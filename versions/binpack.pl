@@ -8,18 +8,16 @@
 
 best(App, Placement, Cost, CapCost) :-
     application(App, Functions, Services), 
-    % RankedComps --> sort components by increasing HWReqs
-    ranking(Functions, Services, RankedComps),
-    % Components --> sort comp nodes by decreasing HWCaps
-    findCompatibles(RankedComps, Components),
+    ranking(Functions, Services, RankedComps),  % RankedComps:  [(Rank, Comp)|Rest] --> sort "Comp" by increasing HWReqs
+    findCompatibles(RankedComps, Components),   % Components:   [(Comp, Compatibles)|Rest]--> sort "Compatibles" nodes by decreasing HWCaps
     placement(Components, Placement, CapCost, Cost),
     qosOK(Placement),
     findall(N, distinct(member((_,N), Placement)), S),
-    sort(S, Ss), length(Ss, L), writeln(L).
+    sort(S, Ss), length(Ss, L), write("Distinct Nodes: "), writeln(L).
 
-findCompatibles([(_,S)|Ss], [(S,SCompatibles)|Rest]):-
-  findCompatibles(Ss, Rest),
-  findall((Cost, H, M), lightNodeOK(S, M, H, Cost), Compatibles),  
+findCompatibles([(_,C)|Cs], [(C,SCompatibles)|Rest]):-
+  findCompatibles(Cs, Rest),
+  findall((Cost, H, M), lightNodeOK(C, M, H, Cost), Compatibles),  
   %sort(1, @>, Compatibles, Tmp), sort(2, @<, Tmp, SCompatibles),
   sort(Compatibles, SCompatibles).
 findCompatibles([],[]).
@@ -47,24 +45,25 @@ placement([(C, Comps)|Cs], [(C,N)|Ps], CapCost, NewCost) :-
     NewCost is Cost + CCost, NewCost < CapCost.
 placement([], [], _, 0).
 
-/*componentPlacement(F, Comps, N, Ps, FCost) :-
+
+componentPlacement(F, Comps, N, Ps, FCost) :-
     functionInstance(F, FId, _), function(FId, _, _, HWReqs),
     member((_,N), Ps), member((FCost,_,N), Comps),
     compatible(N, HWReqs, Ps).
-*/
+
 componentPlacement(F, Comps, N, Ps, FCost) :-
     functionInstance(F, FId, _), function(FId, _, _, HWReqs),
-    member((FCost,_,N), Comps), %\+ member((_,N),Ps),
+    member((FCost,_,N), Comps), \+ member((_,N),Ps),
     compatible(N, HWReqs, Ps).
 
-/*componentPlacement(S, Comps, N, Ps, SCost) :-
+componentPlacement(S, Comps, N, Ps, SCost) :-
     serviceInstance(S, SId), service(SId, _, _, HWReqs),
     member((_,N), Ps), member((SCost,_,N), Comps),
     compatible(N, HWReqs, Ps).
-*/
+
 componentPlacement(S, Comps, N, Ps, SCost) :-
     serviceInstance(S, SId), service(SId, _, _, HWReqs),
-    member((SCost,_,N), Comps), %\+ member((_,N),Ps),
+    member((SCost,_,N), Comps), \+ member((_,N),Ps),
     compatible(N, HWReqs, Ps).
 
 compatible(N, (_,HWReqs), Ps) :-
