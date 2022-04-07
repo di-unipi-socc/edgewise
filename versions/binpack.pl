@@ -1,4 +1,4 @@
-:-['../data/infr/infr.pl', '../data/app.pl'].
+:-['../data/infr/infr64.pl', '../data/app.pl'].
 :-['../requirements.pl', '../costs.pl'].
 :- dynamic best_so_far/2.
 
@@ -16,19 +16,19 @@ best(App, Placement, Cost, CapCost) :-
     sort(S, Ss), length(Ss, L), write("Distinct Nodes: "), writeln(L).
 
 findCompatibles([(_,C)|Cs], [(C,SCompatibles)|Rest]):-
-  findCompatibles(Cs, Rest),
-  findall((Cost, H, M), lightNodeOK(C, M, H, Cost), Compatibles),  
-  %sort(1, @>, Compatibles, Tmp), sort(2, @<, Tmp, SCompatibles),
-  sort(Compatibles, SCompatibles).
+    findCompatibles(Cs, Rest),
+    findall((Cost, H, M), lightNodeOK(C, M, H, Cost), Compatibles),  
+    %sort(1, @>, Compatibles, Tmp), sort(2, @<, Tmp, SCompatibles),
+    sort(Compatibles, SCompatibles).
 findCompatibles([],[]).
 
 lightNodeOK(S,N,H,SCost) :-
-  serviceInstance(S, SId),
-  service(SId, _, SWReqs, (Arch, HWReqs)),
-  node(N, NType, SWCaps, (Arch, HWCaps), _, _),
-  subset(SWReqs, SWCaps),
-  HWCaps >= HWReqs, H is 1/HWCaps,
-  cost(NType, S, SCost).
+    serviceInstance(S, SId),
+    service(SId, _, SWReqs, (Arch, HWReqs)),
+    node(N, NType, SWCaps, (Arch, HWCaps), _, _),
+    subset(SWReqs, SWCaps),
+    HWCaps >= HWReqs, H is 1/HWCaps, % H used to sort Compatibles (ascending H --> descending HWCaps)) 
+    cost(NType, S, SCost).
 
 lightNodeOK(F,N,H,FCost) :-
     functionInstance(F, FId, _), 
@@ -41,8 +41,8 @@ lightNodeOK(F,N,H,FCost) :-
 placement([(C, Comps)|Cs], [(C,N)|Ps], CapCost, NewCost) :-
     placement(Cs, Ps, CapCost, Cost),
     componentPlacement(C, Comps, N, Ps, CCost),
-    % write(C), write(" on "), writeln(N),
-    NewCost is Cost + CCost, NewCost < CapCost.
+    write(C), write(" on "), writeln(N).
+    % NewCost is Cost + CCost, NewCost < CapCost.
 placement([], [], _, 0).
 
 
