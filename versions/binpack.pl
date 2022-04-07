@@ -12,14 +12,18 @@ best(App, Placement, Cost, CapCost) :-
     findCompatibles(RankedComps, Components),   % Components:   [(Comp, Compatibles)|Rest]--> sort "Compatibles" nodes by decreasing HWCaps
     placement(Components, Placement, CapCost, Cost),
     qosOK(Placement),
-    findall(N, distinct(member((_,N), Placement)), S),
-    sort(S, Ss), length(Ss, L), write("Distinct Nodes: "), writeln(L).
+    countDistinct(Placement). % only for testing
+
+countDistinct(P) :-
+    findall(N, distinct(member((_,N), P)), S),
+    sort(S, Ss), length(Ss, L), 
+    write("Distinct Nodes: "), write(L), write(" - "), writeln(Ss).
 
 findCompatibles([(_,C)|Cs], [(C,SCompatibles)|Rest]):-
     findCompatibles(Cs, Rest),
     findall((Cost, H, M), lightNodeOK(C, M, H, Cost), Compatibles),  
-    %sort(1, @>, Compatibles, Tmp), sort(2, @<, Tmp, SCompatibles),
     sort(Compatibles, SCompatibles).
+    %sort(1, @>, Compatibles, Tmp), sort(2, @<, Tmp, SCompatibles),
 findCompatibles([],[]).
 
 lightNodeOK(S,N,H,SCost) :-
@@ -41,8 +45,8 @@ lightNodeOK(F,N,H,FCost) :-
 placement([(C, Comps)|Cs], [(C,N)|Ps], CapCost, NewCost) :-
     placement(Cs, Ps, CapCost, Cost),
     componentPlacement(C, Comps, N, Ps, CCost),
-    write(C), write(" on "), writeln(N).
-    % NewCost is Cost + CCost, NewCost < CapCost.
+    write(C), write(" on "), writeln(N),
+    NewCost is Cost + CCost, NewCost < CapCost.
 placement([], [], _, 0).
 
 
@@ -50,7 +54,6 @@ componentPlacement(F, Comps, N, Ps, FCost) :-
     functionInstance(F, FId, _), function(FId, _, _, HWReqs),
     member((_,N), Ps), member((FCost,_,N), Comps),
     compatible(N, HWReqs, Ps).
-
 componentPlacement(F, Comps, N, Ps, FCost) :-
     functionInstance(F, FId, _), function(FId, _, _, HWReqs),
     member((FCost,_,N), Comps), \+ member((_,N),Ps),
@@ -60,7 +63,6 @@ componentPlacement(S, Comps, N, Ps, SCost) :-
     serviceInstance(S, SId), service(SId, _, _, HWReqs),
     member((_,N), Ps), member((SCost,_,N), Comps),
     compatible(N, HWReqs, Ps).
-
 componentPlacement(S, Comps, N, Ps, SCost) :-
     serviceInstance(S, SId), service(SId, _, _, HWReqs),
     member((SCost,_,N), Comps), \+ member((_,N),Ps),
