@@ -10,7 +10,6 @@ best(App, Placement, Cost, CapCost) :-
     application(App, Functions, Services), 
     ranking(Functions, Services, RankedComps),  % RankedComps:  [(Rank, Comp)|Rest] --> sort "Comp" by increasing HWReqs
     findCompatibles(RankedComps, Components),   % Components:   [(Comp, Compatibles)|Rest]--> sort "Compatibles" nodes by decreasing HWCaps
-    writeln("Done preprocessing"),
     placement(Components, Placement, CapCost, Cost),
     countDistinct(Placement). % only for testing
 

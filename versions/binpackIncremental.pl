@@ -1,4 +1,4 @@
-:-['../data/infr/infr64.pl', '../data/app.pl'].
+:-['../data/infr/infr32.pl', '../data/app.pl'].
 :-['../requirements.pl', '../costs.pl'].
 :- dynamic best_so_far/2.
 
@@ -10,10 +10,7 @@ best(App, Placement, Cost, CapCost) :-
     application(App, Functions, Services), 
     ranking(Functions, Services, RankedComps),  % RankedComps:  [(Rank, Comp)|Rest] --> sort "Comp" by increasing HWReqs
     findCompatibles(RankedComps, Components),   % Components:   [(Comp, Compatibles)|Rest]--> sort "Compatibles" nodes by decreasing HWCaps
-    writeln("Done preprocessing"),
     placement(Components, Placement, CapCost, Cost),
-    writeln(Placement),writeln(Cost),
-    qosOK(Placement),
     countDistinct(Placement). % only for testing
 
 countDistinct(P) :-
@@ -47,7 +44,7 @@ lightNodeOK(F,N,H,FCost) :-
 placement([(C, Comps)|Cs], [(C,N)|Ps], CapCost, NewCost) :-
     placement(Cs, Ps, CapCost, Cost),
     componentPlacement(C, Comps, N, Ps, CCost),
-    %write(C), write(" on "), writeln(N),
+    qosOK(C, N, Ps),
     NewCost is Cost + CCost, NewCost < CapCost.
 placement([], [], _, 0).
 
@@ -82,23 +79,34 @@ hwOK(N,HWCaps,HWReqs,Ps) :-
 hwOnN(N, Ps, HW) :- serviceInstance(S, SId), service(SId,_,_,(_,HW)), member((S,N), Ps).
 hwOnN(N, Ps, HW) :- functionInstance(F, FId,_), function(FId,_,_,(_,HW)), member((F,N), Ps).
 
-qosOK(Ps) :- 
-    findall((N1N2, Lat), relevant(N1N2, Ps, Lat, _), DataFlows), 
-    checkDF(DataFlows, Ps).
+qosOK(C, N, Ps) :-
+    findall((N1N2, Lat), distinct(relevant(C, N, Ps, N1N2, Lat)), DataFlows), 
+    latOK(DataFlows),
+    findall(N1N2, distinct(member((N1N2,_),DataFlows)), BWs), 
+    bwOK(BWs, [(C,N)|Ps]).
 
-checkDF([((N1,N2),ReqLat)|DFs], Ps) :-
-    checkDF(DFs, Ps), 
-    link(N1, N2, FeatLat, FeatBW),
+relevant(T, N, Ps, (N,N2), Lat) :- 
+    dataFlow(T, T2, _, _, _, _, Lat), 
+    (member((T2,N2), Ps); node(N2, _, _, _, _, IoTCaps), member(T2, IoTCaps)), dif(N,N2).
+relevant(T, N, Ps, (N1,N), Lat) :- 
+    dataFlow(T1, T, _, _, _, _, Lat), 
+    (member((T1,N1), Ps); node(N1, _, _, _, _, IoTCaps), member(T1, IoTCaps)), dif(N1,N).
+
+latOK([((N1,N2), ReqLat)|DFs]) :-
+    link(N1,N2,FeatLat,_),
     FeatLat =< ReqLat,
-    bwOK((N1,N2), FeatBW, Ps).
-checkDF([], _).
+    latOK(DFs).
+latOK([]).
 
-bwOK(N1N2, FeatBW, Ps):-
-    findall(BW, relevant(N1N2, Ps, _, BW), BWs), sum_list(BWs, OkAllocBW), 
-    bwTh(T), FeatBW >= OkAllocBW + T.
+bwOK([(N1,N2)|DFs], Ps) :-
+    link(N1,N2,_,FeatBW),
+    findall(BW, flowsOnN1N2((N1,N2), Ps, BW), BWs), sum_list(BWs, OkAllocBW), 
+    bwTh(T), FeatBW >= OkAllocBW + T,
+    bwOK(DFs, Ps).
+bwOK([],_).
 
-relevant((N1,N2), Ps, Lat, BW) :-
-    dataFlow(T1,T2,_,_,Size,Rate,Lat),
+flowsOnN1N2((N1,N2), Ps, BW) :-
+    dataFlow(T1,T2,_,_,Size,Rate,_),
     (member((T1,N1), Ps); node(N1, _, _, _, _, IoTCaps), member(T1, IoTCaps)),
     (member((T2,N2), Ps); node(N2, _, _, _, _, IoTCaps), member(T2, IoTCaps)),
-    dif(N1,N2), BW is Rate*Size.
+    BW is Rate*Size.
