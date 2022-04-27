@@ -1,4 +1,4 @@
-:-['../data/infr/infr64.pl', '../data/app.pl'].
+:-['../data/infr/infr32.pl', '../data/app.pl'].
 :-['../requirements.pl', '../costs.pl'].
 :- dynamic best_so_far/2.
 
