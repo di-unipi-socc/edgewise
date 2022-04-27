@@ -12,6 +12,8 @@ best(App, Placement, Cost, CapCost) :-
     findCompatibles(RankedComps, Components),   % Components:   [(Comp, Compatibles)|Rest]--> sort "Compatibles" nodes by decreasing HWCaps
     writeln("Done preprocessing"),
     placement(Components, Placement, CapCost, Cost),
+    writeln(Placement),writeln(Cost),
+    qosOK(Placement),
     countDistinct(Placement). % only for testing
 
 countDistinct(P) :-
