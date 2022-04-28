@@ -1,19 +1,23 @@
 import networkx as nx
 from numpy import random as rnd
 import argparse as ap
-import random as rn
+from os.path import dirname, abspath, join
 
 HW_PLATFORMS = ['arm64', 'x86']
 TYPES = ['cloud', 'isp', 'cabinet', 'accesspoint', 'thing']
 PROBS = [0.1, 0.2, 0.3, 0.2, 0.2]
 THINGS = ['iphoneXS', 'echoDot']
 
+# ../../newDAP/
+ROOT_DIR = dirname(dirname(abspath(__file__)))
+
 
 class Infra(nx.DiGraph):
 	def __init__(self, n):
 		super().__init__()
-		self.gnodes = {} # nodes grouped by TYPES
-		self._file = "infr/infr{}.pl".format(n)
+		self.gnodes = {}  # nodes grouped by TYPES
+		# self._file = "infr/infr{}.pl".format(n)
+		self._file = join(ROOT_DIR, "data", "infr", "infr{}.pl".format(n))
 		self._bwTh = 5
 		self._hwTh = 2
 
@@ -169,22 +173,22 @@ def main(nodesnumber):
 	infra.add_links('thing', 'cabinet', 15, 50)
 	infra.add_links('thing', 'accesspoint', 2, 20)
 	infra.add_links('thing', 'thing', 15, 50)
-	
+
 	#infra.dummy_links(lat=5, bw=700)
 	infra.upload()
-	
-	for k,v in infra.gnodes.items():
-		print("{}: {}".format(k,len(v)))
+
+	for k, v in infra.gnodes.items():
+		print("{}: {}".format(k, len(v)))
 
 
 def init_parser() -> ap.ArgumentParser:
 	usage = "<%(prog)s> n"
 	description = "Generate random infrastructure made of a given number of nodes."
-	parser = ap.ArgumentParser(usage=usage, description=description)
+	p = ap.ArgumentParser(usage=usage, description=description)
 
-	parser.add_argument("n", type=int, help="Number of infrastructure nodes to generate.")
+	p.add_argument("n", type=int, help="Number of infrastructure nodes to generate.")
 
-	return parser
+	return p
 
 
 if __name__ == "__main__":
