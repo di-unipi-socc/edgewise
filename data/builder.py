@@ -1,6 +1,7 @@
 import networkx as nx
 from numpy import random as rnd
 import argparse as ap
+import random as rn
 
 HW_PLATFORMS = ['arm64', 'x86']
 TYPES = ['cloud', 'isp', 'cabinet', 'accesspoint', 'thing']
@@ -98,16 +99,22 @@ class Infra(nx.DiGraph):
 		return "domain(all, [_])."
 
 	def get_nodes(self):
-		nodes = ""
-		for (nid, nattr) in self.nodes(data=True):
-			nodes += "node({}, {ntype}, {software}, {hardware}, {security}, {things}).\n".format(nid, **nattr).replace("'", "")
-		return nodes
+		nodes_str = ""
+		nodes = list(self.nodes(data=True))
+		rnd.shuffle(nodes)
+
+		for (nid, nattr) in nodes:
+			nodes_str += "node({}, {ntype}, {software}, {hardware}, {security}, {things}).\n".format(nid, **nattr).replace("'", "")
+		return nodes_str
 
 	def get_links(self):
-		links = ""
-		for n1, n2, lattr in self.edges(data=True):
-			links += "link({},{},{lat},{bw}).\n".format(n1, n2, **lattr).replace("'", "")
-		return links
+		links_str = ""
+		links = list(self.edges(data=True))
+		rnd.shuffle(links)
+
+		for n1, n2, lattr in links:
+			links_str += "link({},{},{lat},{bw}).\n".format(n1, n2, **lattr).replace("'", "")
+		return links_str
 
 	def __str__(self):
 		infra = ""
@@ -166,7 +173,8 @@ def main(nodesnumber):
 	#infra.dummy_links(lat=5, bw=700)
 	infra.upload()
 	
-	print(infra.gnodes)
+	for k,v in infra.gnodes.items():
+		print("{}: {}".format(k,len(v)))
 
 
 def init_parser() -> ap.ArgumentParser:

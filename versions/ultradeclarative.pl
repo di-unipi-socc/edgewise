@@ -1,17 +1,34 @@
 :-['../data/infr/infr64.pl', '../data/app.pl'].
 :-['../requirements.pl', '../costs.pl'].
-:- dynamic best_so_far/2.
 
 :- set_prolog_flag(answer_write_options,[max_depth(0)]). % write answers' text entirely
-:- set_prolog_flag(stack_limit, 16 000 000 000).
+:- set_prolog_flag(stack_limit, 32 000 000 000).
 :- set_prolog_flag(last_call_optimisation, true).
 
 tolerance(0.0).
 
+/*best(App, Placement, Cost, Budget) :-
+    application(App, Functions, Services), 
+    findall((C,P), eligiblePlacement(Functions, Services, Budget, P, C), Pls), sort(Pls,[(Cost, Placement)|_]), 
+    % writeln("Found first placement"), writeln(Placement), writeln(Cost),
+    % (eligiblePlacement(Functions, Services, Budget, P1, C1), dif(Placement, P1), C1 < Cost),
+    % writeln("This last Placement is optimal"),
+    countDistinct(Placement). % only for testing
+*/
 best(App, Placement, Cost, Budget) :-
     application(App, Functions, Services), 
+    eligiblePlacement(Functions, Services, Budget, Placement, Cost),
+    countDistinct(Placement). % only for testing
+
+eligiblePlacement(Functions, Services, Budget, Placement, Cost):-
     placement(Functions, Services, Placement),
-    hwOK(Placement), qosOK(Placement), costOK(Placement, Budget, Cost).
+    costOK(Placement, Budget, Cost), hwOK(Placement), qosOK(Placement), 
+    write(Placement), write(" - "), writeln(Cost).
+
+countDistinct(P) :-
+    findall(N, distinct(member(on(_,N), P)), S),
+    sort(S, Ss), length(Ss, L), 
+    write("Distinct Nodes: "), write(L), write(" - "), writeln(Ss).
 
 placement(Functions, Services, Placement) :-
     append(Functions, Services, Components),

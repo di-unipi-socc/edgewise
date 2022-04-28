@@ -1,6 +1,5 @@
-:-['../data/infr/infr32.pl', '../data/app.pl'].
+:-['../data/infr/infr64.pl', '../data/app.pl'].
 :-['../requirements.pl', '../costs.pl'].
-:- dynamic best_so_far/2.
 
 :- set_prolog_flag(answer_write_options,[max_depth(0)]). % write answers' text entirely
 :- set_prolog_flag(stack_limit, 32 000 000 000).
@@ -10,6 +9,7 @@ best(App, Placement, Cost, CapCost) :-
     application(App, Functions, Services), 
     ranking(Functions, Services, RankedComps),  % RankedComps:  [(Rank, Comp)|Rest] --> sort "Comp" by increasing HWReqs
     findCompatibles(RankedComps, Components),   % Components:   [(Comp, Compatibles)|Rest]--> sort "Compatibles" nodes by decreasing HWCaps
+    writeln("preprocessing Done!"),
     placement(Components, Placement, CapCost, Cost),
     countDistinct(Placement). % only for testing
 

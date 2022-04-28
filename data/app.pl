@@ -51,6 +51,6 @@ dataFlow(convertTxt, converter, post, [enc], 0.2, 8, 40).
 dataFlow(converter, convertTxt, speech, [enc], 0.2, 12, 30).
 dataFlow(convertTxt, echoDot, speech, [enc], 0.5, 10, 30).
 dataFlow(convertTxt, metaAudio, speech, [enc], 0.5, 10, 70).
-dataFlow(metaAudio, mainDB, meta, [enc], 0.1, 15, 20).
+dataFlow(metaAudio, mainDB, meta, [enc], 0.1, 15, 30). % lat = 20
 dataFlow(convertTxt, uploadAudio, speech, [enc], 0.8, 10, 30).
 dataFlow(uploadAudio, audioBucket, speech, [enc], 0.8, 10, 40).

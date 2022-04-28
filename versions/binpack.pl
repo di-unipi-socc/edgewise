@@ -1,6 +1,5 @@
 :-['../data/infr/infr32.pl', '../data/app.pl'].
 :-['../requirements.pl', '../costs.pl'].
-:- dynamic best_so_far/2.
 
 :- set_prolog_flag(answer_write_options,[max_depth(0)]). % write answers' text entirely
 :- set_prolog_flag(stack_limit, 32 000 000 000).
@@ -10,7 +9,8 @@ best(App, Placement, Cost, CapCost) :-
     application(App, Functions, Services), 
     ranking(Functions, Services, RankedComps),  % RankedComps:  [(Rank, Comp)|Rest] --> sort "Comp" by increasing HWReqs
     findCompatibles(RankedComps, Components),   % Components:   [(Comp, Compatibles)|Rest]--> sort "Compatibles" nodes by decreasing HWCaps
-    placement(Components, Placement, CapCost, Cost),
+    writeln("preprocessing Done!"),   
+    placement(Components, Placement, CapCost, Cost), qosOK(Placement),
     countDistinct(Placement). % only for testing
 
 countDistinct(P) :-
@@ -21,7 +21,8 @@ countDistinct(P) :-
 findCompatibles([(_,C)|Cs], [(C,SCompatibles)|Rest]):-
     findCompatibles(Cs, Rest),
     findall((Cost, H, M), lightNodeOK(C, M, H, Cost), Compatibles),  
-    sort(Compatibles, SCompatibles).
+    sort(Compatibles, SCompatibles),
+    length(SCompatibles, L), write(C), write(" - "), writeln(L).
     %sort(1, @>, Compatibles, Tmp), sort(2, @<, Tmp, SCompatibles),
 findCompatibles([],[]).
 
@@ -41,31 +42,27 @@ lightNodeOK(F,N,H,FCost) :-
     HWCaps >= HWReqs, H is 1/HWCaps,
     cost(NType, F, FCost).
 
-placement([(C, Comps)|Cs], [(C,N)|Ps], CapCost, NewCost) :-
-    placement(Cs, Ps, CapCost, Cost),
-    componentPlacement(C, Comps, N, Ps, CCost),
-    %write(C), write(" on "), writeln(N),
-    NewCost is Cost + CCost, NewCost < CapCost.
-placement([], [], _, 0).
+placement(Cs, Placement, CapCost, NewCost) :-
+    puppaPlacement(Cs, [], Placement, CapCost, 0, NewCost),
+    write("Found placement: "), writeln(Placement).
 
+puppaPlacement([(C, Comps)|Cs], OldP, NewP, CapCost, OldCost, NewCost) :-
+    componentPlacement(C, Comps, N, OldP, CCost),
+    TCost is OldCost + CCost, TCost < CapCost,
+    puppaPlacement(Cs, [(C,N)|OldP], NewP, CapCost, TCost, NewCost).
+puppaPlacement([], P, P, _, Cost, Cost).
+
+pickNode(N, Ps, Comps, Cost):-
+    (member((_,N), Ps), member((Cost,_,N), Comps));
+    (member((Cost,_,N), Comps), \+ member((_,N),Ps)).
 
 componentPlacement(F, Comps, N, Ps, FCost) :-
     functionInstance(F, FId, _), function(FId, _, _, HWReqs),
-    member((_,N), Ps), member((FCost,_,N), Comps),
-    compatible(N, HWReqs, Ps).
-componentPlacement(F, Comps, N, Ps, FCost) :-
-    functionInstance(F, FId, _), function(FId, _, _, HWReqs),
-    member((FCost,_,N), Comps), \+ member((_,N),Ps),
-    compatible(N, HWReqs, Ps).
+    pickNode(N, Ps, Comps, FCost), compatible(N, HWReqs, Ps).
 
 componentPlacement(S, Comps, N, Ps, SCost) :-
     serviceInstance(S, SId), service(SId, _, _, HWReqs),
-    member((_,N), Ps), member((SCost,_,N), Comps),
-    compatible(N, HWReqs, Ps).
-componentPlacement(S, Comps, N, Ps, SCost) :-
-    serviceInstance(S, SId), service(SId, _, _, HWReqs),
-    member((SCost,_,N), Comps), \+ member((_,N),Ps),
-    compatible(N, HWReqs, Ps).
+    pickNode(N, Ps, Comps, SCost), compatible(N, HWReqs, Ps).
 
 compatible(N, (_,HWReqs), Ps) :-
     node(N, _, _, (_, HWCaps), _, _), 
@@ -96,6 +93,6 @@ bwOK(N1N2, FeatBW, Ps):-
 
 relevant((N1,N2), Ps, Lat, BW) :-
     dataFlow(T1,T2,_,_,Size,Rate,Lat),
-    (member((T1,N1), Ps); node(N1, _, _, _, _, IoTCaps), member(T1, IoTCaps)),
-    (member((T2,N2), Ps); node(N2, _, _, _, _, IoTCaps), member(T2, IoTCaps)),
+    (member((T1,N1), Ps); (node(N1, _, _, _, _, IoTCaps), member(T1, IoTCaps))),
+    (member((T2,N2), Ps); (node(N2, _, _, _, _, IoTCaps), member(T2, IoTCaps))),
     dif(N1,N2), BW is Rate*Size.
