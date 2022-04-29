@@ -1,2 +1,9 @@
-networkx==2.7.1
+colorama==0.4.4
+networkx==2.8
 numpy==1.22.3
+pandas==1.4.2
+pyswip @ git+https://github.com/yuce/pyswip@89955611467cec37ab89bf6fbf7f7567cbcb194b
+python-dateutil==2.8.2
+pytz==2022.1
+six==1.16.0
+tabulate==0.8.9
