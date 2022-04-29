@@ -1,5 +1,3 @@
-%:-['data/infr.pl', 'data/app.pl'].
-
 cost(_, SIId, C) :-
     serviceInstance(SIId, SId),
     service(SId, _, SWReqs, (Arch, HW)),

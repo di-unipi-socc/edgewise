@@ -1,5 +1,3 @@
-%:-['data/infr.pl', 'data/app.pl'].
-
 % requirements(Type,S,N) effettua
 % un preprocessing "ad-hoc" per identificare il dominio dei nodi buoni per ogni servizio S, basandosi su:
 % - banda media

@@ -1,4 +1,4 @@
-:-['../data/infr/infr64.pl', '../data/app.pl'].
+% :-['../data/infrs/infr16.pl', '../data/apps/speakToMe.pl'].
 :-['../requirements.pl', '../costs.pl'].
 
 :- set_prolog_flag(answer_write_options,[max_depth(0)]). % write answers' text entirely
@@ -15,49 +15,60 @@ tolerance(0.0).
     % writeln("This last Placement is optimal"),
     countDistinct(Placement). % only for testing
 */
+
+stats(App, Placement, Cost, NDistinct, Infs, Time, Budget) :-
+    statistics(inferences, InfA),
+        statistics(cputime, TimeA),
+            best(App, Placement, Cost, Budget),
+            countDistinct(Placement, NDistinct),
+        statistics(cputime, TimeB),
+    statistics(inferences, InfB),
+
+    Infs is InfB - InfA,
+    Time is TimeB - TimeA.
+
 best(App, Placement, Cost, Budget) :-
     application(App, Functions, Services), 
-    eligiblePlacement(Functions, Services, Budget, Placement, Cost),
-    countDistinct(Placement). % only for testing
+    eligiblePlacement(Functions, Services, Budget, Placement, Cost).
 
 eligiblePlacement(Functions, Services, Budget, Placement, Cost):-
     placement(Functions, Services, Placement),
-    costOK(Placement, Budget, Cost), hwOK(Placement), qosOK(Placement), 
-    write(Placement), write(" - "), writeln(Cost).
+    costOK(Placement, Budget, Cost), hwOK(Placement), qosOK(Placement).
+    %write(Placement), write(" - "), writeln(Cost).
 
-countDistinct(P) :-
-    findall(N, distinct(member(on(_,N), P)), S),
-    sort(S, Ss), length(Ss, L), 
-    write("Distinct Nodes: "), write(L), write(" - "), writeln(Ss).
+countDistinct(P, L) :-
+    findall(N, distinct(member((_,N), P)), S),
+    sort(S, Ss), length(Ss, L).
+    % write("Distinct Nodes: "), write(L), write(" - "), writeln(Ss).
 
 placement(Functions, Services, Placement) :-
     append(Functions, Services, Components),
     placement(Components, Placement).
 
-placement([C|Cs], [on(C,N)|P]) :-
+placement([C|Cs], [(C,N)|P]) :-
     placement(Cs, P), componentPlacement(C,N).
 placement([], []).
     
 componentPlacement(F, N) :-
-    functionInstance(F, FId, _), function(FId, FType, SWPlat, (Arch,_)),
+    functionInstance(F, FId, _), function(FId, _, SWPlat, (Arch,_)),
     node(N, _, SWCaps, (Arch,_), _, _), 
     %requirements(FType, F, N), 
     member(SWPlat,SWCaps).
 componentPlacement(S, N) :-
-    serviceInstance(S, SId), service(SId, SType, SWReqs, (Arch,_)),
+    serviceInstance(S, SId), service(SId, _, SWReqs, (Arch,_)),
     node(N, _, SWCaps, (Arch,_), _, _), 
     %requirements(SType, S, N), 
     subset(SWReqs, SWCaps).
 
 costOK(Placement, Budget, Cost) :-
-    findall(C, (member(on(S,N), Placement), componentCost(S,N,C)), Costs), sum_list(Costs,Cost),
+    findall(C, (member((S,N), Placement), componentCost(S,N,C)), Costs), sum_list(Costs,Cost),
     tolerance(T), Tol is T * Budget,
     Cost < Budget + Tol.
 
 componentCost(S,N,C) :- node(N, NType, _, _, _, _), cost(NType,S,C).
 
 hwOK(Placement) :-
-    findall(N, distinct(member(on(_,N),Placement)), Nodes),
+    findall(N, distinct(member((_,N),Placement)), Nodes),
     nodeHwOk(Nodes,Placement).
 
 nodeHwOk([N|Nodes], Placement) :-

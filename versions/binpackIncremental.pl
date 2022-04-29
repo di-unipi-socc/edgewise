@@ -1,22 +1,30 @@
-:-['../data/infr/infr64.pl', '../data/app.pl'].
+%:-['../data/infrs/infr64.pl', '../data/apps/speakToMe.pl'].
 :-['../requirements.pl', '../costs.pl'].
 
 :- set_prolog_flag(answer_write_options,[max_depth(0)]). % write answers' text entirely
 :- set_prolog_flag(stack_limit, 32 000 000 000).
 :- set_prolog_flag(last_call_optimisation, true).
 
-best(App, Placement, Cost, CapCost) :-
+stats(App, Placement, Cost, NDistinct, Infs, Time, Budget) :-
+    statistics(inferences, InfA),
+        statistics(cputime, TimeA),
+            best(App, Placement, Cost, Budget),
+            countDistinct(Placement, NDistinct),
+        statistics(cputime, TimeB),
+    statistics(inferences, InfB),
+
+    Infs is InfB - InfA,
+    Time is TimeB - TimeA.
+
+best(App, Placement, Cost, Budget) :-
     application(App, Functions, Services), 
     ranking(Functions, Services, RankedComps),  % RankedComps:  [(Rank, Comp)|Rest] --> sort "Comp" by increasing HWReqs
     findCompatibles(RankedComps, Components),   % Components:   [(Comp, Compatibles)|Rest]--> sort "Compatibles" nodes by decreasing HWCaps
-    writeln("preprocessing Done!"),
-    placement(Components, Placement, CapCost, Cost),
-    countDistinct(Placement). % only for testing
+    placement(Components, Placement, Budget, Cost).
 
-countDistinct(P) :-
+countDistinct(P, L) :-
     findall(N, distinct(member((_,N), P)), S),
-    sort(S, Ss), length(Ss, L), 
-    write("Distinct Nodes: "), write(L), write(" - "), writeln(Ss).
+    sort(S, Ss), length(Ss, L).
 
 findCompatibles([(_,C)|Cs], [(C,SCompatibles)|Rest]):-
     findCompatibles(Cs, Rest),
@@ -41,11 +49,11 @@ lightNodeOK(F,N,H,FCost) :-
     HWCaps >= HWReqs, H is 1/HWCaps,
     cost(NType, F, FCost).
 
-placement([(C, Comps)|Cs], [(C,N)|Ps], CapCost, NewCost) :-
-    placement(Cs, Ps, CapCost, Cost),
+placement([(C, Comps)|Cs], [(C,N)|Ps], Budget, NewCost) :-
+    placement(Cs, Ps, Budget, Cost),
     componentPlacement(C, Comps, N, Ps, CCost),
     qosOK(C, N, Ps),
-    NewCost is Cost + CCost, NewCost < CapCost.
+    NewCost is Cost + CCost, NewCost < Budget.
 placement([], [], _, 0).
 
 

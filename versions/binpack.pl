@@ -1,28 +1,36 @@
-:-['../data/infr/infr32.pl', '../data/app.pl'].
+%:-['../data/infrs/infr64.pl', '../data/apps/speakToMe.pl'].
 :-['../requirements.pl', '../costs.pl'].
 
 :- set_prolog_flag(answer_write_options,[max_depth(0)]). % write answers' text entirely
 :- set_prolog_flag(stack_limit, 32 000 000 000).
 :- set_prolog_flag(last_call_optimisation, true).
 
-best(App, Placement, Cost, CapCost) :-
+stats(App, Placement, Cost, NDistinct, Infs, Time, Budget) :-
+    statistics(inferences, InfA),
+        statistics(cputime, TimeA),
+            best(App, Placement, Cost, Budget),
+            countDistinct(Placement, NDistinct),
+        statistics(cputime, TimeB),
+    statistics(inferences, InfB),
+
+    Infs is InfB - InfA,
+    Time is TimeB - TimeA.
+
+best(App, Placement, Cost, Budget) :-
     application(App, Functions, Services), 
     ranking(Functions, Services, RankedComps),  % RankedComps:  [(Rank, Comp)|Rest] --> sort "Comp" by increasing HWReqs
     findCompatibles(RankedComps, Components),   % Components:   [(Comp, Compatibles)|Rest]--> sort "Compatibles" nodes by decreasing HWCaps
-    writeln("preprocessing Done!"),   
-    placement(Components, Placement, CapCost, Cost), qosOK(Placement),
-    countDistinct(Placement). % only for testing
+    placement(Components, Placement, Budget, Cost), qosOK(Placement).
 
-countDistinct(P) :-
+countDistinct(P, L) :-
     findall(N, distinct(member((_,N), P)), S),
-    sort(S, Ss), length(Ss, L), 
-    write("Distinct Nodes: "), write(L), write(" - "), writeln(Ss).
+    sort(S, Ss), length(Ss, L).
 
 findCompatibles([(_,C)|Cs], [(C,SCompatibles)|Rest]):-
     findCompatibles(Cs, Rest),
     findall((Cost, H, M), lightNodeOK(C, M, H, Cost), Compatibles),  
-    sort(Compatibles, SCompatibles),
-    length(SCompatibles, L), write(C), write(" - "), writeln(L).
+    sort(Compatibles, SCompatibles).
+    %length(SCompatibles, L), write(C), write(" - "), writeln(L).
     %sort(1, @>, Compatibles, Tmp), sort(2, @<, Tmp, SCompatibles),
 findCompatibles([],[]).
 
@@ -42,15 +50,15 @@ lightNodeOK(F,N,H,FCost) :-
     HWCaps >= HWReqs, H is 1/HWCaps,
     cost(NType, F, FCost).
 
-placement(Cs, Placement, CapCost, NewCost) :-
-    puppaPlacement(Cs, [], Placement, CapCost, 0, NewCost),
-    write("Found placement: "), writeln(Placement).
+placement(Cs, Placement, Budget, NewCost) :-
+    placement(Cs, [], Placement, Budget, 0, NewCost).
+    % write("Found placement: "), writeln(Placement).
 
-puppaPlacement([(C, Comps)|Cs], OldP, NewP, CapCost, OldCost, NewCost) :-
+placement([(C, Comps)|Cs], OldP, NewP, Budget, OldCost, NewCost) :-
     componentPlacement(C, Comps, N, OldP, CCost),
-    TCost is OldCost + CCost, TCost < CapCost,
-    puppaPlacement(Cs, [(C,N)|OldP], NewP, CapCost, TCost, NewCost).
-puppaPlacement([], P, P, _, Cost, Cost).
+    TCost is OldCost + CCost, TCost < Budget,
+    placement(Cs, [(C,N)|OldP], NewP, Budget, TCost, NewCost).
+placement([], P, P, _, Cost, Cost).
 
 pickNode(N, Ps, Comps, Cost):-
     (member((_,N), Ps), member((Cost,_,N), Comps));

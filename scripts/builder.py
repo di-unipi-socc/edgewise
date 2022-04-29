@@ -16,8 +16,8 @@ class Infra(nx.DiGraph):
 	def __init__(self, n):
 		super().__init__()
 		self.gnodes = {}  # nodes grouped by TYPES
-		# self._file = "infr/infr{}.pl".format(n)
-		self._file = join(ROOT_DIR, "data", "infr", "infr{}.pl".format(n))
+		# self._file = "infrs/infrs{}.pl".format(n)
+		self._file = join(ROOT_DIR, "data", "infrs", "infr{}.pl".format(n))
 		self._bwTh = 5
 		self._hwTh = 2
 
@@ -182,9 +182,8 @@ def main(nodesnumber):
 
 
 def init_parser() -> ap.ArgumentParser:
-	usage = "<%(prog)s> n"
 	description = "Generate random infrastructure made of a given number of nodes."
-	p = ap.ArgumentParser(usage=usage, description=description)
+	p = ap.ArgumentParser(prog=__file__, description=description)
 
 	p.add_argument("n", type=int, help="Number of infrastructure nodes to generate.")
 
