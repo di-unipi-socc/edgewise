@@ -1,4 +1,5 @@
 import argparse as ap
+import os
 from multiprocessing import Process, Manager
 from os.path import dirname, abspath, exists, join, basename
 
@@ -17,6 +18,7 @@ def init_parser() -> ap.ArgumentParser:
 	p = ap.ArgumentParser(prog=__file__, description=description)
 
 	p.add_argument("-p", "--placement", action="store_true", help="if set, shows the obtained placement"),
+	p.add_argument("-d", "--dummy", action="store_true", help="if set, uses an infrastructure with dummy links (low lat, high bw)."),
 	p.add_argument("app", help="Application name.")
 	p.add_argument("size", type=int, help="Infrastructure size.")
 	p.add_argument("budget", type=int, help="Maximum budget.")
@@ -26,7 +28,7 @@ def init_parser() -> ap.ArgumentParser:
 	return p
 
 
-def check_files_existence(app, versions, size):
+def check_files(app, versions, size, dummy_infr=False):
 	# newDAP/data/apps/<app>.pl
 	app = join(ROOT_DIR, "data", "apps", "{}.pl".format(app))
 	if not exists(app):
@@ -34,10 +36,14 @@ def check_files_existence(app, versions, size):
 	print("\n" + Fore.LIGHTCYAN_EX + "APPLICATION: \t {}".format(basename(app)))
 
 	# newDAP/data/infrs/infr<size>.pl
-	infr = join(ROOT_DIR, "data", "infrs", "infr{}.pl".format(size))
+	infr = join(ROOT_DIR, "data", "infrs")
+	if dummy_infr:
+		infr = join(infr, "dummy")
+	infr = join(infr, "infr{}.pl".format(size))
+
 	if not exists(infr):
 		raise FileNotFoundError("No infrastructure file found at {}".format(infr))
-	print(Fore.LIGHTCYAN_EX + "INFRASTRUCTURE:  {}".format(basename(infr)))
+	print(Fore.LIGHTCYAN_EX + "INFRASTRUCTURE:  {}".format(("dummy"+os.sep if dummy_infr else "")+basename(infr)))
 
 	files = []
 	for v in versions:
@@ -47,7 +53,7 @@ def check_files_existence(app, versions, size):
 			raise FileNotFoundError("No version file found at {}".format(f))
 		files.append(f)
 	files = sorted(files)
-	print(Fore.LIGHTCYAN_EX + "VERSIONS: \t\t {}".format([basename(f) for f in files]))
+	print(Fore.LIGHTCYAN_EX + "VERSIONS: \t {}".format([basename(f) for f in files]))
 
 	return app, infr, files
 
@@ -97,7 +103,7 @@ def pl_process(version, app, budget, infr, result):
 	result[basename(version)] = q
 
 
-def main(app, infr, budget, versions, show_placement):
+def main(app, infr, budget, versions, show_placement=False):
 	manager = Manager()
 	result = manager.dict()
 
@@ -114,5 +120,5 @@ if __name__ == "__main__":
 	parser = init_parser()
 	args = parser.parse_args()
 
-	app, infr, vs = check_files_existence(args.app, args.versions, args.size)
+	app, infr, vs = check_files(args.app, args.versions, args.size, dummy_infr=args.dummy)
 	main(app=app, infr=infr, budget=args.budget, versions=vs, show_placement=args.placement)

@@ -1,4 +1,4 @@
-% :-['../data/infrs/infr16.pl', '../data/apps/speakToMe.pl'].
+%:-['../data/infrs/infr0.pl', '../data/apps/speakToMe.pl'].
 :-['../requirements.pl', '../costs.pl'].
 
 :- set_prolog_flag(answer_write_options,[max_depth(0)]). % write answers' text entirely
@@ -7,14 +7,14 @@
 
 tolerance(0.0).
 
-/*best(App, Placement, Cost, Budget) :-
+best(App, Placement, Cost, Budget) :-
     application(App, Functions, Services), 
     findall((C,P), eligiblePlacement(Functions, Services, Budget, P, C), Pls), sort(Pls,[(Cost, Placement)|_]), 
-    % writeln("Found first placement"), writeln(Placement), writeln(Cost),
-    % (eligiblePlacement(Functions, Services, Budget, P1, C1), dif(Placement, P1), C1 < Cost),
-    % writeln("This last Placement is optimal"),
-    countDistinct(Placement). % only for testing
-*/
+    writeln("Found first placement"), writeln(Placement), writeln(Cost),
+    (eligiblePlacement(Functions, Services, Budget, P1, C1), dif(Placement, P1), C1 < Cost),
+    writeln("This last Placement is optimal").
+    %countDistinct(Placement). % only for testing
+
 
 stats(App, Placement, Cost, NDistinct, Infs, Time, Budget) :-
     statistics(inferences, InfA),
@@ -27,9 +27,9 @@ stats(App, Placement, Cost, NDistinct, Infs, Time, Budget) :-
     Infs is InfB - InfA,
     Time is TimeB - TimeA.
 
-best(App, Placement, Cost, Budget) :-
+/*best(App, Placement, Cost, Budget) :-
     application(App, Functions, Services), 
-    eligiblePlacement(Functions, Services, Budget, Placement, Cost).
+    eligiblePlacement(Functions, Services, Budget, Placement, Cost).*/
 
 eligiblePlacement(Functions, Services, Budget, Placement, Cost):-
     placement(Functions, Services, Placement),
