@@ -1,22 +1,22 @@
+import argparse as ap
+from os.path import join
+
 import networkx as nx
 from numpy import random as rnd
-import argparse as ap
-from os.path import dirname, abspath, join
+
+from utils import INFRS_DIR
 
 HW_PLATFORMS = ['arm64', 'x86']
 TYPES = ['cloud', 'isp', 'cabinet', 'accesspoint', 'thing']
 PROBS = [0.1, 0.2, 0.3, 0.2, 0.2]
 THINGS = ['iphoneXS', 'echoDot']
 
-# ../../newDAP/
-ROOT_DIR = dirname(dirname(abspath(__file__)))
-
 
 class Infra(nx.DiGraph):
 	def __init__(self, n, dummy=False):
 		super().__init__()
 		self.gnodes = {}  # nodes grouped by TYPES
-		self._file = "infr{}.pl".format(n)
+		self.file = "infr{}.pl".format(n)
 		self._bwTh = 5
 		self._hwTh = 2
 
@@ -24,11 +24,11 @@ class Infra(nx.DiGraph):
 		self.set_filepath(dummy)
 
 	def set_filepath(self, dummy):
-		path = join(ROOT_DIR, "data", "infrs")
+		path = INFRS_DIR
 		if dummy:
 			path = join(path, "dummy")
 
-		self._file = join(path, self._file)
+		self.file = join(path, self.file)
 
 	def set_nodes(self, n):
 		self.add_nodes_from([f"n{i}" for i in range(0, n)], things=[])
@@ -115,7 +115,9 @@ class Infra(nx.DiGraph):
 		rnd.shuffle(nodes)
 
 		for (nid, nattr) in nodes:
-			nodes_str += "node({}, {ntype}, {software}, {hardware}, {security}, {things}).\n".format(nid, **nattr).replace("'", "")
+			nodes_str += "node({}, {ntype}, {software}, {hardware}, {security}, {things}).\n".format(nid,
+			                                                                                         **nattr).replace(
+				"'", "")
 		return nodes_str
 
 	def get_links(self):
@@ -124,7 +126,7 @@ class Infra(nx.DiGraph):
 		rnd.shuffle(links)
 
 		for n1, n2, lattr in links:
-			links_str += "link({},{},{lat},{bw}).\n".format(n1, n2, **lattr).replace("'", "")
+			links_str += "link({}, {}, {lat}, {bw}).\n".format(n1, n2, **lattr).replace("'", "")
 		return links_str
 
 	def __str__(self):
@@ -137,13 +139,11 @@ class Infra(nx.DiGraph):
 		return infra
 
 	def get_gnodes(self):
-		return "\n".join(["{}: {}".format(k, len(v)) for k,v in self.gnodes.items()])
-
-
+		return "\n".join(["{}: {}".format(k, len(v)) for k, v in self.gnodes.items()])
 
 	def upload(self, file=None):
 		if file is None:
-			file = self._file
+			file = self.file
 		with open(file, "w+") as f:
 			f.write(str(self))
 
@@ -196,8 +196,9 @@ def main(nodesnumber, dummy=False):
 
 	infra.upload()
 
-	print(" at \n{}\n".format(infra._file))
+	print(" at \n{}\n".format(infra.file))
 	print(infra.get_gnodes())
+
 
 def init_parser() -> ap.ArgumentParser:
 	description = "Generate random infrastructure made of a given number of nodes."

@@ -1,7 +1,11 @@
+absl-py==1.0.0
 colorama==0.4.4
 networkx==2.8
 numpy==1.22.3
+ortools==9.3.10497
 pandas==1.4.2
+parse==1.19.0
+protobuf==3.20.1
 pyswip @ git+https://github.com/yuce/pyswip@89955611467cec37ab89bf6fbf7f7567cbcb194b
 python-dateutil==2.8.2
 pytz==2022.1
