@@ -1,9 +1,13 @@
-from classes import Application, Infrastructure
+import time
+
+from .classes import Application, Infrastructure
 import numpy as np
 from ortools.linear_solver import pywraplp
 
 
-def main(app_name="", size=0, dummy=False):
+def or_process(app_name, size, dummy, result):
+	start = time.process_time()
+
 	app = Application(app_name)
 	infr = Infrastructure(size, dummy=dummy)
 
@@ -33,18 +37,28 @@ def main(app_name="", size=0, dummy=False):
 	# Solve
 	status = solver.Solve()
 
+	cost = -1
+	placement = {}
+
 	# Print solution.
 	if status == pywraplp.Solver.OPTIMAL or status == pywraplp.Solver.FEASIBLE:
-		print(f'Total cost = {solver.Objective().Value()}\n')
+		# print(f'Total cost = {solver.Objective().Value()}\n')
+		cost = solver.Objective().Value()
 		for i in range(num_nodes):
 			for j in range(num_instances):
 				# Test if x[i,j] is 1 (with tolerance for floating point arithmetic).
 				if x[i, j].solution_value() > 0.5:
-					print(f'on({instances[j].id}, {list(infr.nodes)[i]}) (cost: {costs[i][j]})')
+					# print(f'on({instances[j].id}, {list(infr.nodes)[i]}) (cost: {costs[i][j]})')
+					placement[instances[j].id] = list(infr.nodes)[i]
 	else:
-		print('No solution found.')
+		raise ValueError(f'Solver status: {status}. No solution found.')
+
+	n_distinct = len(set(placement.values()))
+
+	end = time.process_time()
+	tot_time = end - start
+	result['OR tools'] = {'App': app_name, 'Cost': cost, 'Placement': placement, 'NDistinct': n_distinct, 'Infs': '---', 'Time': tot_time}
 
 
 if __name__ == '__main__':
-
-	main(app_name="speakToMe", size=32)
+	or_process(app_name="speakToMe", size=32)
