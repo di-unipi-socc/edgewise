@@ -1,6 +1,6 @@
 from .components import *
 from .infrastructure import Infrastructure
-from utils import check_app
+from .utils import check_app
 
 
 class Application:
@@ -12,13 +12,15 @@ class Application:
 		self.things = []
 		self.thing_instances = []
 		self.data_flows = []
+		self.file = None
 
 		self.parse(app_name)
 
 	def parse(self, app_name):
 		app_file = check_app(app_name)
+		self.file = app_file
 
-		with open(app_file, "r") as f:
+		with open(self.file, "r") as f:
 			lines = f.read().splitlines()
 
 			services = [i for i in lines if i.startswith("service(")]
@@ -146,4 +148,3 @@ class Application:
 		for n, things in infr.nodes(data='iotcaps'):
 			for t in things:
 				self.get_thing_instance_by_id(t).set_node(n)
-

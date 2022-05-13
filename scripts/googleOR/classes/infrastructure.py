@@ -1,6 +1,6 @@
 import networkx as nx
 import parse as p
-from utils import check_infr
+from .utils import check_infr
 
 BW_TH = "bwTh({t:g})."
 HW_TH = "hwTh({t:g})."
@@ -23,13 +23,15 @@ class Infrastructure(nx.DiGraph):
 		super().__init__()
 		self.hwTh = None
 		self.bwTh = None
+		self.file = None
 
 		self.parse(size, dummy)
 
 	def parse(self, size, dummy):
 		infr_file = check_infr(size, dummy)
+		self.file = infr_file
 
-		with open(infr_file, "r") as f:
+		with open(self.file, "r") as f:
 			lines = f.read().splitlines()
 
 			bw_th = next(i for i in lines if i.startswith("bwTh("))

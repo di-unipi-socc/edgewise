@@ -1,8 +1,40 @@
+import os
+
 from ortools.linear_solver import pywraplp
 import numpy as np
+from pyswip import Prolog
+import sys
+from colorama import Fore, Style, init
+from tabulate import tabulate
+
+QUERY = "cost({ntype}, {compid}, Cost)"
 
 
-def or_process(app_name, size, dummy=False, result=None):
+def get_costs(app, infr, instances, nodes):
+
+	p = Prolog()
+	p.consult(app)
+	p.consult(infr)
+	p.consult(join(ROOT_DIR, "costs.pl"))
+
+	costs = np.zeros((len(instances), len(nodes)))
+	for i, s in enumerate(instances):
+		for j, (_, a) in enumerate(nodes):
+			try:
+				q = p.query(QUERY.format(ntype=a['type'], compid=s.id))
+				r = next(q)
+				costs[i][j] = r['Cost']
+				q.close()
+			except StopIteration:
+				raise ValueError("No cost for {} in {}".format(a['type'], s.id))
+
+	return costs
+
+
+def or_solver(app_name, size, dummy=False, show_placement=False, result=""):
+
+	if type(result) != str:  # if result is not a string, redirect output tu /dev/null
+		sys.stdout = open(os.devnull, 'w')
 
 	app = Application(app_name)
 	infr = Infrastructure(size, dummy=dummy)
@@ -12,7 +44,7 @@ def or_process(app_name, size, dummy=False, result=None):
 
 	instances = app.services + app.functions
 	nodes = list(infr.nodes(data=True))  # (nid, {attrs})
-	links = list(infr.edges(data=True))  # (src, dst, {attrs})
+	links = list(infr.edges(data=True))  # (scripts, dst, {attrs})
 	dfs = app.data_flows
 
 	nids = list(infr.nodes())  # list of node ids
@@ -22,10 +54,8 @@ def or_process(app_name, size, dummy=False, result=None):
 	L = len(links)
 	DF = len(dfs)
 
-	print("# Instances (S):", S)
-	print(f"# Nodes (N):", N)
-	print(f"# Links (L):", L)
-	print(f"# Data Flows (DF):", DF)
+	info = [['Instances', S], ['Nodes', N], ['Links', L], ['Data Flows', DF]]
+	print(Fore.LIGHTCYAN_EX + tabulate(info))
 
 	# Create the solver.
 	solver = pywraplp.Solver.CreateSolver('GLOP')
@@ -35,10 +65,9 @@ def or_process(app_name, size, dummy=False, result=None):
 
 	# Constraint: one instance at most in one node.
 	for i in range(S):
-		solver.Add(solver.Sum([x[i, j] for j in range(N)]) == 1)  # solver.AddExactlyOne
+		solver.Add(solver.Sum([x[i, j] for j in range(N)]) == 1)
 
 	# Constraint: cannot exceed the hw capacity of a node.
-	# TODO add infr.hwTh
 	coeffs = [s.comp.hwreqs for s in instances]
 	bounds = [a['hwcaps'] for _, a in nodes]
 
@@ -48,7 +77,6 @@ def or_process(app_name, size, dummy=False, result=None):
 			constraint.SetCoefficient(x[i, j], coeffs[i])
 
 	# Constraints:
-	# TODO add infr.hwTh
 	# - cannot exceed the bandwidth of a link. (FeatBW >= sum(ReqBW))
 	# - satisfy latency requirements of data flows. (FeatLat <= ReqLat)
 	for n, n1, a in links:  # foreach link
@@ -74,9 +102,8 @@ def or_process(app_name, size, dummy=False, result=None):
 			bw_constraint.SetCoefficient(c, df.bw)
 
 	#  OBJECTIVE FUNCTION
-	# TODO get costs from Prolog (now random for testing)
-	costs = np.random.uniform(low=1, high=100, size=(S, N))
-
+	# costs = np.random.uniform(low=1, high=100, size=(S, N))
+	costs = get_costs(app.file, infr.file, instances, nodes)
 	objective = solver.Objective()
 	for i in range(S):
 		for j in range(N):
@@ -84,24 +111,39 @@ def or_process(app_name, size, dummy=False, result=None):
 	objective.SetMinimization()
 
 	status = solver.Solve()
+	tot_cost = 0
+	tot_time = 0
+	n_distinct = set()
+	placement = {}
 
 	if status == pywraplp.Solver.OPTIMAL or status == pywraplp.Solver.FEASIBLE:
-		print('\nTotal Cost = {:.4f}\n'.format(solver.Objective().Value()))
 		for i, j in x:
 			if x[i, j].solution_value() >= 0.5:
-				print(f"on({instances[i].id}, {nodes[j][0]})")
+				s = instances[i].id
+				n = nodes[j][0]
+				placement[s] = n
+				n_distinct.add(n)
 
-		print('\nProblem solved in {} milliseconds'.format(solver.WallTime()))
-		print("\nNumber of constraints:", solver.NumConstraints())
+		if show_placement:
+			print(tabulate(placement.items(), tablefmt='fancy_grid', stralign='center'))
+		tot_cost = solver.Objective().Value()
+		tot_time = solver.WallTime() / 1000  # in seconds
 	else:
 		print('The problem does not have a solution.')
+
+	res = {'Time': tot_time, 'Cost': tot_cost, 'NDistinct': len(n_distinct), 'Constraints': solver.NumConstraints()}
+	print(Fore.LIGHTGREEN_EX + tabulate(res.items(), numalign='right'))
+	if type(result) != str:  # if set,send or-tools results to "compare.py"
+		del res['Constraints']
+		result['ortools'] = res
 
 
 if __name__ == '__main__':
 	# relative import
 	from classes import *
 
-	or_process(app_name="speakToMe", size=32, dummy=True)
+	init(autoreset=True)
+	or_solver(app_name="speakToMe", size=128, show_placement=True, dummy=True)
 
 	# absolute import
 else:

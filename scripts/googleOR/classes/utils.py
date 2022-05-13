@@ -1,6 +1,6 @@
 from os.path import abspath, dirname, join, exists
 
-ROOT_DIR = dirname(dirname(abspath(__file__)))
+ROOT_DIR = dirname(dirname(dirname(dirname(abspath(__file__)))))
 DATA_DIR = join(ROOT_DIR, 'data')
 VERSIONS_DIR = join(ROOT_DIR, 'versions')
 
@@ -12,7 +12,7 @@ def check_files(app=None, infr_size=None, dummy_infr=False, versions=None):
 	result = []
 	if app:
 		result.append(check_app(app))
-	if infr_size or infr_size == 0:  # infr0.pl is "UC Davis" one
+	if infr_size >= 0:  # infr0.pl is "UC Davis" one
 		result.append(check_infr(infr_size, dummy_infr))
 	if versions:
 		result.append(check_versions(versions))

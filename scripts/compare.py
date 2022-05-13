@@ -1,7 +1,7 @@
 import argparse as ap
 from multiprocessing import Process, Manager
 from os.path import basename, splitext
-from googleOR import or_process
+from googleOR import or_solver
 
 import os
 import pandas as pd
@@ -9,7 +9,7 @@ from colorama import Fore, init
 from pyswip import Prolog
 from tabulate import tabulate
 
-from utils import check_files
+from googleOR.classes.utils import check_files
 
 QUERY = "once(stats(App, Placement, Cost, NDistinct, Infs, Time, {budget}))"
 
@@ -87,21 +87,20 @@ def pl_process(version, app, budget, infr, result):
 def main(app, infr, budget, versions, show_placement=False, ortools=False, dummy=False):
 	manager = Manager()
 	result = manager.dict()
-
 	processes = []
 
-	# add Google OR-Tools process
+	for v in versions:
+		p = Process(target=pl_process, args=(v, app, budget, infr, result))
+		p.start()
+		processes.append(p)
+
+	# add OR-Tools process
 	if ortools:
 		app_name = splitext(basename(app))[0]
 		infr_name = splitext(basename(infr))[0]
 		infr_size = int(infr_name.lstrip('infr'))
 
-		p = Process(target=or_process, args=(app_name, infr_size, dummy, result))
-		p.start()
-		processes.append(p)
-
-	for v in versions:
-		p = Process(target=pl_process, args=(v, app, budget, infr, result))
+		p = Process(target=or_solver, args=(app_name, infr_size, dummy, show_placement, result))
 		p.start()
 		processes.append(p)
 

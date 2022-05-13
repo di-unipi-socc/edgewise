@@ -4,7 +4,7 @@ from os.path import join
 import networkx as nx
 from numpy import random as rnd
 
-from utils import INFRS_DIR
+from googleOR.classes.utils import INFRS_DIR
 
 HW_PLATFORMS = ['arm64', 'x86']
 TYPES = ['cloud', 'isp', 'cabinet', 'accesspoint', 'thing']
