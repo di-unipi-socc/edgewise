@@ -2,18 +2,27 @@ import networkx as nx
 import parse as p
 from scripts.utils import check_infr
 
-BW_TH = "bwTh({})."
-HW_TH = "hwTh({})."
+BW_TH = "bwTh({t:g})."
+HW_TH = "hwTh({t:g})."
 
-NODE = "node({id}, {type}, {swcaps}, {hwcaps}, {seccaps}, {iotcaps})."
-LINK = "link({source}, {target}, {lat}, {bw})."
+NODE = "node({id}, {type}, [{swcaps:to_list}], ({arch}, {hwcaps:g}), [{seccaps:to_list}], {iotcaps:to_list2})."
+LINK = "link({source}, {target}, {lat:g}, {bw:g})."
+
+
+def to_list_maybe_empty(s):  # due to a bug of 'parse' module
+	s = s[1:-1]
+	return s.split(',') if s else []
+
+
+def to_list(s):
+	return s.split(',') if s else []
 
 
 class Infrastructure(nx.DiGraph):
 	def __init__(self, size, dummy=False):
 		super().__init__()
-		self._hwTh = None
-		self._bwTh = None
+		self.hwTh = None
+		self.bwTh = None
 
 		self.parse(size, dummy)
 
@@ -33,7 +42,7 @@ class Infrastructure(nx.DiGraph):
 			self.add_links(links)
 
 	def parse_node(self, data):
-		out = p.parse(NODE, data)
+		out = p.parse(NODE, data, dict(to_list=to_list, to_list2=to_list_maybe_empty))
 		if not out:
 			raise ParseException("Node parse error: {}".format(data))
 
@@ -57,15 +66,15 @@ class Infrastructure(nx.DiGraph):
 			self.parse_link(e)
 
 	def set_thresholds(self, bw_th, hw_th):
-		out_bw = int(p.parse(BW_TH, bw_th).fixed[0])
-		out_hw = int(p.parse(HW_TH, hw_th).fixed[0])
+		out_bw = p.parse(BW_TH, bw_th).named['t']
+		out_hw = p.parse(HW_TH, hw_th).named['t']
 
-		self._bwTh = out_bw
-		self._hwTh = out_hw
+		self.bwTh = out_bw
+		self.hwTh = out_hw
 
 	def get_thresholds(self):
-		bwTh = "bwTh({}).".format(self._bwTh)
-		hwTh = "hwTh({}).".format(self._hwTh)
+		bwTh = "bwTh({}).".format(self.bwTh)
+		hwTh = "hwTh({}).".format(self.hwTh)
 
 		return "{}\n{}\n".format(bwTh, hwTh)
 

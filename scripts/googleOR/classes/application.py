@@ -1,5 +1,5 @@
-from os.path import dirname, abspath, join, exists
 from .components import *
+from .infrastructure import Infrastructure
 from scripts.utils import check_app
 
 
@@ -10,7 +10,7 @@ class Application:
 		self.services = []
 		self.functions = []
 		self.things = []
-		self.things_instances = []
+		self.thing_instances = []
 		self.data_flows = []
 
 		self.parse(app_name)
@@ -52,6 +52,7 @@ class Application:
 	def add_services(self, services):
 		for s in services:
 			data = ServiceInstance.parse(s)
+			data['comp'] = self.get_component_by_id(data['comp'])
 			self.add_service(ServiceInstance(**data))
 
 	def add_function(self, function: FunctionInstance):
@@ -60,6 +61,7 @@ class Application:
 	def add_functions(self, functions):
 		for f in functions:
 			data = FunctionInstance.parse(f)
+			data['comp'] = self.get_component_by_id(data['comp'])
 			self.add_function(FunctionInstance(**data))
 
 	def add_thing(self, thing: Thing):
@@ -71,11 +73,12 @@ class Application:
 			self.add_thing(Thing(**data))
 
 	def add_thing_instance(self, thing_instance: ThingInstance):
-		self.things_instances.append(thing_instance)
+		self.thing_instances.append(thing_instance)
 
 	def add_thing_instances(self, thing_instances):
 		for ti in thing_instances:
 			data = ThingInstance.parse(ti)
+			data['thing'] = self.get_thing_by_id(data['thing'])
 			self.add_thing_instance(ThingInstance(**data))
 
 	def add_data_flow(self, data_flow: DataFlow):
@@ -92,11 +95,11 @@ class Application:
 		return next((c for c in self.components if c.id == component_id), None)
 
 	def get_instance_by_id(self, instance_id):
-		instance = next((i for i in self.things_instances if i.id == instance_id), None)  # thing instance
+		instance = self.get_thing_instance_by_id(instance_id)
 		if not instance:
-			instance = next((i for i in self.services if i.id == instance_id), None)  # service instance
+			instance = self.get_service_by_id(instance_id)
 		if not instance:
-			instance = next((i for i in self.functions if i.id == instance_id), None)  # function instance
+			instance = self.get_function_by_id(instance_id)
 		if not instance:
 			raise Exception(f'Instance with id {instance_id} not found')
 
@@ -109,10 +112,16 @@ class Application:
 		return next((f for f in self.functions if f.id == function_id), None)
 
 	def get_thing_by_id(self, thing_id):
-		return next((t for t in self.things_instances if t.id == thing_id), None)
+		return next((t for t in self.things if t.id == thing_id), None)
 
-	def get_component_data_flow(self, component_id):
-		return [df for df in self.data_flows if df.source.id == component_id or df.target.id == component_id]
+	def get_thing_instance_by_id(self, thing_instance_id):
+		return next((t for t in self.thing_instances if t.id == thing_instance_id), None)
+
+	def get_instance_data_flow(self, instance_id):
+		return [df for df in self.data_flows if df.source.id == instance_id or df.target.id == instance_id]
+
+	def get_data_flow(self, source_id, target_id):
+		return next((df for df in self.data_flows if df.source.id == source_id and df.target.id == target_id), None)
 
 	def __str__(self):
 		str_app = f"Application {self.id}:\n"
@@ -133,4 +142,8 @@ class Application:
 
 		return str_app
 
+	def set_things_from_infr(self, infr: Infrastructure):
+		for n, things in infr.nodes(data='iotcaps'):
+			for t in things:
+				self.get_thing_instance_by_id(t).set_node(n)
 

@@ -1,14 +1,18 @@
 import parse as p
 
-COMP1 = "service({id}, {type}, [{swreqs}], ({arch}, {hwreqs}))."
-COMP2 = "function({id}, {type}, {swreqs}, ({arch}, {hwreqs}))."
+COMP1 = "service({id}, {type}, [{swreqs:to_list}], ({arch}, {hwreqs:g}))."
+COMP2 = "function({id}, {type}, {swreqs}, ({arch}, {hwreqs:g}))."
 THING = "thing({id}, {type})."
 
-SERVICE_INSTANCE = "serviceInstance({id}, {service})."
-FUNCTION_INSTANCE = "functionInstance({id}, {function} ({req_x_month}, {req_duration}))."
-THING_INSTANCE = "thingInstance({id}, {thing_id})."
+SERVICE_INSTANCE = "serviceInstance({id}, {comp})."
+FUNCTION_INSTANCE = "functionInstance({id}, {comp}, ({req_x_month:g}, {req_duration:g}))."
+THING_INSTANCE = "thingInstance({id}, {thing})."
 
-DATA_FLOW = "dataFlow({source}, {target}, {data_type}, [{secreqs}], {size}, {rate}, {max_latency})."
+DATA_FLOW = "dataFlow({source}, {target}, {data_type}, [{secreqs:to_list}], {size:g}, {rate:g}, {latency:g})."
+
+
+def to_list(s):
+	return s.split(',') if s else []
 
 
 class Component:
@@ -19,11 +23,11 @@ class Component:
 		self.type = type
 		self.swreqs = swreqs
 		self.arch = arch
-		self.hwreqs = float(hwreqs)
+		self.hwreqs = hwreqs
 
 	@classmethod
 	def parse(cls, data):
-		out = p.parse(COMP1, data)  # try service
+		out = p.parse(COMP1, data, dict(to_list=to_list))  # try service
 		if not out:
 			out = p.parse(COMP2, data)  # try function
 			# self.is_service = False
@@ -34,19 +38,21 @@ class Component:
 
 	def __str__(self):
 		if self.is_service:
-			return COMP1.format(**self.__dict__)
+			return "service({id}, {type}, {swreqs}, ({arch}, {hwreqs})).".format(**self.__dict__)
 		else:
-			return COMP2.format(**self.__dict__)
+			return "function({id}, {type}, {swreqs}, ({arch}, {hwreqs})).".format(**self.__dict__)
 
 
 class ServiceInstance:
-	def __init__(self, id, service: Component):
+	def __init__(self, id, comp: Component):
 		self.id = id
-		self.service = service
+		self.comp = comp
 		self.node = None
 
 	def __str__(self):
-		return SERVICE_INSTANCE.format(**self.__dict__)
+		data = self.__dict__.copy()
+		data['comp'] = data['comp'].id
+		return SERVICE_INSTANCE.format(**data)
 
 	def set_node(self, node):
 		self.node = node
@@ -56,20 +62,21 @@ class ServiceInstance:
 		out = p.parse(SERVICE_INSTANCE, data)
 		if not out:
 			raise ParseException("{} parse error".format(cls.__class__))
-
 		return out.named
 
 
 class FunctionInstance:
-	def __init__(self, id, function: Component, req_x_month, req_duration):
+	def __init__(self, id, comp: Component, req_x_month, req_duration):
 		self.id = id
-		self.function = function
-		self.req_x_month = float(req_x_month)
-		self.req_duration = float(req_duration)
+		self.comp = comp
+		self.req_x_month = req_x_month
+		self.req_duration = req_duration
 		self.node = None
 
 	def __str__(self):
-		return FUNCTION_INSTANCE.format(**self.__dict__)
+		data = self.__dict__.copy()
+		data['comp'] = data['comp'].id
+		return FUNCTION_INSTANCE.format(**data)
 
 	def set_node(self, node):
 		self.node = node
@@ -104,13 +111,15 @@ class Thing:
 
 
 class ThingInstance:
-	def __init__(self, id, thing_id: Thing):
+	def __init__(self, id, thing: Thing):
 		self.id = id
-		self.thing_id = thing_id
+		self.thing = thing
 		self.node = None
 
 	def __str__(self):
-		return THING_INSTANCE.format(**self.__dict__)
+		data = self.__dict__.copy()
+		data['thing'] = data['thing'].id
+		return THING_INSTANCE.format(**data)
 
 	def set_node(self, node):
 		self.node = node
@@ -128,36 +137,33 @@ class ThingInstance:
 
 
 class DataFlow:
-	def __init__(self, source, target, data_type, secreqs, size, rate, max_latency):
+	def __init__(self, source, target, data_type, secreqs, size, rate, latency):
 		self.source = source
 		self.target = target
 		self.data_type = data_type
 		self.secreqs = secreqs
-		self.size = float(size)
-		self.rate = float(rate)
-		self.max_latency = float(max_latency)
+		self.size = size
+		self.rate = rate
+		self.latency = latency
 
-		self.reqbw = self.rate * self.size
+		self.bw = self.rate * self.size
 
 	@classmethod
 	def parse(cls, data):
-		out = p.parse(DATA_FLOW, data)
+		out = p.parse(DATA_FLOW, data, dict(to_list=to_list))
 		if not out:
 			raise ParseException("{} parse error".format(cls.__class__))
 
 		return out.named
 
 	def __str__(self):
-		data = self.__dict__
+		data = self.__dict__.copy()
 		data['source'] = self.source.id
 		data['target'] = self.target.id
-		return DATA_FLOW.format(**data)
+
+		return "dataFlow({source}, {target}, {data_type}, {secreqs}, {size}, {rate}, {latency}).".format(**data)
 
 
 class ParseException(Exception):
 	def __init__(self, message):
 		self.message = message
-
-
-if __name__ == "__main__":
-	pass

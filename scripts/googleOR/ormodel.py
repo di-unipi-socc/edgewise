@@ -1,64 +1,108 @@
-import time
-
-from .classes import Application, Infrastructure
-import numpy as np
 from ortools.linear_solver import pywraplp
+import numpy as np
 
 
-def or_process(app_name, size, dummy, result):
-	start = time.process_time()
+def or_process(app_name, size, dummy=False, result=None):
 
 	app = Application(app_name)
 	infr = Infrastructure(size, dummy=dummy)
 
-	# Create the solver.
-	solver = pywraplp.Solver.CreateSolver('SCIP')
+	# Set ThingInstance nodes, knowing the infrastructure
+	app.set_things_from_infr(infr)
 
-	x = {}
 	instances = app.services + app.functions
+	nodes = list(infr.nodes(data=True))  # (nid, {attrs})
+	links = list(infr.edges(data=True))  # (src, dst, {attrs})
+	dfs = app.data_flows
 
-	num_instances = len(instances)
-	num_nodes = len(infr.nodes())
+	nids = list(infr.nodes())  # list of node ids
 
-	for n in range(num_nodes):
-		for i in range(num_instances):
-			x[n, i] = solver.IntVar(0, 1, "")  # f"on({n},{i})"
+	S = len(instances)
+	N = len(nodes)
+	L = len(links)
+	DF = len(dfs)
 
-	# random costs (for testing)
-	costs = np.random.randint(1, 100, size=(num_nodes, num_instances))
+	print("# Instances (S):", S)
+	print(f"# Nodes (N):", N)
+	print(f"# Links (L):", L)
+	print(f"# Data Flows (DF):", DF)
 
-	# Each instance is assigned to exactly one node.
-	for j in range(num_instances):
-		solver.Add(solver.Sum([x[i, j] for i in range(num_nodes)]) == 1)
+	# Create the solver.
+	solver = pywraplp.Solver.CreateSolver('GLOP')
 
-	objective_terms = [(costs[i][j] * x[i, j]) for i in range(num_nodes) for j in range(num_instances)]
-	solver.Minimize(solver.Sum(objective_terms))
+	# Create the variables.
+	x = {(i, j): solver.IntVar(0, 1, '') for i in range(S) for j in range(N)}
 
-	# Solve
+	# Constraint: one instance at most in one node.
+	for i in range(S):
+		solver.Add(solver.Sum([x[i, j] for j in range(N)]) == 1)  # solver.AddExactlyOne
+
+	# Constraint: cannot exceed the hw capacity of a node.
+	# TODO add infr.hwTh
+	coeffs = [s.comp.hwreqs for s in instances]
+	bounds = [a['hwcaps'] for _, a in nodes]
+
+	for j in range(N):
+		constraint = solver.RowConstraint(0, bounds[j]-infr.hwTh, '')
+		for i in range(S):
+			constraint.SetCoefficient(x[i, j], coeffs[i])
+
+	# Constraints:
+	# TODO add infr.hwTh
+	# - cannot exceed the bandwidth of a link. (FeatBW >= sum(ReqBW))
+	# - satisfy latency requirements of data flows. (FeatLat <= ReqLat)
+	for n, n1, a in links:  # foreach link
+		bw_constraint = solver.RowConstraint(0, a['bw']-infr.bwTh, '')
+		j = nids.index(n)
+		j1 = nids.index(n1)
+		for df in dfs:  # foreach data flow
+
+			i = instances.index(df.source) if type(df.source) != ThingInstance else None
+			i1 = instances.index(df.target) if type(df.target) != ThingInstance else None
+
+			xij = x[i, j] if i else 1
+			xi1j1 = x[i1, j1] if i1 else 1
+
+			# linearize the constraint
+			c = solver.IntVar(0, 1, '')
+			solver.Add(c <= xij)
+			solver.Add(c <= xi1j1)
+			solver.Add(c >= xij + xi1j1 - 1)
+
+			solver.Add(c * a['lat'] <= df.latency)
+
+			bw_constraint.SetCoefficient(c, df.bw)
+
+	#  OBJECTIVE FUNCTION
+	# TODO get costs from Prolog (now random for testing)
+	costs = np.random.uniform(low=1, high=100, size=(S, N))
+
+	objective = solver.Objective()
+	for i in range(S):
+		for j in range(N):
+			objective.SetCoefficient(x[i, j], costs[i][j])
+	objective.SetMinimization()
+
 	status = solver.Solve()
 
-	cost = -1
-	placement = {}
-
-	# Print solution.
 	if status == pywraplp.Solver.OPTIMAL or status == pywraplp.Solver.FEASIBLE:
-		# print(f'Total cost = {solver.Objective().Value()}\n')
-		cost = solver.Objective().Value()
-		for i in range(num_nodes):
-			for j in range(num_instances):
-				# Test if x[i,j] is 1 (with tolerance for floating point arithmetic).
-				if x[i, j].solution_value() > 0.5:
-					# print(f'on({instances[j].id}, {list(infr.nodes)[i]}) (cost: {costs[i][j]})')
-					placement[instances[j].id] = list(infr.nodes)[i]
+		print('\nTotal Cost = {:.4f}\n'.format(solver.Objective().Value()))
+		for i, j in x:
+			if x[i, j].solution_value() >= 0.5:
+				print(f"on({instances[i].id}, {nodes[j][0]})")
+
+		print('\nProblem solved in {} milliseconds'.format(solver.WallTime()))
+		print("\nNumber of constraints:", solver.NumConstraints())
 	else:
-		raise ValueError(f'Solver status: {status}. No solution found.')
-
-	n_distinct = len(set(placement.values()))
-
-	end = time.process_time()
-	tot_time = end - start
-	result['OR tools'] = {'App': app_name, 'Cost': cost, 'Placement': placement, 'NDistinct': n_distinct, 'Infs': '---', 'Time': tot_time}
+		print('The problem does not have a solution.')
 
 
 if __name__ == '__main__':
-	or_process(app_name="speakToMe", size=32)
+	# relative import
+	from classes import *
+
+	or_process(app_name="speakToMe", size=32, dummy=True)
+
+	# absolute import
+else:
+	from .classes import *
