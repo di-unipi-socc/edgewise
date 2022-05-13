@@ -112,7 +112,6 @@ def main(app, infr, budget, versions, show_placement=False, ortools=False, dummy
 
 
 if __name__ == "__main__":
-
 	# reset color after every "print"
 	init(autoreset=True)
 
@@ -121,8 +120,9 @@ if __name__ == "__main__":
 
 	app, infr, vs = check_files(app=args.app, infr_size=args.size, dummy_infr=args.dummy, versions=args.versions)
 
-	print(Fore.LIGHTCYAN_EX + "APPLICATION: \t {}".format(basename(app)))
-	print(Fore.LIGHTCYAN_EX + "INFRASTRUCTURE:  {}".format(("dummy" + os.sep if args.dummy else "") + basename(infr)))
-	print(Fore.LIGHTCYAN_EX + "VERSIONS: \t\t {}".format([basename(v) for v in vs]))
+	info = [['APPLICATION:', basename(app)],
+	         ['INFRASTRUCTURE:', ("dummy" + os.sep if args.dummy else "") + basename(infr)],
+	         ['VERSIONS:', [basename(v) for v in vs]]]
+	print(Fore.LIGHTCYAN_EX + tabulate(info))
 
 	main(app=app, infr=infr, versions=vs, budget=args.budget, show_placement=args.placement, ortools=args.ortools, dummy=args.dummy)
