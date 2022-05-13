@@ -1,6 +1,6 @@
 import networkx as nx
 import parse as p
-from scripts.utils import check_infr
+from utils import check_infr
 
 BW_TH = "bwTh({t:g})."
 HW_TH = "hwTh({t:g})."
@@ -83,7 +83,8 @@ class Infrastructure(nx.DiGraph):
 		nodes = list(self.nodes(data=True))
 
 		for (nid, nattr) in nodes:
-			nodes_str += "node({}, {type}, {swcaps}, {hwcaps}, {seccaps}, {iotcaps}).\n".format(nid, **nattr).replace("'", "")
+			nodes_str += "node({}, {type}, {swcaps}, {hwcaps}, {seccaps}, {iotcaps}).\n".format(nid, **nattr).replace(
+				"'", "")
 		return nodes_str
 
 	def get_links(self):

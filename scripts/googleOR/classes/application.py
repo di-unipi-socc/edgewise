@@ -1,6 +1,6 @@
 from .components import *
 from .infrastructure import Infrastructure
-from scripts.utils import check_app
+from utils import check_app
 
 
 class Application:
