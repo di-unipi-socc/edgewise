@@ -25,7 +25,7 @@ def init_parser() -> ap.ArgumentParser:
 	p.add_argument("app", help="Application name.")
 	p.add_argument("size", type=int, help="Infrastructure size.")
 	p.add_argument("budget", type=int, help="Maximum budget.")
-	p.add_argument("versions", nargs='+',
+	p.add_argument("versions", nargs='*',
 	               help="List of the versions to compare. Valid ones can be found in \"versions/\" folder.")
 
 	return p
@@ -69,7 +69,7 @@ def format_result(q):
 
 
 def pl_query(p: Prolog, s: str):
-	q = p.query(s)
+	q = p.query(s, maxresult=1)
 	return next(q)
 
 
@@ -126,7 +126,7 @@ if __name__ == "__main__":
 
 	info = [['APPLICATION:', basename(app)],
 	         ['INFRASTRUCTURE:', ("dummy" + os.sep if args.dummy else "") + basename(infr)],
-	         ['VERSIONS:', [basename(v) for v in vs]+['or-tools' if args.ortools else '']]]
+	         ['VERSIONS:', [basename(v) for v in vs]+['or-tools' if args.ortools else ""]]]
 	print(Fore.LIGHTCYAN_EX + tabulate(info))
 
 	main(app=app, infr=infr, versions=vs, budget=args.budget, show_placement=args.placement, ortools=args.ortools, dummy=args.dummy)

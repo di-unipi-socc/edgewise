@@ -1,4 +1,4 @@
-%:-['../data/infrs/infr32.pl', '../data/apps/speakToMe.pl'].
+% :-['../data/infrs/infr32.pl', '../data/apps/speakToMe.pl'].
 :-['../requirements.pl', '../costs.pl'].
 
 :- set_prolog_flag(answer_write_options,[max_depth(0)]). % write answers' text entirely
@@ -91,8 +91,7 @@ qosOK(Ps) :-
 checkDF([((N1,N2),ReqLat)|DFs], Ps) :-
     checkDF(DFs, Ps), 
     link(N1, N2, FeatLat, FeatBW),
-    FeatLat =< ReqLat,
-    bwOK((N1,N2), FeatBW, Ps).
+    FeatLat =< ReqLat, bwOK((N1,N2), FeatBW, Ps).
 checkDF([], _).
 
 bwOK(N1N2, FeatBW, Ps):-

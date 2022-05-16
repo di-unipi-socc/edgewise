@@ -1,13 +1,27 @@
 import os
+import argparse as ap
+import numpy as np
+import sys
 
 from ortools.linear_solver import pywraplp
-import numpy as np
 from pyswip import Prolog
-import sys
-from colorama import Fore, Style, init
+from colorama import Fore, init
 from tabulate import tabulate
 
 QUERY = "cost({ntype}, {compid}, Cost)"
+
+
+def init_parser() -> ap.ArgumentParser:
+	description = "Compare several placement strategies."
+	p = ap.ArgumentParser(prog=__file__, description=description)
+
+	p.add_argument("-p", "--placement", action="store_true", help="if set, shows the obtained placement"),
+	p.add_argument("-d", "--dummy", action="store_true",
+	               help="if set, uses an infrastructure with dummy links (low lat, high bw)."),
+	p.add_argument("app", help="Application name.")
+	p.add_argument("size", type=int, help="Infrastructure size.")
+
+	return p
 
 
 def get_costs(app, infr, instances, nodes):
@@ -131,8 +145,7 @@ def or_solver(app_name, size, dummy=False, show_placement=False, result=""):
 	else:
 		print('The problem does not have a solution.')
 
-	res = {'Time': tot_time, 'Cost': tot_cost, 'NDistinct': len(n_distinct), 'Constraints': solver.NumConstraints(),
-	       'Infs': '---'}
+	res = {'Time': tot_time, 'Cost': tot_cost, 'NDistinct': len(n_distinct), 'Constraints': solver.NumConstraints()}
 	print(Fore.LIGHTGREEN_EX + tabulate(res.items(), numalign='right'))
 
 	res['Placement'] = placement
@@ -147,8 +160,13 @@ if __name__ == '__main__':
 	# relative import
 	from classes import *
 
+	# reset color after every "print"
 	init(autoreset=True)
-	or_solver(app_name="speakToMe", size=16, show_placement=False, dummy=True)
+
+	parser = init_parser()
+	args = parser.parse_args()
+
+	or_solver(app_name=args.app, size=args.size, show_placement=args.placement, dummy=args.dummy)
 
 	# absolute import
 else:

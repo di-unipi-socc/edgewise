@@ -1,5 +1,5 @@
-bwTh(5).
-hwTh(2).
+bwTh(3).
+hwTh(0.5).
 
 node(n7, cabinet, [ubuntu, mySQL], (arm64, 256), [enc], []).
 node(n6, cabinet, [ubuntu, mySQL], (arm64, 256), [enc], []).
