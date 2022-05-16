@@ -5,7 +5,7 @@ hwTh(2).
 % node(NodeId, NodeType, SWCaps, HWCaps, SecCaps, IoTCaps).
 node(parkingServices, thing, [python, gcc, mySQL], (x86, 100), [encryption, auth], []).
 node(westEntry, thing, [ubuntu], (x86, 100), [encryption], [echoDot]).
-node(kleiberHall, thing, [ubuntu, mySQL], (arm64, 150), [], []).
+node(kleiberHall, thing, [ubuntu, mySQL], (arm64, 150), [encryption], []).
 node(hoaglandAnnex, thing, [ubuntu], (x86, 150), [auth], [iphoneXS]).
 node(briggsHall, thing, [ubuntu, mySQL], (arm64, 180), [auth], []).
 node(mannLab, cabinet, [ubuntu, gcc, python], (arm64, 256), [encryption, auth], []).
