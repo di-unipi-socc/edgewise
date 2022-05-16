@@ -131,11 +131,16 @@ def or_solver(app_name, size, dummy=False, show_placement=False, result=""):
 	else:
 		print('The problem does not have a solution.')
 
-	res = {'Time': tot_time, 'Cost': tot_cost, 'NDistinct': len(n_distinct), 'Constraints': solver.NumConstraints()}
+	res = {'Time': tot_time, 'Cost': tot_cost, 'NDistinct': len(n_distinct), 'Constraints': solver.NumConstraints(),
+	       'Infs': '---'}
 	print(Fore.LIGHTGREEN_EX + tabulate(res.items(), numalign='right'))
+
+	res['Placement'] = placement
 	if type(result) != str:  # if set,send or-tools results to "compare.py"
 		del res['Constraints']
 		result['ortools'] = res
+
+	print(result)
 
 
 if __name__ == '__main__':
@@ -143,7 +148,7 @@ if __name__ == '__main__':
 	from classes import *
 
 	init(autoreset=True)
-	or_solver(app_name="speakToMe", size=128, show_placement=True, dummy=True)
+	or_solver(app_name="speakToMe", size=16, show_placement=False, dummy=True)
 
 	# absolute import
 else:

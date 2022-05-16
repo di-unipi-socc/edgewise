@@ -32,6 +32,11 @@ def init_parser() -> ap.ArgumentParser:
 
 
 def print_result(result, show_placement):
+	# remove None results (not shown in the table)
+	not_none = {k: v for k, v in result.items() if v is not None}
+	result.clear()
+	result.update(not_none)
+
 	result = pd.DataFrame.from_dict(result, orient='index')
 	result.drop(columns=['App'], inplace=True)
 	result.rename(columns={"NDistinct": "# Distinct Nodes", "Infs": "# Inferences", "Time": "Time(s)"}, inplace=True)
@@ -121,7 +126,7 @@ if __name__ == "__main__":
 
 	info = [['APPLICATION:', basename(app)],
 	         ['INFRASTRUCTURE:', ("dummy" + os.sep if args.dummy else "") + basename(infr)],
-	         ['VERSIONS:', [basename(v) for v in vs]]]
+	         ['VERSIONS:', [basename(v) for v in vs]+['or-tools' if args.ortools else '']]]
 	print(Fore.LIGHTCYAN_EX + tabulate(info))
 
 	main(app=app, infr=infr, versions=vs, budget=args.budget, show_placement=args.placement, ortools=args.ortools, dummy=args.dummy)
