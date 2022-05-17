@@ -9,6 +9,10 @@ from colorama import Fore, init
 from tabulate import tabulate
 
 QUERY = "cost({ntype}, {compid}, Cost)"
+L_COST = 0.5
+L_BINPACK = 0.5
+
+assert L_COST + L_BINPACK == 1, "Lambdas must be summed to 1."
 
 
 def init_parser() -> ap.ArgumentParser:
@@ -73,9 +77,11 @@ def or_solver(app_name, size, dummy=False, show_placement=False, result=""):
 
 	# Create the solver.
 	solver = pywraplp.Solver.CreateSolver('GLOP')
+	solver.SetNumThreads(32)
 
 	# Create the variables.
 	x = {(i, j): solver.IntVar(0, 1, '') for i in range(S) for j in range(N)}
+	b = {j: solver.IntVar(0, 1, '') for j in range(N)}
 
 	# Constraint: one instance at most in one node.
 	for i in range(S):
@@ -85,10 +91,13 @@ def or_solver(app_name, size, dummy=False, show_placement=False, result=""):
 	coeffs = [s.comp.hwreqs for s in instances]
 	bounds = [a['hwcaps'] for _, a in nodes]
 
-	for j in range(N):
+	"""for j in range(N):
 		constraint = solver.RowConstraint(0, bounds[j]-infr.hwTh, '')
 		for i in range(S):
-			constraint.SetCoefficient(x[i, j], coeffs[i])
+			constraint.SetCoefficient(x[i, j], coeffs[i])"""
+
+	for j in range(N):
+		solver.Add(solver.Sum([coeffs[i] * x[i, j] for i in range(S)]) <= b[j] * (bounds[j] - infr.hwTh))
 
 	# Constraints:
 	# - cannot exceed the bandwidth of a link. (FeatBW >= sum(ReqBW))
@@ -116,31 +125,40 @@ def or_solver(app_name, size, dummy=False, show_placement=False, result=""):
 			bw_constraint.SetCoefficient(c, df.bw)
 
 	#  OBJECTIVE FUNCTION
-	# costs = np.random.uniform(low=1, high=100, size=(S, N))
+	# costs = np.random.uniform(low=1, high=50, size=(S, N))
 	costs = get_costs(app.file, infr.file, instances, nodes)
-	objective = solver.Objective()
+	"""objective = solver.Objective()
 	for i in range(S):
 		for j in range(N):
 			objective.SetCoefficient(x[i, j], costs[i][j])
-	objective.SetMinimization()
+	objective.SetMinimization()"""
 
+	min_cost_expr = [L_COST * costs[i, j] * x[i, j] for i in range(S) for j in range(N)]
+	binpack_expr = [L_BINPACK * b[j] for j in range(N)]
+
+	obj_expr = min_cost_expr + binpack_expr
+
+	solver.Minimize(solver.Sum(obj_expr))
 	status = solver.Solve()
+	
 	tot_cost = 0
 	tot_time = 0
 	n_distinct = set()
 	placement = {}
 
 	if status == pywraplp.Solver.OPTIMAL or status == pywraplp.Solver.FEASIBLE:
-		for i, j in x:
-			if x[i, j].solution_value() >= 0.5:
-				s = instances[i].id
-				n = nodes[j][0]
-				placement[s] = n
-				n_distinct.add(n)
+		for i in range(S):
+			row = [x[i,j].solution_value() for j in range(N)]
+			j = row.index(max(row))
+			s = instances[i].id
+			n = nodes[j][0]
+			placement[s] = n
+			n_distinct.add(n)
+			tot_cost += costs[i, j]
 
 		if show_placement:
 			print(tabulate(placement.items(), tablefmt='fancy_grid', stralign='center'))
-		tot_cost = solver.Objective().Value()
+		# tot_cost = solver.Objective().Value()
 		tot_time = solver.WallTime() / 1000  # in seconds
 	else:
 		print('The problem does not have a solution.')
@@ -153,10 +171,9 @@ def or_solver(app_name, size, dummy=False, show_placement=False, result=""):
 		del res['Constraints']
 		result['ortools'] = res
 
-	print(result)
-
 
 if __name__ == '__main__':
+	
 	# relative import
 	from classes import *
 

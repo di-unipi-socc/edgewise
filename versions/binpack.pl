@@ -1,4 +1,4 @@
-% :-['../data/infrs/infr32.pl', '../data/apps/speakToMe.pl'].
+% :-['../data/infrs/infr64.pl', '../data/apps/speakToMe.pl'].
 :-['../requirements.pl', '../costs.pl'].
 
 :- set_prolog_flag(answer_write_options,[max_depth(0)]). % write answers' text entirely
@@ -17,9 +17,12 @@ stats(App, Placement, Cost, NDistinct, Infs, Time, Budget) :-
     Time is TimeB - TimeA.
 
 best(App, Placement, Cost, Budget) :-
+    writeln("prova"),
     application(App, Functions, Services), 
     ranking(Functions, Services, RankedComps),  % RankedComps:  [(Rank, Comp)|Rest] --> sort "Comp" by increasing HWReqs
+    writeln("ranking"),
     findCompatibles(RankedComps, Components),   % Components:   [(Comp, Compatibles)|Rest]--> sort "Compatibles" nodes by decreasing HWCaps
+    writeln("comps"),
     placement(Components, Placement, Budget, Cost), qosOK(Placement).
 
 countDistinct(P, L) :-

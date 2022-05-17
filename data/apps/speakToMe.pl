@@ -1,11 +1,11 @@
 % service(ServiceId, SType, SWReqs, (Arch, HWReqs)).
-service(s3, storage, [ubuntu], (x86, 50)).
-service(dynamoDB, database, [mySQL, ubuntu], (x86, 30)).
+service(s3, storage, [ubuntu], (x86, 100)).
+service(dynamoDB, database, [mySQL, ubuntu], (x86, 50)).
 service(sns, queue, [python], (x86, 2)).
 service(polly, tts, [python, gcc], (arm64, 4)).
 
 % function(FunctionId, FType, SWPlatform, (Arch, HWReqs)).
-function(upload, uploadFun, python, (x86, 30)).
+function(upload, uploadFun, python, (x86, 20)).
 function(metadata, metadataFun, python, (arm64, 2)).
 function(publish, publishFun, python, (x86, 4)).
 function(txtToSpeech, ttsFun, python, (arm64, 30)).

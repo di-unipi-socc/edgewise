@@ -17,8 +17,8 @@ class Infra(nx.DiGraph):
 		super().__init__()
 		self.gnodes = {}  # nodes grouped by TYPES
 		self.file = "infr{}.pl".format(n)
-		self._bwTh = 5
-		self._hwTh = 2
+		self._bwTh = 3
+		self._hwTh = 1
 
 		self.set_nodes(n)
 		self.set_filepath(dummy)
