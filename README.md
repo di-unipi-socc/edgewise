@@ -21,18 +21,18 @@ newDAP
 └── versions
 ```
 
-- `data`: contains the input data (as Prolog knowledge base):
-    - `apps`: contains the applications
-    - `infrs`: contains the infrastructures
-        - `dummy`: contains the dummy infrastructures (links with low latency and high bandwidth, used for faster testing)
-- `scripts`: contains some useful scripts
-    - `googleOR`:
-        - `classes`: contains the classes to model application and infrastructure
-        - `orsolver.py`: the main script, which contains the main logic with
+- [`data`](https://github.com/jacopo-massa/newDAP/tree/main/data): contains the input data (as Prolog knowledge base):
+    - [`apps`](https://github.com/jacopo-massa/newDAP/tree/main/data/apps): contains the applications
+    - [`infrs`](https://github.com/jacopo-massa/newDAP/tree/main/data/infrs): contains the infrastructures
+        - [`dummy`](https://github.com/jacopo-massa/newDAP/tree/main/data/infrs/dummy): contains the dummy infrastructures (links with low latency and high bandwidth, used for faster testing)
+- [`scripts`](https://github.com/jacopo-massa/newDAP/tree/main/scripts): contains some useful scripts
+    - [`googleOR`](https://github.com/jacopo-massa/newDAP/tree/main/scripts/googleOR):
+        - [`classes`](https://github.com/jacopo-massa/newDAP/tree/main/scripts/googleOR/classes): contains the classes to model application and infrastructure
+        - [`orsolver.py`](https://github.com/jacopo-massa/newDAP/blob/main/scripts/googleOR/orsolver.py): the main script, which contains the main logic with
         the solver within its constraints, and the visualization of the results.
-    - `builder.py`: the script to build randomly generated infrastructure of a given size
-    - `compare.py`: the script to compare the results of different versions (and optionally the _or-tools_ one)
-- `versions`: contains several version of the Prolog reasoner
+    - [`builder.py`](https://github.com/jacopo-massa/newDAP/blob/main/scripts/builder.py): the script to build randomly generated infrastructure of a given size
+    - [`compare.py`](https://github.com/jacopo-massa/newDAP/blob/main/scripts/compare.py): the script to compare the results of different versions (and optionally the _or-tools_ one)
+- [`versions`](https://github.com/jacopo-massa/newDAP/tree/main/versions): contains several version of the Prolog reasoner
 implementing different heuristics.
 
 ## How To &nbsp;<img src="https://cdn-icons-png.flaticon.com/512/3208/3208615.png" alt="checklist" width="20" height="20"/> 
