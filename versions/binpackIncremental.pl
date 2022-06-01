@@ -1,4 +1,4 @@
-%:-['../data/infrs/infr64.pl', '../data/apps/speakToMe.pl'].
+% :-['../data/infrs/infrUC.pl', '../data/apps/arFarming.pl'].
 :-['../requirements.pl', '../costs.pl'].
 
 :- set_prolog_flag(answer_write_options,[max_depth(0)]). % write answers' text entirely
@@ -8,7 +8,7 @@
 stats(App, Placement, Cost, NDistinct, Infs, Time, Budget) :-
     statistics(inferences, InfA),
         statistics(cputime, TimeA),
-            best(App, Placement, Cost, Budget),
+            best(App, Placement, Cost, TimeA, Budget),
             countDistinct(Placement, NDistinct),
         statistics(cputime, TimeB),
     statistics(inferences, InfB),
@@ -16,11 +16,11 @@ stats(App, Placement, Cost, NDistinct, Infs, Time, Budget) :-
     Infs is InfB - InfA,
     Time is TimeB - TimeA.
 
-best(App, Placement, Cost, Budget) :-
+best(App, Placement, Cost, StartTime, Budget) :-
     application(App, Functions, Services), 
     ranking(Functions, Services, RankedComps),  % RankedComps:  [(Rank, Comp)|Rest] --> sort "Comp" by increasing HWReqs
     findCompatibles(RankedComps, Components),   % Components:   [(Comp, Compatibles)|Rest]--> sort "Compatibles" nodes by decreasing HWCaps
-    placement(Components, Placement, Budget, Cost).
+    placement(Components, Placement, Budget, StartTime, Cost).
 
 countDistinct(P, L) :-
     findall(N, distinct(member((_,N), P)), S),
@@ -49,12 +49,15 @@ lightNodeOK(F,N,H,FCost) :-
     HWCaps >= HWReqs, H is 1/HWCaps,
     cost(NType, F, FCost).
 
-placement([(C, Comps)|Cs], [(C,N)|Ps], Budget, NewCost) :-
-    placement(Cs, Ps, Budget, Cost),
+placement([(C, Comps)|Cs], [(C,N)|Ps], Budget, StartTime, NewCost) :-
+    placement(Cs, Ps, Budget, StartTime, Cost),
     componentPlacement(C, Comps, N, Ps, CCost),
+    /*statistics(cputime, CurrTime),
+    MaxTime is StartTime+5,
+    (CurrTime < MaxTime -> qosOK(C, N, Ps); writeln("FAIL"), !, false),*/
     qosOK(C, N, Ps),
     NewCost is Cost + CCost, NewCost < Budget.
-placement([], [], _, 0).
+placement([], [], _, _, 0).
 
 
 componentPlacement(F, Comps, N, Ps, FCost) :-

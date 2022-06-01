@@ -1,20 +1,20 @@
 % --- INFRASTRUCTURE ---
-bwTh(5).
-hwTh(2).
+bwTh(3).
+hwTh(1).
 
 % node(NodeId, NodeType, SWCaps, HWCaps, SecCaps, IoTCaps).
-node(parkingServices, thing, [python, gcc, mySQL], (x86, 100), [encryption, auth], []).
-node(westEntry, thing, [ubuntu], (x86, 100), [encryption], [echoDot]).
-node(kleiberHall, thing, [ubuntu, mySQL], (arm64, 150), [encryption], []).
+node(parkingServices, thing, [python, gcc, mySQL], (x86, 100), [encryption, auth], [piCamera1, piCamera2]).
+node(westEntry, thing, [ubuntu], (x86, 100), [encryption], [echoDot, soil, heat]).
+node(kleiberHall, thing, [ubuntu, mySQL], (arm64, 150), [encryption], [nutrient, energy]).
 node(hoaglandAnnex, thing, [ubuntu], (x86, 150), [auth], [iphoneXS]).
-node(briggsHall, thing, [ubuntu, mySQL], (arm64, 180), [auth], []).
+node(briggsHall, thing, [ubuntu, mySQL], (arm64, 180), [auth], [water]).
 node(mannLab, cabinet, [ubuntu, gcc, python], (arm64, 256), [encryption, auth], []).
-node(lifeSciences, cabinet, [python, mySQL], (x86, 256), [encryption, auth], []).
-node(sciencesLectureHall, cabinet, [ubuntu, mySQL], (arm64, 256), [encryption, auth], []).
+node(lifeSciences, cabinet, [python, mySQL, php, js], (x86, 256), [encryption, auth], []).
+node(sciencesLectureHall, cabinet, [ubuntu, mySQL, php, js], (arm64, 256), [encryption, auth], [arViewer]).
 node(firePolice, cabinet, [ubuntu, mySQL, gcc, python], (x86, 512), [encryption, auth], []).
-node(studentCenter, cabinet, [ubuntu, mySQL, python], (x86, 512), [encryption, auth], []).
+node(studentCenter, cabinet, [ubuntu, mySQL, python, php, js], (x86, 512), [encryption, auth], []).
 node(isp, cloud, [ubuntu, mySQL, gcc, python], (arm64, 600), [encryption, auth], []).
-node(uc_cloud, cloud, [ubuntu, mySQL, gcc, python], (x86, 10000), [encryption, auth], []).
+node(uc_cloud, cloud, [ubuntu, mySQL, gcc, python, php, js], (x86, 10000), [encryption, auth], []).
 
 % link(N1, N2, Lat, BW).
 link(parkingServices, westEntry, 10, 70).

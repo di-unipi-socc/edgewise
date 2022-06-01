@@ -8,12 +8,12 @@ INFRS_DIR = join(DATA_DIR, 'infrs')
 APPS_DIR = join(DATA_DIR, 'apps')
 
 
-def check_files(app=None, infr_size=None, dummy_infr=False, versions=None):
+def check_files(app=None, infr=None, dummy_infr=False, versions=None):
 	result = []
 	if app:
 		result.append(check_app(app))
-	if infr_size >= 0:  # infr0.pl is "UC Davis" one
-		result.append(check_infr(infr_size, dummy_infr))
+	if infr:
+		result.append(check_infr(infr, dummy_infr))
 	if versions:
 		result.append(check_versions(versions))
 
@@ -29,12 +29,12 @@ def check_app(app):
 	return app
 
 
-def check_infr(size, dummy):
-	# newDAP/data/infrs/infr<size>.pl
+def check_infr(name, dummy):
+	# newDAP/data/infrs/<dummy>/infr<name>.pl
 	infr = INFRS_DIR
 	if dummy:
 		infr = join(infr, "dummy")
-	infr = join(infr, "infr{}.pl".format(size))
+	infr = join(infr, "infr{}.pl".format(name))
 
 	if not exists(infr):
 		raise FileNotFoundError("No infrastructure file found at {}".format(infr))

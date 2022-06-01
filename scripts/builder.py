@@ -7,9 +7,13 @@ from numpy import random as rnd
 from googleOR.classes.utils import INFRS_DIR
 
 HW_PLATFORMS = ['arm64', 'x86']
+SW_CAPS = ['ubuntu', 'mySQL', 'python', 'php', 'js', 'gcc']
 TYPES = ['cloud', 'isp', 'cabinet', 'accesspoint', 'thing']
 PROBS = [0.1, 0.2, 0.3, 0.2, 0.2]
-THINGS = ['iphoneXS', 'echoDot']
+THINGS = None
+
+def get_random_sw_caps(size=1):
+	return list(rnd.choice(SW_CAPS, size=size, replace=False))
 
 
 class Infra(nx.DiGraph):
@@ -51,7 +55,7 @@ class Infra(nx.DiGraph):
 	def set_as_cloud(self, nid):
 		node = self.nodes[nid]
 		node['ntype'] = 'cloud'
-		node['software'] = ["ubuntu", "mySQL", "gcc", "python"]
+		node['software'] = SW_CAPS
 		hw_platform = rnd.choice(HW_PLATFORMS)
 		node['hardware'] = (hw_platform, 1024)
 		node['security'] = ["enc", "auth"]
@@ -59,7 +63,7 @@ class Infra(nx.DiGraph):
 	def set_as_isp(self, nid):
 		node = self.nodes[nid]
 		node['ntype'] = 'isp'
-		node['software'] = ["ubuntu", "mySQL"]
+		node['software'] = get_random_sw_caps(size=rnd.randint(2, 5))
 		hw_platform = rnd.choice(HW_PLATFORMS)
 		node['hardware'] = (hw_platform, 512)
 		node['security'] = ["enc"]
@@ -67,15 +71,15 @@ class Infra(nx.DiGraph):
 	def set_as_cabinet(self, nid):
 		node = self.nodes[nid]
 		node['ntype'] = 'cabinet'
-		node['software'] = ["ubuntu", "mySQL"]
+		node['software'] = get_random_sw_caps(size=rnd.randint(2, 5))
 		hw_platform = rnd.choice(HW_PLATFORMS)
 		node['hardware'] = (hw_platform, 256)
-		node['security'] = ["enc"]
+		node['security'] = ["enc", "auth"]
 
 	def set_as_accesspoint(self, nid):
 		node = self.nodes[nid]
 		node['ntype'] = 'accesspoint'
-		node['software'] = ["ubuntu", "gcc", "python"]
+		node['software'] = get_random_sw_caps(size=rnd.randint(2, 5))
 		hw_platform = rnd.choice(HW_PLATFORMS)
 		node['hardware'] = (hw_platform, 128)
 		node['security'] = ["enc", "auth"]
@@ -86,7 +90,7 @@ class Infra(nx.DiGraph):
 	def set_as_thing(self, nid):
 		node = self.nodes[nid]
 		node['ntype'] = 'thing'
-		node['software'] = ["android", "gcc", "python"]
+		node['software'] = get_random_sw_caps(size=rnd.randint(1, 4))
 		hw_platform = rnd.choice(HW_PLATFORMS)
 		node['hardware'] = (hw_platform, 64)
 		node['security'] = ["enc", "auth"]
@@ -206,6 +210,7 @@ def init_parser() -> ap.ArgumentParser:
 
 	p.add_argument("-d", "--dummy", action="store_true", help="Set dummy links (low latency, high bandwidth")
 	p.add_argument("n", type=int, help="Number of infrastructure nodes to generate.")
+	p.add_argument("things", nargs='*', help="List of IoT devices to be randomly placed.")
 
 	return p
 
@@ -213,4 +218,6 @@ def init_parser() -> ap.ArgumentParser:
 if __name__ == "__main__":
 	parser = init_parser()
 	args = parser.parse_args()
+
+	THINGS = args.things
 	main(args.n, dummy=args.dummy)

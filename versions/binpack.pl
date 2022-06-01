@@ -1,4 +1,4 @@
-% :-['../data/infrs/infr64.pl', '../data/apps/speakToMe.pl'].
+:-['../data/infrs/infrUC.pl', '../data/apps/arFarming.pl'].
 :-['../requirements.pl', '../costs.pl'].
 
 :- set_prolog_flag(answer_write_options,[max_depth(0)]). % write answers' text entirely
@@ -8,7 +8,7 @@
 stats(App, Placement, Cost, NDistinct, Infs, Time, Budget) :-
     statistics(inferences, InfA),
         statistics(cputime, TimeA),
-            best(App, Placement, Cost, Budget),
+            best(App, Placement, Cost, TimeA, Budget),
             countDistinct(Placement, NDistinct),
         statistics(cputime, TimeB),
     statistics(inferences, InfB),
@@ -16,14 +16,17 @@ stats(App, Placement, Cost, NDistinct, Infs, Time, Budget) :-
     Infs is InfB - InfA,
     Time is TimeB - TimeA.
 
-best(App, Placement, Cost, Budget) :-
-    writeln("prova"),
+best(App, Placement, Cost, StartTime, Budget) :-
     application(App, Functions, Services), 
     ranking(Functions, Services, RankedComps),  % RankedComps:  [(Rank, Comp)|Rest] --> sort "Comp" by increasing HWReqs
-    writeln("ranking"),
     findCompatibles(RankedComps, Components),   % Components:   [(Comp, Compatibles)|Rest]--> sort "Compatibles" nodes by decreasing HWCaps
-    writeln("comps"),
-    placement(Components, Placement, Budget, Cost), qosOK(Placement).
+    placement(Components, Placement, Budget, Cost),
+    qosOK(Placement).%timer(StartTime, Placement).
+
+timer(StartTime, Placement) :-
+    MaxTime is StartTime+5, statistics(cputime, CurrTime),
+    write(StartTime), write(" - "), writeln(CurrTime),
+    (CurrTime < MaxTime -> qosOK(Placement); !, false).
 
 countDistinct(P, L) :-
     findall(N, distinct(member((_,N), P)), S),
@@ -55,7 +58,6 @@ lightNodeOK(F,N,H,FCost) :-
 
 placement(Cs, Placement, Budget, NewCost) :-
     placement(Cs, [], Placement, Budget, 0, NewCost).
-    % write("Found placement: "), writeln(Placement).
 
 placement([(C, Comps)|Cs], OldP, NewP, Budget, OldCost, NewCost) :-
     componentPlacement(C, Comps, N, OldP, CCost),
@@ -63,7 +65,7 @@ placement([(C, Comps)|Cs], OldP, NewP, Budget, OldCost, NewCost) :-
     placement(Cs, [(C,N)|OldP], NewP, Budget, TCost, NewCost).
 placement([], P, P, _, Cost, Cost).
 
-pickNode(N, Ps, Comps, Cost):-
+/*pickNode(N, Ps, Comps, Cost):-
     (member((_,N), Ps), member((Cost,_,N), Comps));
     (member((Cost,_,N), Comps), \+ member((_,N),Ps)).
 
@@ -73,7 +75,26 @@ componentPlacement(F, Comps, N, Ps, FCost) :-
 
 componentPlacement(S, Comps, N, Ps, SCost) :-
     serviceInstance(S, SId), service(SId, _, _, HWReqs),
-    pickNode(N, Ps, Comps, SCost), compatible(N, HWReqs, Ps).
+    pickNode(N, Ps, Comps, SCost), compatible(N, HWReqs, Ps).*/
+
+componentPlacement(F, Comps, N, Ps, FCost) :-
+    functionInstance(F, FId, _), function(FId, _, _, HWReqs),
+    member((_,N), Ps), member((FCost,_,N), Comps),
+    compatible(N, HWReqs, Ps).
+componentPlacement(F, Comps, N, Ps, FCost) :-
+    functionInstance(F, FId, _), function(FId, _, _, HWReqs),
+    member((FCost,_,N), Comps), \+ member((_,N),Ps),
+    compatible(N, HWReqs, Ps).
+
+componentPlacement(S, Comps, N, Ps, SCost) :-
+    serviceInstance(S, SId), service(SId, _, _, HWReqs),
+    member((_,N), Ps), member((SCost,_,N), Comps),
+    compatible(N, HWReqs, Ps).
+componentPlacement(S, Comps, N, Ps, SCost) :-
+    serviceInstance(S, SId), service(SId, _, _, HWReqs),
+    member((SCost,_,N), Comps), \+ member((_,N),Ps),
+    compatible(N, HWReqs, Ps).
+
 
 compatible(N, (_,HWReqs), Ps) :-
     node(N, _, _, (_, HWCaps), _, _), 

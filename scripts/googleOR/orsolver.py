@@ -23,7 +23,7 @@ def init_parser() -> ap.ArgumentParser:
 	p.add_argument("-d", "--dummy", action="store_true",
 	               help="if set, uses an infrastructure with dummy links (low lat, high bw)."),
 	p.add_argument("app", help="Application name.")
-	p.add_argument("size", type=int, help="Infrastructure size.")
+	p.add_argument("infr", help="Infrastructure name.")
 
 	return p
 
@@ -49,13 +49,13 @@ def get_costs(app, infr, instances, nodes):
 	return costs
 
 
-def or_solver(app_name, size, dummy=False, show_placement=False, result=""):
+def or_solver(app_name, infr_name, dummy=False, show_placement=False, result=""):
 
 	if type(result) != str:  # if result is not a string, redirect output tu /dev/null
 		sys.stdout = open(os.devnull, 'w')
 
 	app = Application(app_name)
-	infr = Infrastructure(size, dummy=dummy)
+	infr = Infrastructure(infr_name, dummy=dummy)
 
 	# Set ThingInstance nodes, knowing the infrastructure
 	app.set_things_from_infr(infr)
@@ -72,7 +72,7 @@ def or_solver(app_name, size, dummy=False, show_placement=False, result=""):
 	L = len(links)
 	DF = len(dfs)
 
-	info = [['Instances', S], ['Nodes', N], ['Links', L], ['Data Flows', DF]]
+	info = [['Infrastructure', infr_name], ['Instances', S], ['Nodes', N], ['Links', L], ['Data Flows', DF]]
 	print(Fore.LIGHTCYAN_EX + tabulate(info))
 
 	# Create the solver.
@@ -156,18 +156,21 @@ def or_solver(app_name, size, dummy=False, show_placement=False, result=""):
 			n_distinct.add(n)
 			tot_cost += costs[i, j]
 
+
+		res = {'App': app_name, 'Time': tot_time, 'Cost': round(tot_cost, 4), 'NDistinct': len(n_distinct), 'Constraints': solver.NumConstraints()}
 		if show_placement:
 			print(tabulate(placement.items(), tablefmt='fancy_grid', stralign='center'))
 		# tot_cost = solver.Objective().Value()
 		tot_time = solver.WallTime() / 1000  # in seconds
+
+		print(Fore.LIGHTGREEN_EX + tabulate(res.items(), numalign='right'))
+
 	else:
 		print('The problem does not have a solution.')
+	
 
-	res = {'Time': tot_time, 'Cost': tot_cost, 'NDistinct': len(n_distinct), 'Constraints': solver.NumConstraints()}
-	print(Fore.LIGHTGREEN_EX + tabulate(res.items(), numalign='right'))
-
-	res['Placement'] = placement
-	if type(result) != str:  # if set,send or-tools results to "compare.py"
+	if type(result) != str and res:  # if set, send or-tools results to "compare.py"
+		res['Placement'] = placement, 
 		del res['Constraints']
 		result['ortools'] = res
 
@@ -183,7 +186,7 @@ if __name__ == '__main__':
 	parser = init_parser()
 	args = parser.parse_args()
 
-	or_solver(app_name=args.app, size=args.size, show_placement=args.placement, dummy=args.dummy)
+	or_solver(app_name=args.app, infr_name=args.infr, show_placement=args.placement, dummy=args.dummy)
 
 	# absolute import
 else:

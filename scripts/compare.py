@@ -23,7 +23,7 @@ def init_parser() -> ap.ArgumentParser:
 	               help="if set, uses an infrastructure with dummy links (low lat, high bw)."),
 	p.add_argument("-o", "--ortools", action="store_true", help="if set, compares also with Google OR-Tools model."),
 	p.add_argument("app", help="Application name.")
-	p.add_argument("size", type=int, help="Infrastructure size.")
+	p.add_argument("infr", help="Infrastructure name.")
 	p.add_argument("budget", type=int, help="Maximum budget.")
 	p.add_argument("versions", nargs='*',
 	               help="List of the versions to compare. Valid ones can be found in \"versions/\" folder.")
@@ -36,28 +36,26 @@ def print_result(result, show_placement):
 	not_none = {k: v for k, v in result.items() if v is not None}
 	result.clear()
 	result.update(not_none)
+	
+	if result:
+		result = pd.DataFrame.from_dict(result, orient='index')
+		result.drop(columns=['App'], inplace=True)
+		result.rename(columns={"NDistinct": "# Distinct Nodes", "Infs": "# Inferences", "Time": "Time(s)"}, inplace=True)
+		placements = result.pop('Placement')
 
-	result = pd.DataFrame.from_dict(result, orient='index')
-	result.drop(columns=['App'], inplace=True)
-	result.rename(columns={"NDistinct": "# Distinct Nodes", "Infs": "# Inferences", "Time": "Time(s)"}, inplace=True)
-	placements = result.pop('Placement')
-	floatfmt = ("f", ".4f", ".0f", ".0f")
+		if show_placement:
+			n_distinct = result.pop('# Distinct Nodes')
+			# transform list of strings into a dict in the form {service: node}
+			placements = pd.DataFrame.from_records(placements.values, index=placements.index)
+			placements.insert(0, '# Distinct nodes', n_distinct)
 
-	if show_placement:
-		n_distinct = result.pop('# Distinct Nodes')
-		# transform list of strings into a dict in the form {service: node}
-		placements = pd.DataFrame.from_records(placements.values, index=placements.index)
-		placements.insert(0, '# Distinct nodes', n_distinct)
+			p_tab = tabulate(placements, headers='keys', tablefmt='fancy_grid', numalign='center', stralign='center')
+			print(Fore.LIGHTRED_EX + "\nPLACEMENTS:")
+			print(Fore.LIGHTRED_EX + p_tab)
 
-		p_tab = tabulate(placements, headers='keys', tablefmt='fancy_grid', numalign='center', stralign='center')
-		print(Fore.LIGHTRED_EX + "\nPLACEMENTS:")
-		print(Fore.LIGHTRED_EX + p_tab)
-		floatfmt = ("f", ".4f", ".0f")
-
-	print(Fore.LIGHTYELLOW_EX + "\nCOMPARISON:")
-	tab = tabulate(result, headers="keys", tablefmt="fancy_grid", numalign="center", stralign="center",
-	               floatfmt=floatfmt)  # Time, Cost, <Nodes>, Inferences (order for floatfmt, idk why)
-	print(Fore.LIGHTYELLOW_EX + tab)
+		tab = tabulate(result, headers="keys", tablefmt="fancy_grid", numalign="center", stralign="center")  
+		print(Fore.LIGHTYELLOW_EX + "\nCOMPARISON:")
+		print(Fore.LIGHTYELLOW_EX + tab)
 
 
 def format_result(q):
@@ -69,7 +67,7 @@ def format_result(q):
 
 
 def pl_query(p: Prolog, s: str):
-	q = p.query(s, maxresult=1)
+	q = p.query(s)
 	return next(q)
 
 
@@ -81,11 +79,11 @@ def pl_process(version, app, budget, infr, result):
 
 	try:
 		q = pl_query(p, QUERY.format(budget=budget))
+		q = format_result(q)
 	except StopIteration:
-		print("No solution found.")
+		print(Fore.LIGHTRED_EX + "No PL solution found for {}.".format(basename(version)))
 		q = None
 
-	q = format_result(q)
 	result[basename(version)] = q
 
 
@@ -122,7 +120,7 @@ if __name__ == "__main__":
 	parser = init_parser()
 	args = parser.parse_args()
 
-	app, infr, vs = check_files(app=args.app, infr_size=args.size, dummy_infr=args.dummy, versions=args.versions)
+	app, infr, vs = check_files(app=args.app, infr=args.infr, dummy_infr=args.dummy, versions=args.versions)
 
 	info = [['APPLICATION:', basename(app)],
 	         ['INFRASTRUCTURE:', ("dummy" + os.sep if args.dummy else "") + basename(infr)],

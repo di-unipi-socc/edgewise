@@ -1,4 +1,4 @@
-% :-['../data/infrs/infr32.pl', '../data/apps/speakToMe.pl'].
+% :-['../data/infrs/infrUC.pl', '../data/apps/arFarming.pl'].
 :-['../requirements.pl', '../costs.pl'].
 
 :- set_prolog_flag(answer_write_options,[max_depth(0)]). % write answers' text entirely
@@ -81,8 +81,8 @@ nodeHwOk([], _).
 hwOnN(N, Ps, HW) :- serviceInstance(S, SId), service(SId,_,_,(_,HW)), member((S,N), Ps).
 hwOnN(N, Ps, HW) :- functionInstance(F, FId,_), function(FId,_,_,(_,HW)), member((F,N), Ps).
 
-qosOK(Ps) :- 
-    findall((N1N2, Lat), relevant(N1N2, Ps, Lat, _), DataFlows), 
+qosOK(Ps) :- % TODO, if a thing not placed, "relevant" don't take the dataFlow
+    findall((N1N2, Lat), relevant(N1N2, Ps, Lat, _), DataFlows),
     checkDF(DataFlows, Ps).
 
 checkDF([((N1,N2),ReqLat)|DFs], Ps) :-
@@ -99,4 +99,4 @@ relevant((N1,N2), Ps, Lat, BW) :-
     dataFlow(T1,T2,_,_,Size,Rate,Lat),
     (member((T1,N1), Ps); node(N1, _, _, _, _, IoTCaps), member(T1, IoTCaps)),
     (member((T2,N2), Ps); node(N2, _, _, _, _, IoTCaps), member(T2, IoTCaps)),
-    dif(N1,N2), BW is Rate*Size.
+    dif(N1,N2), BW is Size*Rate.
