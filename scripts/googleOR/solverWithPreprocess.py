@@ -1,5 +1,6 @@
 import os
 import argparse as ap
+from sqlite3 import complete_statement
 import numpy as np
 import sys
 
@@ -8,8 +9,11 @@ from pyswip import Prolog
 from colorama import Fore, init
 from tabulate import tabulate
 
-QUERY = "cost({ntype}, {compid}, Cost)"
-THRESHOLD = 80
+QUERY = "preprocess({app_name}, Compatibles)"
+L_COST = 0.5
+L_BINPACK = 0.5
+
+assert L_COST + L_BINPACK == 1, "Lambdas must be summed to 1."
 
 
 def init_parser() -> ap.ArgumentParser:
@@ -20,39 +24,50 @@ def init_parser() -> ap.ArgumentParser:
 	p.add_argument("-d", "--dummy", action="store_true",
 	               help="if set, uses an infrastructure with dummy links (low lat, high bw)."),
 	p.add_argument("app", help="Application name.")
-	p.add_argument("size", type=int, help="Infrastructure size.")
+	p.add_argument("infr", help="Infrastructure name.")
 
 	return p
 
 
-def get_costs(app, infr, instances, nodes):
+def get_compatibles(app_name, app, infr, n_comps, n_nodes):
+	prolog = Prolog()
+	prolog.consult(app)
+	prolog.consult(infr)
+	prolog.consult(join(VERSIONS_DIR, "preprocessing.pl"))
+	
+	costs = np.zeros((n_comps,n_nodes))
+	try:
+		q = prolog.query(QUERY.format(app_name=app_name))
+		r = next(q)['Compatibles']
+		q.close()
+	except StopIteration:
+		raise ValueError("Error in preprocessing.pl")
 
-	p = Prolog()
-	p.consult(app)
-	p.consult(infr)
-	p.consult(join(ROOT_DIR, "costs.pl"))
+	return parse_compatibles(r)
 
-	costs = np.zeros((len(instances), len(nodes)))
-	for i, s in enumerate(instances):
-		for j, (_, a) in enumerate(nodes):
-			try:
-				q = p.query(QUERY.format(ntype=a['type'], compid=s.id))
-				r = next(q)
-				costs[i][j] = r['Cost']
-				q.close()
-			except StopIteration:
-				raise ValueError("No cost for {} in {}".format(a['type'], s.id))
+# bug in pyswip when retrieving lists/tuples with format ",(...)"
+def parse_compatibles(r):
+	compatibles = {}
+	for i in r:
+		i = i[2:-1].replace(",(", "(").split(", ", 1)
+		s = i[0]
+		comps = eval(i[1])
+		comps2 = {}
+		for c in comps:
+			c = c[1:-1].split(", ", 1)
+			comps2[c[0]] = round(float(c[1]), 4)
 
-	return costs
-
-
-def or_solver(app_name, size, dummy=False, show_placement=False, result=""):
+		compatibles[s] = comps2
+	
+	return compatibles
+		
+def or_solver(app_name, infr_name, dummy=False, show_placement=False, result=""):
 
 	if type(result) != str:  # if result is not a string, redirect output tu /dev/null
 		sys.stdout = open(os.devnull, 'w')
 
 	app = Application(app_name)
-	infr = Infrastructure(size, dummy=dummy)
+	infr = Infrastructure(infr_name, dummy=dummy)
 
 	# Set ThingInstance nodes, knowing the infrastructure
 	app.set_things_from_infr(infr)
@@ -69,16 +84,32 @@ def or_solver(app_name, size, dummy=False, show_placement=False, result=""):
 	L = len(links)
 	DF = len(dfs)
 
-	info = [['Instances', S], ['Nodes', N], ['Links', L], ['Data Flows', DF]]
+	compatibles = get_compatibles(app_name, app.file, infr.file, S, N)
+	# app.set_compatibles(compatibles)
+	print([(k,len(v)) for k,v in compatibles.items()])
+
+	info = [['Infrastructure', infr_name], ['Instances', S], ['Nodes', N], ['Links', L], ['Data Flows', DF]]
 	print(Fore.LIGHTCYAN_EX + tabulate(info))
 
 	# Create the solver.
 	solver = pywraplp.Solver.CreateSolver('GLOP')
 	solver.SetNumThreads(32)
 
-	# Create the variables.
-	x = {(i, j): solver.IntVar(0, 1, '') for i in range(S) for j in range(N)}
+	# Create the variables for binpack B.
 	b = {j: solver.IntVar(0, 1, '') for j in range(N)}
+
+	# Create bool vars matrix X.
+	# at the same time, create costs matrix C
+	costs = np.zeros((S, N))
+	# x = {(i, j): solver.IntVar(0, 1, '') for i in range(S) for j in range(N)}
+	x = {(i, j): 0 for i in range(S) for j in range(N)}
+	for i, s in enumerate(instances):
+		for j, n in enumerate(nids):
+			if n in compatibles[s.id]:
+				x[i, j] = solver.IntVar(0, 1, '')
+				costs[i, j] = compatibles[s.id][n]				
+
+	
 
 	# Constraint: one instance at most in one node.
 	for i in range(S):
@@ -87,11 +118,6 @@ def or_solver(app_name, size, dummy=False, show_placement=False, result=""):
 	# Constraint: cannot exceed the hw capacity of a node.
 	coeffs = [s.comp.hwreqs for s in instances]
 	bounds = [a['hwcaps'] for _, a in nodes]
-
-	"""for j in range(N):
-		constraint = solver.RowConstraint(0, bounds[j]-infr.hwTh, '')
-		for i in range(S):
-			constraint.SetCoefficient(x[i, j], coeffs[i])"""
 
 	for j in range(N):
 		solver.Add(solver.Sum([coeffs[i] * x[i, j] for i in range(S)]) <= b[j] * (bounds[j] - infr.hwTh))
@@ -121,13 +147,15 @@ def or_solver(app_name, size, dummy=False, show_placement=False, result=""):
 
 			bw_constraint.SetCoefficient(c, df.bw)
 
-	#  OBJECTIVE FUNCTION
 	# costs = np.random.uniform(low=1, high=50, size=(S, N))
-	costs = get_costs(app.file, infr.file, instances, nodes)
 
-	min_cost_expr = [costs[i, j] * x[i, j] for i in range(S) for j in range(N)]
+	# OBJECTIVE FUNCTION
+	min_cost_expr = [L_COST * costs[i, j] * x[i, j] for i in range(S) for j in range(N)]
+	binpack_expr = [L_BINPACK * b[j] for j in range(N)]
 
-	solver.Minimize(solver.Sum(min_cost_expr))
+	obj_expr = min_cost_expr + binpack_expr
+
+	solver.Minimize(solver.Sum(obj_expr))
 	status = solver.Solve()
 	
 	tot_cost = 0
@@ -137,7 +165,7 @@ def or_solver(app_name, size, dummy=False, show_placement=False, result=""):
 
 	if status == pywraplp.Solver.OPTIMAL or status == pywraplp.Solver.FEASIBLE:
 		for i in range(S):
-			row = [x[i,j].solution_value() for j in range(N)]
+			row = [x[i,j].solution_value() if not isinstance(x[i,j], int) else 0 for j in range(N)]
 			j = row.index(max(row))
 			s = instances[i].id
 			n = nodes[j][0]
@@ -145,36 +173,24 @@ def or_solver(app_name, size, dummy=False, show_placement=False, result=""):
 			n_distinct.add(n)
 			tot_cost += costs[i, j]
 
+
+		res = {'App': app_name, 'Time': tot_time, 'Cost': round(tot_cost, 4), 'NDistinct': len(n_distinct), 'Constraints': solver.NumConstraints()}
 		if show_placement:
 			print(tabulate(placement.items(), tablefmt='fancy_grid', stralign='center'))
 		# tot_cost = solver.Objective().Value()
 		tot_time = solver.WallTime() / 1000  # in seconds
+
+		print(Fore.LIGHTGREEN_EX + tabulate(res.items(), numalign='right'))
+
 	else:
 		print('The problem does not have a solution.')
+	
 
-	res = {'Time': tot_time, 'Cost': tot_cost, 'NDistinct': len(n_distinct), 'Constraints': solver.NumConstraints()}
-	print(Fore.LIGHTGREEN_EX + tabulate(res.items(), numalign='right'))
-
-	res['Placement'] = placement
-	if type(result) != str:  # if set,send or-tools results to "compare.py"
+	if type(result) != str and res:  # if set, send or-tools results to "compare.py"
+		res['Placement'] = placement, 
 		del res['Constraints']
 		result['ortools'] = res
-
-
-	binpack_expr = [b[j] for j in range(N)]
-	lx = list(x.values())
-
-	solver.SetHint(lx, [x[i,j].solution_value() for i in range(S) for j in range(N)])
-	opt_cost = solver.Objective().Value()
-	solver.Add(solver.Sum(min_cost_expr) <= (opt_cost+(opt_cost*THRESHOLD/100)))
-
-	solver.Minimize(solver.Sum(binpack_expr))
-
-	status = solver.Solve()
-	if status == pywraplp.Solver.FEASIBLE or status == pywraplp.Solver.OPTIMAL:
-		print([b[j].solution_value() for j in range(N)], sep=", ", end="\n")
-	else:
-		print("Not found for BINPACK.")
+	
 
 
 if __name__ == '__main__':
@@ -188,7 +204,7 @@ if __name__ == '__main__':
 	parser = init_parser()
 	args = parser.parse_args()
 
-	or_solver(app_name=args.app, size=args.size, show_placement=args.placement, dummy=args.dummy)
+	or_solver(app_name=args.app, infr_name=args.infr, show_placement=args.placement, dummy=args.dummy)
 
 	# absolute import
 else:

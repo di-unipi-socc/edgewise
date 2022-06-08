@@ -1,4 +1,4 @@
-:-['../data/infrs/infrUC.pl', '../data/apps/arFarming.pl'].
+% :-['../data/infrs/infrUC.pl', '../data/apps/arFarming.pl'].
 :-['../requirements.pl', '../costs.pl'].
 
 :- set_prolog_flag(answer_write_options,[max_depth(0)]). % write answers' text entirely

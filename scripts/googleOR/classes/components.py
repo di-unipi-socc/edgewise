@@ -47,15 +47,15 @@ class ServiceInstance:
 	def __init__(self, id, comp: Component):
 		self.id = id
 		self.comp = comp
-		self.node = None
+		self.compatibles = []
 
 	def __str__(self):
 		data = self.__dict__.copy()
 		data['comp'] = data['comp'].id
 		return SERVICE_INSTANCE.format(**data)
 
-	def set_node(self, node):
-		self.node = node
+	def set_compatibles(self, compatibles):
+		self.compatibles = compatibles
 
 	@classmethod
 	def parse(cls, data):
@@ -71,15 +71,15 @@ class FunctionInstance:
 		self.comp = comp
 		self.req_x_month = req_x_month
 		self.req_duration = req_duration
-		self.node = None
+		self.compatibles = []
 
 	def __str__(self):
 		data = self.__dict__.copy()
 		data['comp'] = data['comp'].id
 		return FUNCTION_INSTANCE.format(**data)
 
-	def set_node(self, node):
-		self.node = node
+	def set_compatibles(self, compatibles):
+		self.compatibles = compatibles
 
 	@classmethod
 	def parse(cls, data):

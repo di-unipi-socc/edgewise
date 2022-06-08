@@ -58,7 +58,7 @@ def or_solver(app_name, infr_name, dummy=False, show_placement=False, result="")
 	infr = Infrastructure(infr_name, dummy=dummy)
 
 	# Set ThingInstance nodes, knowing the infrastructure
-	app.set_things_from_infr(infr)
+	#app.set_things_from_infr(infr)
 
 	instances = app.services + app.functions
 	nodes = list(infr.nodes(data=True))  # (nid, {attrs})
