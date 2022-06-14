@@ -1,14 +1,14 @@
-% service(ServiceId, SType, SWReqs, (Arch, HWReqs)).
-service(s3, storage, [ubuntu], (x86, 100)).
-service(dynamoDB, database, [mySQL, ubuntu], (x86, 50)).
-service(sns, queue, [python], (x86, 2)).
-service(polly, tts, [python, gcc], (arm64, 4)).
+% service(ServiceId, SWReqs, (Arch, HWReqs)).
+service(storage, [ubuntu], (x86, 100)).
+service(database, [mySQL, ubuntu], (x86, 50)).
+service(queue, [python], (x86, 2)).
+service(tts, [python, gcc], (arm64, 4)).
 
-% function(FunctionId, FType, SWPlatform, (Arch, HWReqs)).
-function(upload, uploadFun, python, (x86, 20)).
-function(metadata, metadataFun, python, (arm64, 2)).
-function(publish, publishFun, python, (x86, 4)).
-function(txtToSpeech, ttsFun, python, (arm64, 30)).
+% function(FunctionId, SWPlatform, (Arch, HWReqs)).
+function(uploadFun, python, (x86, 20)).
+function(metadataFun, python, (arm64, 2)).
+function(publishFun, python, (x86, 4)).
+function(ttsFun, python, (arm64, 30)).
 
 % thing(ThingId, TType).
 thing(smph, smartphone).
@@ -20,19 +20,19 @@ thing(spk, speaker).
 application(speakToMe, [uploadPost,metaPost,publishPost,convertTxt,uploadAudio,metaAudio], [textBucket,audioBucket,mainDB,postQueue,converter]).
 
 % serviceInstance(SIId, ServiceId).
-serviceInstance(textBucket, s3).
-serviceInstance(audioBucket, s3).
-serviceInstance(mainDB, dynamoDB).
-serviceInstance(postQueue, sns).
-serviceInstance(converter, polly).
+serviceInstance(textBucket, storage).
+serviceInstance(audioBucket, storage).
+serviceInstance(mainDB, database).
+serviceInstance(postQueue, queue).
+serviceInstance(converter, tts).
 
 % functionInstance(FIId, FunctionId, (ReqXMonth, ReqDuration)).
-functionInstance(uploadPost, upload, (1000, 30)).
-functionInstance(metaPost, metadata, (1500, 8)).
-functionInstance(publishPost, publish, (2000, 8)).
-functionInstance(convertTxt, txtToSpeech, (2500, 30)).
-functionInstance(uploadAudio, upload, (1000, 20)).
-functionInstance(metaAudio, metadata, (2500, 130)).
+functionInstance(uploadPost, uploadFun, (1000, 30)).
+functionInstance(metaPost, metadataFun, (1500, 8)).
+functionInstance(publishPost, publishFun, (2000, 8)).
+functionInstance(convertTxt, ttsFun, (2500, 30)).
+functionInstance(uploadAudio, uploadFun, (1000, 20)).
+functionInstance(metaAudio, metadataFun, (2500, 130)).
 
 % thingInstance(TIId, ThingId).
 thingInstance(iphoneXS, smph).

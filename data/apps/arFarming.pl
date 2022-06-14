@@ -1,13 +1,13 @@
-% service(ServiceId, SType, SWReqs, (Arch, HWReqs)).
-service(dynamoDB, database, [mySQL, ubuntu], (x86, 50)).
-service(sqs, queue, [python], (x86, 5)).
-service(reko, imageRecognition, [python, gcc], (arm64, 10)).
-service(quicksight, dashboard, [mySQL, php, js], (x86, 4)).
+% service(ServiceId, SWReqs, (Arch, HWReqs)).
+service(database, [mySQL, ubuntu], (x86, 50)).
+service(queue, [python], (x86, 5)).
+service(imageRecognition, [python, gcc], (arm64, 10)).
+service(dashboard, [mySQL, php, js], (x86, 4)).
 
-% function(FunctionId, FType, SWPlatform, (Arch, HWReqs)).
-function(camCalibration, camFun, python, (arm64, 8)).
-function(imgRectification, imgFun, python, (x86, 4)).
-function(roiSelection, imgFun, python, (arm64, 3)).
+% function(FunctionId, SWPlatform, (Arch, HWReqs)).
+function(camCalibration, python, (arm64, 8)).
+function(imgRectification, python, (x86, 4)).
+function(roiSelection, python, (arm64, 3)).
 
 % thing(ThingId, TType).
 thing(sns, sensor).
@@ -20,12 +20,12 @@ thing(dsp, display).
 application(arFarming, [calibre, rectify, roiSel],  [mainDB, imgQueue, snsQueue, ctrlQueue, recognizer, visualizer]).
 
 % serviceInstance(SIId, ServiceId).
-serviceInstance(mainDB, dynamoDB).
-serviceInstance(imgQueue, sqs).
-serviceInstance(snsQueue, sqs).
-serviceInstance(ctrlQueue, sqs).
-serviceInstance(recognizer, reko).
-serviceInstance(visualizer, quicksight).
+serviceInstance(mainDB, database).
+serviceInstance(imgQueue, queue).
+serviceInstance(snsQueue, queue).
+serviceInstance(ctrlQueue, queue).
+serviceInstance(recognizer, imageRecognition).
+serviceInstance(visualizer, dashboard).
 
 % functionInstance(FIId, FunctionId, (ReqXMonth, ReqDuration)).
 functionInstance(calibre, camCalibration, (500, 10)).

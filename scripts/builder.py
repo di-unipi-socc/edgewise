@@ -1,7 +1,9 @@
 import argparse as ap
 from os.path import join
+from random import seed
 
 import networkx as nx
+from numpy import log2
 from numpy import random as rnd
 
 from googleOR.classes.utils import INFRS_DIR
@@ -17,14 +19,14 @@ def get_random_sw_caps(size=1):
 
 
 class Infra(nx.DiGraph):
-	def __init__(self, n, dummy=False):
+	def __init__(self, n, seed, dummy=False):
 		super().__init__()
 		self.gnodes = {}  # nodes grouped by TYPES
 		self.file = "infr{}.pl".format(n)
 		self._bwTh = 3
 		self._hwTh = 1
 
-		self.set_nodes(n)
+		self.set_nodes(n, seed)
 		self.set_filepath(dummy)
 
 	def set_filepath(self, dummy):
@@ -34,13 +36,18 @@ class Infra(nx.DiGraph):
 
 		self.file = join(path, self.file)
 
-	def set_nodes(self, n):
-		self.add_nodes_from([f"n{i}" for i in range(0, n)], things=[])
+	def set_nodes(self, n, seed):
+		i = int(log2(n))
+		H = nx.barabasi_albert_graph(n, i, seed=seed)
+		H = nx.relabel_nodes(H, lambda x: f"n{x}")
+		self.add_nodes_from(H, things=[])
 		for node in self.nodes:
 			ntype = rnd.choice(TYPES, p=PROBS)
 			method = 'set_as_{}'.format(ntype)
 			getattr(self, method)(node)
 		self.set_grouped_nodes()
+
+		self.add_edges_from(H.edges)
 
 	def set_grouped_nodes(self):
 		for t in TYPES:
@@ -49,8 +56,9 @@ class Infra(nx.DiGraph):
 	def add_links(self, type1, type2, lat=1, bw=500):
 		for n1 in self.gnodes[type1]:
 			for n2 in self.gnodes[type2]:
-				if n1 != n2:
-					self.add_edge(n1, n2, lat=lat, bw=bw)
+				if n1 != n2 and self.has_edge(n1, n2):
+					# self.add_edge(n1, n2, lat=lat, bw=bw)
+					nx.set_edge_attributes(self, {(n1,n2): {'lat':lat, 'bw':bw}})
 
 	def set_as_cloud(self, nid):
 		node = self.nodes[nid]
@@ -65,7 +73,7 @@ class Infra(nx.DiGraph):
 		node['ntype'] = 'isp'
 		node['software'] = get_random_sw_caps(size=rnd.randint(2, 5))
 		hw_platform = rnd.choice(HW_PLATFORMS)
-		node['hardware'] = (hw_platform, 512)
+		node['hardware'] = (hw_platform, rnd.choice([256, 512]))
 		node['security'] = ["enc"]
 
 	def set_as_cabinet(self, nid):
@@ -73,7 +81,7 @@ class Infra(nx.DiGraph):
 		node['ntype'] = 'cabinet'
 		node['software'] = get_random_sw_caps(size=rnd.randint(2, 5))
 		hw_platform = rnd.choice(HW_PLATFORMS)
-		node['hardware'] = (hw_platform, 256)
+		node['hardware'] = (hw_platform, rnd.choice([128, 256]))
 		node['security'] = ["enc", "auth"]
 
 	def set_as_accesspoint(self, nid):
@@ -81,7 +89,7 @@ class Infra(nx.DiGraph):
 		node['ntype'] = 'accesspoint'
 		node['software'] = get_random_sw_caps(size=rnd.randint(2, 5))
 		hw_platform = rnd.choice(HW_PLATFORMS)
-		node['hardware'] = (hw_platform, 128)
+		node['hardware'] = (hw_platform, 64)
 		node['security'] = ["enc", "auth"]
 		# randomly assign 1 IoT device
 		if THINGS:
@@ -92,7 +100,7 @@ class Infra(nx.DiGraph):
 		node['ntype'] = 'thing'
 		node['software'] = get_random_sw_caps(size=rnd.randint(1, 4))
 		hw_platform = rnd.choice(HW_PLATFORMS)
-		node['hardware'] = (hw_platform, 64)
+		node['hardware'] = (hw_platform, 32)
 		node['security'] = ["enc", "auth"]
 		# randomly assign 1 IoT device
 		if THINGS:
@@ -101,8 +109,9 @@ class Infra(nx.DiGraph):
 	def dummy_links(self, lat, bw):
 		for n1 in self.nodes:
 			for n2 in self.nodes:
-				if n1 != n2:
-					self.add_edge(n1, n2, lat=lat, bw=bw)
+				if n1 != n2 and self.has_edge(n1, n2):
+					#self.add_edge(n1, n2, lat=lat, bw=bw)
+					nx.set_edge_attributes(self, {(n1,n2): {'lat':lat, 'bw':bw}})
 
 	def get_thresholds(self):
 		bwTh = "bwTh({}).".format(self._bwTh)
@@ -158,13 +167,14 @@ def generate_from_basename(g, n, basename=""):
 	return nodes
 
 
-def main(nodesnumber, dummy=False):
-	infra = Infra(nodesnumber, dummy=dummy)
-	print("New infrastructure ", end="")
+def main(n, seed=None, dummy=False):
+	infra = Infra(n, seed=seed, dummy=dummy)
+
+	print(f"\nSeed: {seed}")
 
 	if dummy:
 		infra.dummy_links(lat=5, bw=700)
-		print(" (with dummy links)", end="")
+		print("Dummy links: YES", end="")
 	else:
 		infra.add_links('cloud', 'cloud', 20, 1000)
 		infra.add_links('cloud', 'isp', 110, 1000)
@@ -196,21 +206,22 @@ def main(nodesnumber, dummy=False):
 		infra.add_links('thing', 'accesspoint', 2, 20)
 		infra.add_links('thing', 'thing', 15, 50)
 
-		print(" (without dummy links)", end="")
+		print("Dummy links: NO")
+
+	print(f"Path: {infra.file}", end="\n\n")
+	print(infra.get_gnodes())
 
 	infra.upload()
 
-	print(" at \n{}\n".format(infra.file))
-	print(infra.get_gnodes())
-
 
 def init_parser() -> ap.ArgumentParser:
-	description = "Generate random infrastructure made of a given number of nodes."
+	description = "Generate random infrastructure with a given number of nodes."
 	p = ap.ArgumentParser(prog=__file__, description=description)
 
-	p.add_argument("-d", "--dummy", action="store_true", help="Set dummy links (low latency, high bandwidth")
-	p.add_argument("n", type=int, help="Number of infrastructure nodes to generate.")
-	p.add_argument("things", nargs='*', help="List of IoT devices to be randomly placed.")
+	p.add_argument("-d", "--dummy", action="store_true", help="set dummy links (low latency, high bandwidth)")
+	p.add_argument("-s", "--seed", type=int, help="seed for random generation ('None' if not set)")
+	p.add_argument("n", type=int, help="number of infrastructure nodes")
+	p.add_argument("things", nargs='*', help="list of IoT devices to be randomly placed")
 
 	return p
 
@@ -220,4 +231,6 @@ if __name__ == "__main__":
 	args = parser.parse_args()
 
 	THINGS = args.things
-	main(args.n, dummy=args.dummy)
+	rnd.seed(args.seed)
+	main(args.n, args.seed, dummy=args.dummy)
+

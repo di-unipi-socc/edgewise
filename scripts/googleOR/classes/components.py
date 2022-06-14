@@ -1,26 +1,25 @@
 import parse as p
 
-COMP1 = "service({id}, {type}, [{swreqs:to_list}], ({arch}, {hwreqs:g}))."
-COMP2 = "function({id}, {type}, {swreqs}, ({arch}, {hwreqs:g}))."
+COMP1 = "service({id}, [{swreqs:to_list}], ({arch}, {hwreqs:g}))."
+COMP2 = "function({id}, {swreqs}, ({arch}, {hwreqs:g}))."
 THING = "thing({id}, {type})."
 
 SERVICE_INSTANCE = "serviceInstance({id}, {comp})."
 FUNCTION_INSTANCE = "functionInstance({id}, {comp}, ({req_x_month:g}, {req_duration:g}))."
 THING_INSTANCE = "thingInstance({id}, {thing})."
 
-DATA_FLOW = "dataFlow({source}, {target}, {data_type}, [{secreqs:to_list}], {size:g}, {rate:g}, {latency:g})."
+DATA_FLOW = "dataFlow({source}, {target}, {data_type}, [{sec_reqs:to_list}], {size:g}, {rate:g}, {latency:g})."
 
 
 def to_list(s):
-	return s.split(',') if s else []
+	return [x.strip() for x in s.split(',')] if s else []
 
 
 class Component:
 	is_service = True
 
-	def __init__(self, id, type, swreqs, arch, hwreqs):
+	def __init__(self, id, swreqs, arch, hwreqs):
 		self.id = id
-		self.type = type
 		self.swreqs = swreqs
 		self.arch = arch
 		self.hwreqs = hwreqs
@@ -38,9 +37,9 @@ class Component:
 
 	def __str__(self):
 		if self.is_service:
-			return "service({id}, {type}, {swreqs}, ({arch}, {hwreqs})).".format(**self.__dict__)
+			return "service({id}, {swreqs}, ({arch}, {hwreqs})).".format(**self.__dict__)
 		else:
-			return "function({id}, {type}, {swreqs}, ({arch}, {hwreqs})).".format(**self.__dict__)
+			return "function({id}, {swreqs}, ({arch}, {hwreqs})).".format(**self.__dict__)
 
 
 class ServiceInstance:
@@ -137,11 +136,11 @@ class ThingInstance:
 
 
 class DataFlow:
-	def __init__(self, source, target, data_type, secreqs, size, rate, latency):
+	def __init__(self, source, target, data_type, sec_reqs, size, rate, latency):
 		self.source = source
 		self.target = target
 		self.data_type = data_type
-		self.secreqs = secreqs
+		self.sec_reqs = sec_reqs
 		self.size = size
 		self.rate = rate
 		self.latency = latency
@@ -161,7 +160,7 @@ class DataFlow:
 		data['source'] = self.source.id
 		data['target'] = self.target.id
 
-		return "dataFlow({source}, {target}, {data_type}, {secreqs}, {size}, {rate}, {latency}).".format(**data)
+		return "dataFlow({source}, {target}, {data_type}, {sec_reqs}, {size}, {rate}, {latency}).".format(**data)
 
 
 class ParseException(Exception):

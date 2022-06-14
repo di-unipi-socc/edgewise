@@ -9,9 +9,10 @@ from pyswip import Prolog
 from colorama import Fore, init
 from tabulate import tabulate
 
+# todo normalization costs cij - cmin / cmax - cmin
 QUERY = "preprocess({app_name}, Compatibles)"
-L_COST = 0.5
-L_BINPACK = 0.5
+L_COST = 0
+L_BINPACK = 1
 
 assert L_COST + L_BINPACK == 1, "Lambdas must be summed to 1."
 
@@ -29,13 +30,12 @@ def init_parser() -> ap.ArgumentParser:
 	return p
 
 
-def get_compatibles(app_name, app, infr, n_comps, n_nodes):
+def get_compatibles(app_name, app, infr):
 	prolog = Prolog()
 	prolog.consult(app)
 	prolog.consult(infr)
 	prolog.consult(join(VERSIONS_DIR, "preprocessing.pl"))
 	
-	costs = np.zeros((n_comps,n_nodes))
 	try:
 		q = prolog.query(QUERY.format(app_name=app_name))
 		r = next(q)['Compatibles']
@@ -84,7 +84,7 @@ def or_solver(app_name, infr_name, dummy=False, show_placement=False, result="")
 	L = len(links)
 	DF = len(dfs)
 
-	compatibles = get_compatibles(app_name, app.file, infr.file, S, N)
+	compatibles = get_compatibles(app_name, app.file, infr.file)
 	# app.set_compatibles(compatibles)
 	print([(k,len(v)) for k,v in compatibles.items()])
 
@@ -107,9 +107,7 @@ def or_solver(app_name, infr_name, dummy=False, show_placement=False, result="")
 		for j, n in enumerate(nids):
 			if n in compatibles[s.id]:
 				x[i, j] = solver.IntVar(0, 1, '')
-				costs[i, j] = compatibles[s.id][n]				
-
-	
+				costs[i, j] = compatibles[s.id][n]
 
 	# Constraint: one instance at most in one node.
 	for i in range(S):
@@ -150,11 +148,19 @@ def or_solver(app_name, infr_name, dummy=False, show_placement=False, result="")
 	# costs = np.random.uniform(low=1, high=50, size=(S, N))
 
 	# OBJECTIVE FUNCTION
-	min_cost_expr = [L_COST * costs[i, j] * x[i, j] for i in range(S) for j in range(N)]
-	binpack_expr = [L_BINPACK * b[j] for j in range(N)]
+	cmin = np.sum([np.min(row[np.nonzero(row)]) for row in costs])
+	cmax = np.sum(costs.max(axis=1))
+
+	bmin = 1
+	bmax = S
+
+	min_cost_expr = [L_COST * cmax / (cmax-cmin)] + [(L_COST * costs[i, j] * x[i, j]) / (cmin-cmax) for i in range(S) for j in range(N)]
+	binpack_expr = [L_BINPACK * bmax / (bmax-bmin)] + [(L_BINPACK * b[j]) / (bmin-bmax) for j in range(N)]
+
+	# min_cost_expr = [L_COST * costs[i, j] * x[i, j] for i in range(S) for j in range(N)]
+	# binpack_expr = [L_BINPACK * b[j] for j in range(N)]
 
 	obj_expr = min_cost_expr + binpack_expr
-
 	solver.Minimize(solver.Sum(obj_expr))
 	status = solver.Solve()
 	
@@ -162,6 +168,8 @@ def or_solver(app_name, infr_name, dummy=False, show_placement=False, result="")
 	tot_time = 0
 	n_distinct = set()
 	placement = {}
+
+	str_res = ""
 
 	if status == pywraplp.Solver.OPTIMAL or status == pywraplp.Solver.FEASIBLE:
 		for i in range(S):
@@ -190,7 +198,6 @@ def or_solver(app_name, infr_name, dummy=False, show_placement=False, result="")
 		res['Placement'] = placement, 
 		del res['Constraints']
 		result['ortools'] = res
-	
 
 
 if __name__ == '__main__':

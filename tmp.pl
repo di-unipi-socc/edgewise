@@ -1,11 +1,3 @@
-findCompatibles([F|Fs], NewCompatibles) :-
-    functionInstance(F, FId, Reqs),
-    function(FId, FType, SWPlat, HWReqs),
-    findall(N, requirements(FType, S, N), CompNodes),
-    length(CompNodes, Len), Len > 0,
-    findCompatibles(Fs, [(F,CompNodes)|NewCompatibles]).
-findCompatibles([],[]).
-
 resourceAllocation(Key, ReqRes, TAlloc, [(Key, NewRes)|Rest]) :-
     select((Key, Res), TAlloc, Rest), NewRes is Res+ReqRes.
 resourceAllocation(Key, ReqRes, TAlloc, [(Key, ReqRes)|TAlloc]).

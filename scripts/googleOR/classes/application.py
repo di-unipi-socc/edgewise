@@ -151,10 +151,10 @@ class Application:
 				try:
 					self.get_thing_instance_by_id(t).set_node(n)
 				except AttributeError:
-					print(f'Thing instance {t} not found')
+					print(f'Thing instance \'{t}\' not found')
 
 	def set_compatibles(self, compatibles: dict):
-		for i,c in compatibles.items():
+		for i, c in compatibles.items():
 			try:
 				self.get_instance_by_id(i).set_compatibles(c)
 			except AttributeError:

@@ -1,3 +1,5 @@
+% :-['data/infrs/infrUC.pl', 'data/apps/arFarming.pl'].
+
 % requirements(Type,S,N) effettua
 % un preprocessing "ad-hoc" per identificare il dominio dei nodi buoni per ogni servizio S, basandosi su:
 % - banda media
@@ -8,13 +10,13 @@
 
 requirements(_, S, N) :-
     serviceInstance(S, SId),
-    service(SId, _, _, _),
-    node(N, _, _, _, _, _),
+    service(SId, _, _),
+    node(N, _, _, _, SecCaps, _),
     inDomain(N, all).
 
 requirements(_, F, N) :-
     functionInstance(F, FId, _),
-    function(FId, _, _, _),
+    function(FId, _, _),
     node(N, _, _, _, _, _),
     inDomain(N, all).
 

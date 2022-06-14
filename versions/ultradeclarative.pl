@@ -50,12 +50,12 @@ placement([C|Cs], [(C,N)|P]) :-
 placement([], []).
     
 componentPlacement(F, N) :-
-    functionInstance(F, FId, _), function(FId, _, SWPlat, (Arch,_)),
+    functionInstance(F, FId, _), function(FId, SWPlat, (Arch,_)),
     node(N, _, SWCaps, (Arch,_), _, _), 
     %requirements(FType, F, N), 
     member(SWPlat,SWCaps).
 componentPlacement(S, N) :-
-    serviceInstance(S, SId), service(SId, _, SWReqs, (Arch,_)),
+    serviceInstance(S, SId), service(SId, SWReqs, (Arch,_)),
     node(N, _, SWCaps, (Arch,_), _, _), 
     %requirements(SType, S, N), 
     subset(SWReqs, SWCaps).
@@ -78,8 +78,8 @@ nodeHwOk([N|Nodes], Placement) :-
     nodeHwOk(Nodes, Placement).
 nodeHwOk([], _).
 
-hwOnN(N, Ps, HW) :- serviceInstance(S, SId), service(SId,_,_,(_,HW)), member((S,N), Ps).
-hwOnN(N, Ps, HW) :- functionInstance(F, FId,_), function(FId,_,_,(_,HW)), member((F,N), Ps).
+hwOnN(N, Ps, HW) :- serviceInstance(S, SId), service(SId,_,(_,HW)), member((S,N), Ps).
+hwOnN(N, Ps, HW) :- functionInstance(F, FId,_), function(FId,_,(_,HW)), member((F,N), Ps).
 
 qosOK(Ps) :- % TODO, if a thing not placed, "relevant" don't take the dataFlow
     findall((N1N2, Lat), relevant(N1N2, Ps, Lat, _), DataFlows),

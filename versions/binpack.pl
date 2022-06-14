@@ -42,7 +42,7 @@ findCompatibles([],[]).
 
 lightNodeOK(S,N,H,SCost) :-
     serviceInstance(S, SId),
-    service(SId, _, SWReqs, (Arch, HWReqs)),
+    service(SId, SWReqs, (Arch, HWReqs)),
     node(N, NType, SWCaps, (Arch, HWCaps), _, _),
     subset(SWReqs, SWCaps),
     HWCaps >= HWReqs, H is 1/HWCaps, % H used to sort Compatibles (ascending H --> descending HWCaps)) 
@@ -50,7 +50,7 @@ lightNodeOK(S,N,H,SCost) :-
 
 lightNodeOK(F,N,H,FCost) :-
     functionInstance(F, FId, _), 
-    function(FId, _, SWPlatform, (Arch, HWReqs)),
+    function(FId, SWPlatform, (Arch, HWReqs)),
     node(N, NType, SWCaps, (Arch, HWCaps), _, _),
     member(SWPlatform, SWCaps),
     HWCaps >= HWReqs, H is 1/HWCaps,
@@ -78,20 +78,20 @@ componentPlacement(S, Comps, N, Ps, SCost) :-
     pickNode(N, Ps, Comps, SCost), compatible(N, HWReqs, Ps).*/
 
 componentPlacement(F, Comps, N, Ps, FCost) :-
-    functionInstance(F, FId, _), function(FId, _, _, HWReqs),
+    functionInstance(F, FId, _), function(FId, _, HWReqs),
     member((_,N), Ps), member((FCost,_,N), Comps),
     compatible(N, HWReqs, Ps).
 componentPlacement(F, Comps, N, Ps, FCost) :-
-    functionInstance(F, FId, _), function(FId, _, _, HWReqs),
+    functionInstance(F, FId, _), function(FId, _, HWReqs),
     member((FCost,_,N), Comps), \+ member((_,N),Ps),
     compatible(N, HWReqs, Ps).
 
 componentPlacement(S, Comps, N, Ps, SCost) :-
-    serviceInstance(S, SId), service(SId, _, _, HWReqs),
+    serviceInstance(S, SId), service(SId, _, HWReqs),
     member((_,N), Ps), member((SCost,_,N), Comps),
     compatible(N, HWReqs, Ps).
 componentPlacement(S, Comps, N, Ps, SCost) :-
-    serviceInstance(S, SId), service(SId, _, _, HWReqs),
+    serviceInstance(S, SId), service(SId, _, HWReqs),
     member((SCost,_,N), Comps), \+ member((_,N),Ps),
     compatible(N, HWReqs, Ps).
 
@@ -105,8 +105,8 @@ hwOK(N,HWCaps,HWReqs,Ps) :-
     findall(HW, hwOnN(N, Ps, HW), HWs), sum_list(HWs,TotHW),
     hwTh(T), HWCaps >= TotHW + HWReqs + T.
 
-hwOnN(N, Ps, HW) :- serviceInstance(S, SId), service(SId,_,_,(_,HW)), member((S,N), Ps).
-hwOnN(N, Ps, HW) :- functionInstance(F, FId,_), function(FId,_,_,(_,HW)), member((F,N), Ps).
+hwOnN(N, Ps, HW) :- serviceInstance(S, SId), service(SId,_,(_,HW)), member((S,N), Ps).
+hwOnN(N, Ps, HW) :- functionInstance(F, FId,_), function(FId,_,(_,HW)), member((F,N), Ps).
 
 qosOK(Ps) :- 
     findall((N1N2, Lat), relevant(N1N2, Ps, Lat, _), DataFlows), 

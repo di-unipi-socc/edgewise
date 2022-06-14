@@ -1,5 +1,5 @@
-service(ServiceId, SType, SWReqs, (Arch, HWReqs)).
-function(FunctionId, FType, SWPlatform, (Arch, HWReqs)).
+service(ServiceId, SWReqs, (Arch, HWReqs)).
+function(FunctionId, SWPlatform, (Arch, HWReqs)).
 thing(ThingId, TType).
 
 % --- APPLICATION ---
@@ -34,5 +34,6 @@ domain(Area, [SubDomains]).
 
 % --- REQS/COSTS SPECS ---
 cost(NType, ServiceId, Cost).
-% Type = {SType, FType, TType}
-requirements(Type, Service, Node).
+% TId = {SId, FId, TId}
+% Inst = {SIId, FIId}
+requirements(Type, Inst, Node).

@@ -17,15 +17,16 @@ findCompatibles([],[]).
 
 lightNodeOK(S, N, SCost) :-
     serviceInstance(S, SId),
-    service(SId, _, SWReqs, (Arch, HWReqs)),
+    service(SId, SWReqs, (Arch, HWReqs)),
     node(N, NType, SWCaps, (Arch, HWCaps), _, _),
     subset(SWReqs, SWCaps), 
     HWCaps >= HWReqs,
+    
     cost(NType, S, SCost).
 
 lightNodeOK(F, N, FCost) :-
     functionInstance(F, FId, _), 
-    function(FId, _, SWPlatform, (Arch, HWReqs)),
+    function(FId, SWPlatform, (Arch, HWReqs)),
     node(N, NType, SWCaps, (Arch, HWCaps), _, _),
     member(SWPlatform, SWCaps),
     HWCaps >= HWReqs,

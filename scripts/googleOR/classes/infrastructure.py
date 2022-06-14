@@ -11,11 +11,11 @@ LINK = "link({source}, {target}, {lat:g}, {bw:g})."
 
 def to_list_maybe_empty(s):  # due to a bug of 'parse' module
 	s = s[1:-1]
-	return s.split(',') if s else []
+	return [x.strip() for x in s.split(',')] if s else []
 
 
 def to_list(s):
-	return s.split(',') if s else []
+	return [x.strip() for x in s.split(',')] if s else []
 
 
 class Infrastructure(nx.DiGraph):
