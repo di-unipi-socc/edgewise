@@ -3,152 +3,152 @@ bwTh(3).
 hwTh(1).
 
 % node(NodeId, NodeType, SWCaps, HWCaps, SecCaps, IoTCaps).
-node(parkingServices, thing, [python, gcc, mySQL], (x86, 100), [encryption, auth], [piCamera1, piCamera2]).
-node(westEntry, thing, [ubuntu], (x86, 100), [encryption], [echoDot, soil, heat]).
-node(kleiberHall, thing, [ubuntu, mySQL], (arm64, 150), [encryption], [nutrient, energy]).
-node(hoaglandAnnex, thing, [ubuntu], (x86, 150), [auth], [iphoneXS]).
-node(briggsHall, thing, [ubuntu, mySQL], (arm64, 180), [auth], [water]).
-node(mannLab, cabinet, [ubuntu, gcc, python], (arm64, 256), [encryption, auth], []).
-node(lifeSciences, cabinet, [python, mySQL, php, js], (x86, 256), [encryption, auth], []).
-node(sciencesLectureHall, cabinet, [ubuntu, mySQL, php, js], (arm64, 256), [encryption, auth], [arViewer]).
-node(firePolice, cabinet, [ubuntu, mySQL, gcc, python], (x86, 512), [encryption, auth], []).
-node(studentCenter, cabinet, [ubuntu, mySQL, python, php, js], (x86, 512), [encryption, auth], []).
-node(isp, cloud, [ubuntu, mySQL, gcc, python], (arm64, 600), [encryption, auth], []).
-node(uc_cloud, cloud, [ubuntu, mySQL, gcc, python, php, js], (x86, 10000), [encryption, auth], []).
+node(parkingServices, thing, [python, gcc, mySQL], (x86, 100), [enc, auth], [piCamera1, piCamera2]).
+node(westEntry, thing, [ubuntu], (x86, 100), [enc], [echoDot, soil, heat, cam11, cam21]).
+node(kleiberHall, thing, [ubuntu, mySQL], (arm64, 150), [enc], [nutrient, energy]).
+node(hoaglandAnnex, thing, [ubuntu], (x86, 150), [enc, auth], [iphoneXS]).
+node(briggsHall, thing, [ubuntu, mySQL], (arm64, 180), [enc, auth], [water]).
+node(mannLab, cabinet, [ubuntu, gcc, python], (arm64, 256), [enc, auth], []).
+node(lifeSciences, cabinet, [python, mySQL, php, js], (x86, 256), [enc, auth], [cam12, cam22]).
+node(sciencesLectureHall, cabinet, [ubuntu, mySQL, php, js], (arm64, 256), [enc, auth], [arViewer]).
+node(firePolice, cabinet, [ubuntu, mySQL, gcc, python], (x86, 512), [enc, auth], []).
+node(studentCenter, cabinet, [ubuntu, mySQL, python, php, js], (x86, 512), [enc, auth], []).
+node(isp, cloud, [ubuntu, mySQL, gcc, python], (arm64, 600), [enc, auth], []).
+node(uc_cloud, cloud, [ubuntu, mySQL, gcc, python, php, js], (x86, 10000), [enc, auth], []).
 
 % link(N1, N2, Lat, BW).
-link(parkingServices, westEntry, 10, 70).
-link(westEntry, parkingServices, 10, 70).
-link(parkingServices, kleiberHall, 10, 70).
-link(kleiberHall, parkingServices, 10, 70).
-link(parkingServices, hoaglandAnnex, 10, 70).
-link(hoaglandAnnex, parkingServices, 10, 70).
-link(parkingServices, briggsHall, 10, 70).
-link(briggsHall, parkingServices, 10, 70).
-link(parkingServices, mannLab, 10, 70).
-link(mannLab, parkingServices, 10, 70).
-link(parkingServices, lifeSciences, 10, 70).
-link(lifeSciences, parkingServices, 10, 70).
-link(parkingServices, sciencesLectureHall, 10, 70).
-link(sciencesLectureHall, parkingServices, 10, 70).
-link(parkingServices, firePolice, 10, 70).
-link(firePolice, parkingServices, 10, 70).
-link(parkingServices, studentCenter, 10, 70).
-link(studentCenter, parkingServices, 10, 70).
-link(parkingServices, isp, 10, 70).
-link(isp, parkingServices, 10, 70).
-link(parkingServices, uc_cloud, 10, 70).
-link(uc_cloud, parkingServices, 10, 70).
-link(westEntry, kleiberHall, 10, 70).
-link(kleiberHall, westEntry, 10, 70).
-link(westEntry, hoaglandAnnex, 10, 70).
-link(hoaglandAnnex, westEntry, 10, 70).
-link(westEntry, briggsHall, 10, 70).
-link(briggsHall, westEntry, 10, 70).
-link(westEntry, mannLab, 10, 70).
-link(mannLab, westEntry, 10, 70).
-link(westEntry, lifeSciences, 10, 70).
-link(lifeSciences, westEntry, 10, 70).
-link(westEntry, sciencesLectureHall, 10, 70).
-link(sciencesLectureHall, westEntry, 10, 70).
-link(westEntry, firePolice, 10, 70).
-link(firePolice, westEntry, 10, 70).
-link(westEntry, studentCenter, 10, 70).
-link(studentCenter, westEntry, 10, 70).
-link(westEntry, isp, 10, 70).
-link(isp, westEntry, 10, 70).
-link(westEntry, uc_cloud, 10, 70).
-link(uc_cloud, westEntry, 10, 70).
-link(kleiberHall, hoaglandAnnex, 10, 70).
-link(hoaglandAnnex, kleiberHall, 10, 70).
-link(kleiberHall, briggsHall, 10, 70).
-link(briggsHall, kleiberHall, 10, 70).
-link(kleiberHall, mannLab, 10, 70).
-link(mannLab, kleiberHall, 10, 70).
-link(kleiberHall, lifeSciences, 10, 70).
-link(lifeSciences, kleiberHall, 10, 70).
-link(kleiberHall, sciencesLectureHall, 10, 70).
-link(sciencesLectureHall, kleiberHall, 10, 70).
-link(kleiberHall, firePolice, 10, 70).
-link(firePolice, kleiberHall, 10, 70).
-link(kleiberHall, studentCenter, 10, 70).
-link(studentCenter, kleiberHall, 10, 70).
-link(kleiberHall, isp, 10, 70).
-link(isp, kleiberHall, 10, 70).
-link(kleiberHall, uc_cloud, 10, 70).
-link(uc_cloud, kleiberHall, 10, 70).
-link(hoaglandAnnex, briggsHall, 10, 70).
-link(briggsHall, hoaglandAnnex, 10, 70).
-link(hoaglandAnnex, mannLab, 10, 70).
-link(mannLab, hoaglandAnnex, 10, 70).
-link(hoaglandAnnex, lifeSciences, 10, 70).
-link(lifeSciences, hoaglandAnnex, 10, 70).
-link(hoaglandAnnex, sciencesLectureHall, 10, 70).
-link(sciencesLectureHall, hoaglandAnnex, 10, 70).
-link(hoaglandAnnex, firePolice, 10, 70).
-link(firePolice, hoaglandAnnex, 10, 70).
-link(hoaglandAnnex, studentCenter, 10, 70).
-link(studentCenter, hoaglandAnnex, 10, 70).
-link(hoaglandAnnex, isp, 10, 70).
-link(isp, hoaglandAnnex, 10, 70).
-link(hoaglandAnnex, uc_cloud, 10, 70).
-link(uc_cloud, hoaglandAnnex, 10, 70).
-link(briggsHall, mannLab, 10, 70).
-link(mannLab, briggsHall, 10, 70).
-link(briggsHall, lifeSciences, 10, 70).
-link(lifeSciences, briggsHall, 10, 70).
-link(briggsHall, sciencesLectureHall, 10, 70).
-link(sciencesLectureHall, briggsHall, 10, 70).
-link(briggsHall, firePolice, 10, 70).
-link(firePolice, briggsHall, 10, 70).
-link(briggsHall, studentCenter, 10, 70).
-link(studentCenter, briggsHall, 10, 70).
-link(briggsHall, isp, 10, 70).
-link(isp, briggsHall, 10, 70).
-link(briggsHall, uc_cloud, 10, 70).
-link(uc_cloud, briggsHall, 10, 70).
-link(mannLab, lifeSciences, 10, 70).
-link(lifeSciences, mannLab, 10, 70).
-link(mannLab, sciencesLectureHall, 10, 70).
-link(sciencesLectureHall, mannLab, 10, 70).
-link(mannLab, firePolice, 10, 70).
-link(firePolice, mannLab, 10, 70).
-link(mannLab, studentCenter, 10, 70).
-link(studentCenter, mannLab, 10, 70).
-link(mannLab, isp, 10, 70).
-link(isp, mannLab, 10, 70).
-link(mannLab, uc_cloud, 10, 70).
-link(uc_cloud, mannLab, 10, 70).
-link(lifeSciences, sciencesLectureHall, 10, 70).
-link(sciencesLectureHall, lifeSciences, 10, 70).
-link(lifeSciences, firePolice, 10, 70).
-link(firePolice, lifeSciences, 10, 70).
-link(lifeSciences, studentCenter, 10, 70).
-link(studentCenter, lifeSciences, 10, 70).
-link(lifeSciences, isp, 10, 70).
-link(isp, lifeSciences, 10, 70).
-link(lifeSciences, uc_cloud, 10, 70).
-link(uc_cloud, lifeSciences, 10, 70).
-link(sciencesLectureHall, firePolice, 10, 70).
-link(firePolice, sciencesLectureHall, 10, 70).
-link(sciencesLectureHall, studentCenter, 10, 70).
-link(studentCenter, sciencesLectureHall, 10, 70).
-link(sciencesLectureHall, isp, 10, 70).
-link(isp, sciencesLectureHall, 10, 70).
-link(sciencesLectureHall, uc_cloud, 10, 70).
-link(uc_cloud, sciencesLectureHall, 10, 70).
-link(firePolice, studentCenter, 10, 70).
-link(studentCenter, firePolice, 10, 70).
-link(firePolice, isp, 10, 70).
-link(isp, firePolice, 10, 70).
-link(firePolice, uc_cloud, 10, 70).
-link(uc_cloud, firePolice, 10, 70).
-link(studentCenter, isp, 10, 70).
-link(isp, studentCenter, 10, 70).
-link(studentCenter, uc_cloud, 10, 70).
-link(uc_cloud, studentCenter, 10, 70).
-link(isp, uc_cloud, 10, 70).
-link(uc_cloud, isp, 10, 70).
+link(parkingServices, westEntry, 15, 100).
+link(westEntry, parkingServices, 15, 100).
+link(parkingServices, kleiberHall, 15, 100).
+link(kleiberHall, parkingServices, 15, 100).
+link(parkingServices, hoaglandAnnex, 15, 100).
+link(hoaglandAnnex, parkingServices, 15, 100).
+link(parkingServices, briggsHall, 15, 100).
+link(briggsHall, parkingServices, 15, 100).
+link(parkingServices, mannLab, 15, 100).
+link(mannLab, parkingServices, 15, 100).
+link(parkingServices, lifeSciences, 15, 100).
+link(lifeSciences, parkingServices, 15, 100).
+link(parkingServices, sciencesLectureHall, 15, 100).
+link(sciencesLectureHall, parkingServices, 15, 100).
+link(parkingServices, firePolice, 15, 100).
+link(firePolice, parkingServices, 15, 100).
+link(parkingServices, studentCenter, 15, 100).
+link(studentCenter, parkingServices, 15, 100).
+link(parkingServices, isp, 15, 100).
+link(isp, parkingServices, 15, 100).
+link(parkingServices, uc_cloud, 15, 100).
+link(uc_cloud, parkingServices, 15, 100).
+link(westEntry, kleiberHall, 15, 100).
+link(kleiberHall, westEntry, 15, 100).
+link(westEntry, hoaglandAnnex, 15, 100).
+link(hoaglandAnnex, westEntry, 15, 100).
+link(westEntry, briggsHall, 15, 100).
+link(briggsHall, westEntry, 15, 100).
+link(westEntry, mannLab, 15, 100).
+link(mannLab, westEntry, 15, 100).
+link(westEntry, lifeSciences, 15, 100).
+link(lifeSciences, westEntry, 15, 100).
+link(westEntry, sciencesLectureHall, 15, 100).
+link(sciencesLectureHall, westEntry, 15, 100).
+link(westEntry, firePolice, 15, 100).
+link(firePolice, westEntry, 15, 100).
+link(westEntry, studentCenter, 15, 100).
+link(studentCenter, westEntry, 15, 100).
+link(westEntry, isp, 15, 100).
+link(isp, westEntry, 15, 100).
+link(westEntry, uc_cloud, 15, 100).
+link(uc_cloud, westEntry, 15, 100).
+link(kleiberHall, hoaglandAnnex, 15, 100).
+link(hoaglandAnnex, kleiberHall, 15, 100).
+link(kleiberHall, briggsHall, 15, 100).
+link(briggsHall, kleiberHall, 15, 100).
+link(kleiberHall, mannLab, 15, 100).
+link(mannLab, kleiberHall, 15, 100).
+link(kleiberHall, lifeSciences, 15, 100).
+link(lifeSciences, kleiberHall, 15, 100).
+link(kleiberHall, sciencesLectureHall, 15, 100).
+link(sciencesLectureHall, kleiberHall, 15, 100).
+link(kleiberHall, firePolice, 15, 100).
+link(firePolice, kleiberHall, 15, 100).
+link(kleiberHall, studentCenter, 15, 100).
+link(studentCenter, kleiberHall, 15, 100).
+link(kleiberHall, isp, 15, 100).
+link(isp, kleiberHall, 15, 100).
+link(kleiberHall, uc_cloud, 15, 100).
+link(uc_cloud, kleiberHall, 15, 100).
+link(hoaglandAnnex, briggsHall, 15, 100).
+link(briggsHall, hoaglandAnnex, 15, 100).
+link(hoaglandAnnex, mannLab, 15, 100).
+link(mannLab, hoaglandAnnex, 15, 100).
+link(hoaglandAnnex, lifeSciences, 15, 100).
+link(lifeSciences, hoaglandAnnex, 15, 100).
+link(hoaglandAnnex, sciencesLectureHall, 15, 100).
+link(sciencesLectureHall, hoaglandAnnex, 15, 100).
+link(hoaglandAnnex, firePolice, 15, 100).
+link(firePolice, hoaglandAnnex, 15, 100).
+link(hoaglandAnnex, studentCenter, 15, 100).
+link(studentCenter, hoaglandAnnex, 15, 100).
+link(hoaglandAnnex, isp, 15, 100).
+link(isp, hoaglandAnnex, 15, 100).
+link(hoaglandAnnex, uc_cloud, 15, 100).
+link(uc_cloud, hoaglandAnnex, 15, 100).
+link(briggsHall, mannLab, 15, 100).
+link(mannLab, briggsHall, 15, 100).
+link(briggsHall, lifeSciences, 15, 100).
+link(lifeSciences, briggsHall, 15, 100).
+link(briggsHall, sciencesLectureHall, 15, 100).
+link(sciencesLectureHall, briggsHall, 15, 100).
+link(briggsHall, firePolice, 15, 100).
+link(firePolice, briggsHall, 15, 100).
+link(briggsHall, studentCenter, 15, 100).
+link(studentCenter, briggsHall, 15, 100).
+link(briggsHall, isp, 15, 100).
+link(isp, briggsHall, 15, 100).
+link(briggsHall, uc_cloud, 15, 100).
+link(uc_cloud, briggsHall, 15, 100).
+link(mannLab, lifeSciences, 15, 100).
+link(lifeSciences, mannLab, 15, 100).
+link(mannLab, sciencesLectureHall, 15, 100).
+link(sciencesLectureHall, mannLab, 15, 100).
+link(mannLab, firePolice, 15, 100).
+link(firePolice, mannLab, 15, 100).
+link(mannLab, studentCenter, 15, 100).
+link(studentCenter, mannLab, 15, 100).
+link(mannLab, isp, 15, 100).
+link(isp, mannLab, 15, 100).
+link(mannLab, uc_cloud, 15, 100).
+link(uc_cloud, mannLab, 15, 100).
+link(lifeSciences, sciencesLectureHall, 15, 100).
+link(sciencesLectureHall, lifeSciences, 15, 100).
+link(lifeSciences, firePolice, 15, 100).
+link(firePolice, lifeSciences, 15, 100).
+link(lifeSciences, studentCenter, 15, 100).
+link(studentCenter, lifeSciences, 15, 100).
+link(lifeSciences, isp, 15, 100).
+link(isp, lifeSciences, 15, 100).
+link(lifeSciences, uc_cloud, 15, 100).
+link(uc_cloud, lifeSciences, 15, 100).
+link(sciencesLectureHall, firePolice, 15, 100).
+link(firePolice, sciencesLectureHall, 15, 100).
+link(sciencesLectureHall, studentCenter, 15, 100).
+link(studentCenter, sciencesLectureHall, 15, 100).
+link(sciencesLectureHall, isp, 15, 100).
+link(isp, sciencesLectureHall, 15, 100).
+link(sciencesLectureHall, uc_cloud, 15, 100).
+link(uc_cloud, sciencesLectureHall, 15, 100).
+link(firePolice, studentCenter, 15, 100).
+link(studentCenter, firePolice, 15, 100).
+link(firePolice, isp, 15, 100).
+link(isp, firePolice, 15, 100).
+link(firePolice, uc_cloud, 15, 100).
+link(uc_cloud, firePolice, 15, 100).
+link(studentCenter, isp, 15, 100).
+link(isp, studentCenter, 15, 100).
+link(studentCenter, uc_cloud, 15, 100).
+link(uc_cloud, studentCenter, 15, 100).
+link(isp, uc_cloud, 15, 100).
+link(uc_cloud, isp, 15, 100).
 
 
 % domain(Area, [SubDomains]).

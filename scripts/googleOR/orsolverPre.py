@@ -1,6 +1,5 @@
 import os
 import argparse as ap
-from sqlite3 import complete_statement
 import numpy as np
 import sys
 
@@ -11,10 +10,10 @@ from tabulate import tabulate
 
 # todo normalization costs cij - cmin / cmax - cmin
 QUERY = "preprocess({app_name}, Compatibles)"
-L_COST = 0
-L_BINPACK = 1
+L_COST = 0.01
+L_BINPACK = 1 - L_COST
 
-assert L_COST + L_BINPACK == 1, "Lambdas must be summed to 1."
+# assert L_COST + L_BINPACK == 1, "Lambdas must be summed to 1."
 
 
 def init_parser() -> ap.ArgumentParser:
@@ -85,7 +84,6 @@ def or_solver(app_name, infr_name, dummy=False, show_placement=False, result="")
 	DF = len(dfs)
 
 	compatibles = get_compatibles(app_name, app.file, infr.file)
-	# app.set_compatibles(compatibles)
 	print([(k,len(v)) for k,v in compatibles.items()])
 
 	info = [['Infrastructure', infr_name], ['Instances', S], ['Nodes', N], ['Links', L], ['Data Flows', DF]]
@@ -108,7 +106,7 @@ def or_solver(app_name, infr_name, dummy=False, show_placement=False, result="")
 			if n in compatibles[s.id]:
 				x[i, j] = solver.IntVar(0, 1, '')
 				costs[i, j] = compatibles[s.id][n]
-
+	
 	# Constraint: one instance at most in one node.
 	for i in range(S):
 		solver.Add(solver.Sum([x[i, j] for j in range(N)]) == 1)
@@ -128,6 +126,10 @@ def or_solver(app_name, infr_name, dummy=False, show_placement=False, result="")
 		j = nids.index(n)
 		j1 = nids.index(n1)
 		for df in dfs:  # foreach data flow
+			
+			sec_reqs = set(df.sec_reqs) 
+			if (not sec_reqs.issubset(set(infr.nodes[n]['seccaps']))) or (not sec_reqs.issubset(set(infr.nodes[n1]['seccaps']))):
+				continue
 
 			i = instances.index(df.source) if type(df.source) != ThingInstance else None
 			i1 = instances.index(df.target) if type(df.target) != ThingInstance else None
@@ -148,17 +150,21 @@ def or_solver(app_name, infr_name, dummy=False, show_placement=False, result="")
 	# costs = np.random.uniform(low=1, high=50, size=(S, N))
 
 	# OBJECTIVE FUNCTION
+	
 	cmin = np.sum([np.min(row[np.nonzero(row)]) for row in costs])
 	cmax = np.sum(costs.max(axis=1))
 
 	bmin = 1
 	bmax = S
 
-	min_cost_expr = [L_COST * cmax / (cmax-cmin)] + [(L_COST * costs[i, j] * x[i, j]) / (cmin-cmax) for i in range(S) for j in range(N)]
-	binpack_expr = [L_BINPACK * bmax / (bmax-bmin)] + [(L_BINPACK * b[j]) / (bmin-bmax) for j in range(N)]
+	# min_cost_expr = [L_COST * cmax / (cmax-cmin)] + [(L_COST * costs[i, j] * x[i, j]) / (cmin-cmax) for i in range(S) for j in range(N)]
+	# binpack_expr = [L_BINPACK * bmax / (bmax-bmin)] + [(L_BINPACK * b[j]) / (bmin-bmax) for j in range(N)]
 
-	# min_cost_expr = [L_COST * costs[i, j] * x[i, j] for i in range(S) for j in range(N)]
-	# binpack_expr = [L_BINPACK * b[j] for j in range(N)]
+	# min_cost_expr = L_COST * ([costs[i,j]*x[i,j] for i in range(S) for j in range(N)] + [-cmin]) / (cmax - cmin)
+	# binpack_expr = L_BINPACK * ([costs[i,j]*x[i,j] for i in range(S) for j in range(N)] + [-bmin]) / (bmax - bmin)
+	
+	min_cost_expr = [L_COST * costs[i, j] * x[i, j] for i in range(S) for j in range(N)]
+	binpack_expr = [L_BINPACK * b[j] for j in range(N)]
 
 	obj_expr = min_cost_expr + binpack_expr
 	solver.Minimize(solver.Sum(obj_expr))
@@ -168,9 +174,7 @@ def or_solver(app_name, infr_name, dummy=False, show_placement=False, result="")
 	tot_time = 0
 	n_distinct = set()
 	placement = {}
-
-	str_res = ""
-
+	res = {}
 	if status == pywraplp.Solver.OPTIMAL or status == pywraplp.Solver.FEASIBLE:
 		for i in range(S):
 			row = [x[i,j].solution_value() if not isinstance(x[i,j], int) else 0 for j in range(N)]
@@ -185,7 +189,7 @@ def or_solver(app_name, infr_name, dummy=False, show_placement=False, result="")
 		res = {'App': app_name, 'Time': tot_time, 'Cost': round(tot_cost, 4), 'NDistinct': len(n_distinct), 'Constraints': solver.NumConstraints()}
 		if show_placement:
 			print(tabulate(placement.items(), tablefmt='fancy_grid', stralign='center'))
-		# tot_cost = solver.Objective().Value()
+		# tot_cost = solver.Objective().Value() # if only cost in Objective function
 		tot_time = solver.WallTime() / 1000  # in seconds
 
 		print(Fore.LIGHTGREEN_EX + tabulate(res.items(), numalign='right'))
@@ -197,7 +201,7 @@ def or_solver(app_name, infr_name, dummy=False, show_placement=False, result="")
 	if type(result) != str and res:  # if set, send or-tools results to "compare.py"
 		res['Placement'] = placement, 
 		del res['Constraints']
-		result['ortools'] = res
+		result['ortools-pre'] = res
 
 
 if __name__ == '__main__':

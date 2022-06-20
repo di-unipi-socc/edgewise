@@ -7,7 +7,7 @@ service(tts, [python, gcc], (arm64, 4)).
 % function(FunctionId, SWPlatform, (Arch, HWReqs)).
 function(uploadFun, python, (x86, 20)).
 function(metadataFun, python, (arm64, 2)).
-function(publishFun, python, (x86, 4)).
+function(publishFun, js, (x86, 4)).
 function(ttsFun, python, (arm64, 30)).
 
 % thing(ThingId, TType).

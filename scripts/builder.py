@@ -1,21 +1,39 @@
 import argparse as ap
 from os.path import join
-from random import seed
 
 import networkx as nx
 from numpy import log2
 from numpy import random as rnd
 
+from colorama import Fore, init
+from tabulate import tabulate
+
 from googleOR.classes.utils import INFRS_DIR
 
 HW_PLATFORMS = ['arm64', 'x86']
-SW_CAPS = ['ubuntu', 'mySQL', 'python', 'php', 'js', 'gcc']
+SW_CAPS = ['ubuntu', 'mySQL', 'python', 'js', 'gcc']
 TYPES = ['cloud', 'isp', 'cabinet', 'accesspoint', 'thing']
 PROBS = [0.1, 0.2, 0.3, 0.2, 0.2]
-THINGS = None
+THINGS = ['soil', 'heat', 'water', 'nutrient', 'energy', 'piCamera1', 'piCamera2', 'arViewer',
+		  'cam11', 'cam12', 'cam21', 'cam22',
+		  'iphoneXS', 'echoDot']
+
+NOT_PLACED_THINGS = len(THINGS)
 
 def get_random_sw_caps(size=1):
 	return list(rnd.choice(SW_CAPS, size=size, replace=False))
+
+def get_random_things(n=1):
+	global NOT_PLACED_THINGS
+	t = []
+	for _ in range(n):
+		if THINGS:
+			t.append(THINGS.pop(rnd.randint(len(THINGS))))
+			NOT_PLACED_THINGS -= 1
+		else:
+			break
+	return t
+
 
 
 class Infra(nx.DiGraph):
@@ -83,6 +101,8 @@ class Infra(nx.DiGraph):
 		hw_platform = rnd.choice(HW_PLATFORMS)
 		node['hardware'] = (hw_platform, rnd.choice([128, 256]))
 		node['security'] = ["enc", "auth"]
+		# randomly assign IoT device(s)
+		node['things'] = get_random_things(n=rnd.randint(1, 3))
 
 	def set_as_accesspoint(self, nid):
 		node = self.nodes[nid]
@@ -91,9 +111,8 @@ class Infra(nx.DiGraph):
 		hw_platform = rnd.choice(HW_PLATFORMS)
 		node['hardware'] = (hw_platform, 64)
 		node['security'] = ["enc", "auth"]
-		# randomly assign 1 IoT device
-		if THINGS:
-			node['things'] = [THINGS.pop(rnd.randint(len(THINGS)))]
+		# randomly assign 1 IoT device(s)
+		node['things'] = get_random_things(n=rnd.randint(1, 3))
 
 	def set_as_thing(self, nid):
 		node = self.nodes[nid]
@@ -102,9 +121,8 @@ class Infra(nx.DiGraph):
 		hw_platform = rnd.choice(HW_PLATFORMS)
 		node['hardware'] = (hw_platform, 32)
 		node['security'] = ["enc", "auth"]
-		# randomly assign 1 IoT device
-		if THINGS:
-			node['things'] = [THINGS.pop(rnd.randint(len(THINGS)))]
+		# randomly assign 1 IoT device(s)
+		node['things'] = get_random_things(n=rnd.randint(1, 4))
 
 	def dummy_links(self, lat, bw):
 		for n1 in self.nodes:
@@ -152,7 +170,8 @@ class Infra(nx.DiGraph):
 		return infra
 
 	def get_gnodes(self):
-		return "\n".join(["{}: {}".format(k, len(v)) for k, v in self.gnodes.items()])
+		#return "\n".join(["{}: {}".format(k, len(v)) for k, v in self.gnodes.items()])
+		return list([[k, len(v)] for k,v in self.gnodes.items()])
 
 	def upload(self, file=None):
 		if file is None:
@@ -169,12 +188,11 @@ def generate_from_basename(g, n, basename=""):
 
 def main(n, seed=None, dummy=False):
 	infra = Infra(n, seed=seed, dummy=dummy)
-
-	print(f"\nSeed: {seed}")
+	assert(NOT_PLACED_THINGS == 0)
+	info = [['SEED:', seed], ['DUMMY:', 'YES' if dummy else 'NO']]
 
 	if dummy:
 		infra.dummy_links(lat=5, bw=700)
-		print("Dummy links: YES", end="")
 	else:
 		infra.add_links('cloud', 'cloud', 20, 1000)
 		infra.add_links('cloud', 'isp', 110, 1000)
@@ -206,13 +224,13 @@ def main(n, seed=None, dummy=False):
 		infra.add_links('thing', 'accesspoint', 2, 20)
 		infra.add_links('thing', 'thing', 15, 50)
 
-		print("Dummy links: NO")
+	info.append(['PATH:', infra.file])
+	print(Fore.LIGHTCYAN_EX + tabulate(info))
 
-	print(f"Path: {infra.file}", end="\n\n")
-	print(infra.get_gnodes())
+	print(Fore.GREEN + f"NODES: {n}", end="\n")
+	print(Fore.LIGHTGREEN_EX + tabulate(infra.get_gnodes()))
 
 	infra.upload()
-
 
 def init_parser() -> ap.ArgumentParser:
 	description = "Generate random infrastructure with a given number of nodes."
@@ -221,16 +239,19 @@ def init_parser() -> ap.ArgumentParser:
 	p.add_argument("-d", "--dummy", action="store_true", help="set dummy links (low latency, high bandwidth)")
 	p.add_argument("-s", "--seed", type=int, help="seed for random generation ('None' if not set)")
 	p.add_argument("n", type=int, help="number of infrastructure nodes")
-	p.add_argument("things", nargs='*', help="list of IoT devices to be randomly placed")
+	p.add_argument("-t", "--things", nargs='*', help="list of IoT devices to be randomly placed")
 
 	return p
 
 
 if __name__ == "__main__":
+
+	init(autoreset=True)
 	parser = init_parser()
 	args = parser.parse_args()
 
-	THINGS = args.things
+	if args.things:
+		THINGS = args.things
 	rnd.seed(args.seed)
 	main(args.n, args.seed, dummy=args.dummy)
 

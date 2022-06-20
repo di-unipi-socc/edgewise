@@ -1,4 +1,4 @@
-% :-['../data/infrs/infrUC.pl', '../data/apps/arFarming.pl'].
+%:-['../data/infrs/infr16.pl', '../data/apps/distSecurity.pl'].
 :-['../requirements.pl', '../costs.pl'].
 
 :- set_prolog_flag(answer_write_options,[max_depth(0)]). % write answers' text entirely
@@ -7,8 +7,14 @@
 
 preprocess(App, Compatibles) :-
     application(App, Functions, Services), 
+    checkThings,
     append(Functions, Services, Components),
     findCompatibles(Components, Compatibles).
+
+checkThings :-
+    findall(T, thingInstance(T, _), Things),
+    findall(T, (node(_, _, _, _, _, IoTCaps), member(T, IoTCaps)), IoT),
+    subset(Things, IoT).
 
 findCompatibles([C|Cs], [(C,Compatibles)|Rest]):-
     findCompatibles(Cs, Rest),
@@ -21,7 +27,7 @@ lightNodeOK(S, N, SCost) :-
     node(N, NType, SWCaps, (Arch, HWCaps), _, _),
     subset(SWReqs, SWCaps), 
     HWCaps >= HWReqs,
-    
+    % requirements(SId, S, N),
     cost(NType, S, SCost).
 
 lightNodeOK(F, N, FCost) :-
@@ -30,4 +36,5 @@ lightNodeOK(F, N, FCost) :-
     node(N, NType, SWCaps, (Arch, HWCaps), _, _),
     member(SWPlatform, SWCaps),
     HWCaps >= HWReqs,
+    % requirements(FId, F, N),
     cost(NType, F, FCost).

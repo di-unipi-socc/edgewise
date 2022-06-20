@@ -1,4 +1,4 @@
-% :-['../data/infrs/infrUC.pl', '../data/apps/arFarming.pl'].
+:-['../data/infrs/infr16.pl', '../data/apps/distSecurity.pl'].
 :-['../requirements.pl', '../costs.pl'].
 
 :- set_prolog_flag(answer_write_options,[max_depth(0)]). % write answers' text entirely
@@ -8,7 +8,7 @@
 stats(App, Placement, Cost, NDistinct, Infs, Time, Budget) :-
     statistics(inferences, InfA),
         statistics(cputime, TimeA),
-            best(App, Placement, Cost, TimeA, Budget),
+            best(App, Placement, Cost, Budget),
             countDistinct(Placement, NDistinct),
         statistics(cputime, TimeB),
     statistics(inferences, InfB),
@@ -16,16 +16,23 @@ stats(App, Placement, Cost, NDistinct, Infs, Time, Budget) :-
     Infs is InfB - InfA,
     Time is TimeB - TimeA.
 
-best(App, Placement, Cost, StartTime, Budget) :-
-    application(App, Functions, Services), 
+best(App, Placement, Cost, Budget) :-
+    application(App, Functions, Services),
+    checkThings, 
     ranking(Functions, Services, RankedComps),  % RankedComps:  [(Rank, Comp)|Rest] --> sort "Comp" by increasing HWReqs
     findCompatibles(RankedComps, Components),   % Components:   [(Comp, Compatibles)|Rest]--> sort "Compatibles" nodes by decreasing HWCaps
     placement(Components, Placement, Budget, Cost),
-    qosOK(Placement).%timer(StartTime, Placement).
+    qosOK(Placement).
+    /*statistics(cputime, StartTime),
+    timer(StartTime, Placement).*/
+
+checkThings :-
+    findall(T, thingInstance(T, _), Things),
+    findall(T, (node(_, _, _, _, _, IoTCaps), member(T, IoTCaps)), IoT),
+    subset(Things, IoT).
 
 timer(StartTime, Placement) :-
     MaxTime is StartTime+5, statistics(cputime, CurrTime),
-    write(StartTime), write(" - "), writeln(CurrTime),
     (CurrTime < MaxTime -> qosOK(Placement); !, false).
 
 countDistinct(P, L) :-
@@ -36,8 +43,6 @@ findCompatibles([(_,C)|Cs], [(C,SCompatibles)|Rest]):-
     findCompatibles(Cs, Rest),
     findall((Cost, H, M), lightNodeOK(C, M, H, Cost), Compatibles),  
     sort(Compatibles, SCompatibles).
-    %length(SCompatibles, L), write(C), write(" - "), writeln(L).
-    %sort(1, @>, Compatibles, Tmp), sort(2, @<, Tmp, SCompatibles),
 findCompatibles([],[]).
 
 lightNodeOK(S,N,H,SCost) :-
@@ -108,22 +113,27 @@ hwOK(N,HWCaps,HWReqs,Ps) :-
 hwOnN(N, Ps, HW) :- serviceInstance(S, SId), service(SId,_,(_,HW)), member((S,N), Ps).
 hwOnN(N, Ps, HW) :- functionInstance(F, FId,_), function(FId,_,(_,HW)), member((F,N), Ps).
 
-qosOK(Ps) :- 
-    findall((N1N2, Lat), relevant(N1N2, Ps, Lat, _), DataFlows), 
+qosOK(Ps) :-
+    findall((N1N2, Lat, Sec), relevant(N1N2, Ps, Lat, _, Sec), DataFlows),
     checkDF(DataFlows, Ps).
 
-checkDF([((N1,N2),ReqLat)|DFs], Ps) :-
-    checkDF(DFs, Ps), 
+checkDF([((N1,N2),ReqLat,SecReqs)|DFs], Ps) :-
+    checkDF(DFs, Ps),
+    secOK(N1, N2, SecReqs),
     link(N1, N2, FeatLat, FeatBW),
     FeatLat =< ReqLat, bwOK((N1,N2), FeatBW, Ps).
 checkDF([], _).
 
 bwOK(N1N2, FeatBW, Ps):-
-    findall(BW, relevant(N1N2, Ps, _, BW), BWs), sum_list(BWs, OkAllocBW), 
+    findall(BW, relevant(N1N2, Ps, _, BW, _), BWs), sum_list(BWs, OkAllocBW), 
     bwTh(T), FeatBW >= OkAllocBW + T.
 
-relevant((N1,N2), Ps, Lat, BW) :-
-    dataFlow(T1,T2,_,_,Size,Rate,Lat),
-    (member((T1,N1), Ps); (node(N1, _, _, _, _, IoTCaps), member(T1, IoTCaps))),
-    (member((T2,N2), Ps); (node(N2, _, _, _, _, IoTCaps), member(T2, IoTCaps))),
-    dif(N1,N2), BW is Rate*Size.
+secOK(N1, N2, SecReqs) :-
+    node(N1, _, _, _, SecCaps1, _), subset(SecReqs, SecCaps1),
+    node(N2, _, _, _, SecCaps2, _),  subset(SecReqs, SecCaps2).
+
+relevant((N1,N2), Ps, Lat, BW, Sec):-
+    dataFlow(T1, T2, _, Sec, Size, Rate, Lat),
+    (member((T1,N1), Ps); node(N1, _, _, _, _, IoTCaps), member(T1, IoTCaps)),
+    (member((T2,N2), Ps); node(N2, _, _, _, _, IoTCaps), member(T2, IoTCaps)),
+    dif(N1,N2), BW is Size*Rate.

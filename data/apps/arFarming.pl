@@ -7,7 +7,7 @@ service(dashboard, [mySQL, php, js], (x86, 4)).
 % function(FunctionId, SWPlatform, (Arch, HWReqs)).
 function(camCalibration, python, (arm64, 8)).
 function(imgRectification, python, (x86, 4)).
-function(roiSelection, python, (arm64, 3)).
+function(roiSelection, js, (arm64, 3)).
 
 % thing(ThingId, TType).
 thing(sns, sensor).

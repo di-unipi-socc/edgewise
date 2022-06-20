@@ -11,7 +11,7 @@
 requirements(_, S, N) :-
     serviceInstance(S, SId),
     service(SId, _, _),
-    node(N, _, _, _, SecCaps, _),
+    node(N, _, _, _, _, _),
     inDomain(N, all).
 
 requirements(_, F, N) :-

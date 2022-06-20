@@ -1,4 +1,4 @@
-% :-['../data/infrs/infrUC.pl', '../data/apps/arFarming.pl'].
+:-['../data/infrs/infr16.pl', '../data/apps/distSecurity.pl'].
 :-['../requirements.pl', '../costs.pl'].
 
 :- set_prolog_flag(answer_write_options,[max_depth(0)]). % write answers' text entirely
@@ -29,17 +29,21 @@ stats(App, Placement, Cost, NDistinct, Infs, Time, Budget) :-
 
 best(App, Placement, Cost, Budget) :-
     application(App, Functions, Services), 
+    checkThings,
     eligiblePlacement(Functions, Services, Budget, Placement, Cost).
 
 eligiblePlacement(Functions, Services, Budget, Placement, Cost):-
     placement(Functions, Services, Placement),
     costOK(Placement, Budget, Cost), hwOK(Placement), qosOK(Placement).
-    %write(Placement), write(" - "), writeln(Cost).
 
 countDistinct(P, L) :-
     findall(N, distinct(member((_,N), P)), S),
     sort(S, Ss), length(Ss, L).
-    % write("Distinct Nodes: "), write(L), write(" - "), writeln(Ss).
+
+checkThings :-
+    findall(T, thingInstance(T, _), Things),
+    findall(T, (node(_, _, _, _, _, IoTCaps), member(T, IoTCaps)), IoT),
+    subset(Things, IoT).
 
 placement(Functions, Services, Placement) :-
     append(Functions, Services, Components),
@@ -52,12 +56,12 @@ placement([], []).
 componentPlacement(F, N) :-
     functionInstance(F, FId, _), function(FId, SWPlat, (Arch,_)),
     node(N, _, SWCaps, (Arch,_), _, _), 
-    %requirements(FType, F, N), 
-    member(SWPlat,SWCaps).
+    %requirements(FId, F, N), 
+    member(SWPlat, SWCaps).
 componentPlacement(S, N) :-
     serviceInstance(S, SId), service(SId, SWReqs, (Arch,_)),
     node(N, _, SWCaps, (Arch,_), _, _), 
-    %requirements(SType, S, N), 
+    %requirements(SId, S, N), 
     subset(SWReqs, SWCaps).
 
 costOK(Placement, Budget, Cost) :-
@@ -69,34 +73,40 @@ componentCost(S,N,C) :- node(N, NType, _, _, _, _), cost(NType,S,C).
 
 hwOK(Placement) :-
     findall(N, distinct(member((_,N),Placement)), Nodes),
-    nodeHwOk(Nodes,Placement).
+    nodeHwOK(Nodes,Placement).
 
-nodeHwOk([N|Nodes], Placement) :-
+nodeHwOK([N|Nodes], Placement) :-
     findall(HW, hwOnN(N, Placement, HW), HWs), sum_list(HWs,TotHW),
     node(N, _, _, (_, HWCaps), _, _),
     hwTh(T), HWCaps >= TotHW + T,
-    nodeHwOk(Nodes, Placement).
-nodeHwOk([], _).
+    nodeHwOK(Nodes, Placement).
+nodeHwOK([], _).
 
 hwOnN(N, Ps, HW) :- serviceInstance(S, SId), service(SId,_,(_,HW)), member((S,N), Ps).
 hwOnN(N, Ps, HW) :- functionInstance(F, FId,_), function(FId,_,(_,HW)), member((F,N), Ps).
 
-qosOK(Ps) :- % TODO, if a thing not placed, "relevant" don't take the dataFlow
-    findall((N1N2, Lat), relevant(N1N2, Ps, Lat, _), DataFlows),
+qosOK(Ps) :-
+    findall((N1N2, Lat, Sec), relevant(N1N2, Ps, Lat, _, Sec), DataFlows),
     checkDF(DataFlows, Ps).
 
-checkDF([((N1,N2),ReqLat)|DFs], Ps) :-
+checkDF([((N1,N2), ReqLat, SecReqs)|DFs], Ps) :-
     checkDF(DFs, Ps),
+    secOK(N1, N2, SecReqs),
     link(N1, N2, FeatLat, FeatBW),
-    FeatLat =< ReqLat, bwOK((N1,N2), FeatBW, Ps).
+    FeatLat =< ReqLat,
+    bwOK((N1,N2), FeatBW, Ps).
 checkDF([], _).
 
 bwOK(N1N2, FeatBW, Ps):-
-    findall(BW, relevant(N1N2, Ps, _, BW), BWs), sum_list(BWs, OkAllocBW), 
+    findall(BW, relevant(N1N2, Ps, _, BW, _), BWs), sum_list(BWs, OkAllocBW), 
     bwTh(T), FeatBW >= OkAllocBW + T.
 
-relevant((N1,N2), Ps, Lat, BW) :-
-    dataFlow(T1,T2,_,_,Size,Rate,Lat),
+secOK(N1, N2, SecReqs) :-
+    node(N1, _, _, _, SecCaps1, _), subset(SecReqs, SecCaps1),
+    node(N2, _, _, _, SecCaps2, _),  subset(SecReqs, SecCaps2).
+
+relevant((N1,N2), Ps, Lat, BW, Sec):-
+    dataFlow(T1, T2, _, Sec, Size, Rate, Lat),
     (member((T1,N1), Ps); node(N1, _, _, _, _, IoTCaps), member(T1, IoTCaps)),
     (member((T2,N2), Ps); node(N2, _, _, _, _, IoTCaps), member(T2, IoTCaps)),
     dif(N1,N2), BW is Size*Rate.

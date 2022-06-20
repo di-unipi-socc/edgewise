@@ -1,4 +1,3 @@
-from xml.dom.minidom import Attr
 from .components import *
 from .infrastructure import Infrastructure
 from .utils import check_app
@@ -151,7 +150,8 @@ class Application:
 				try:
 					self.get_thing_instance_by_id(t).set_node(n)
 				except AttributeError:
-					print(f'Thing instance \'{t}\' not found')
+					# print(f'Thing instance \'{t}\' not found')
+					pass
 
 	def set_compatibles(self, compatibles: dict):
 		for i, c in compatibles.items():

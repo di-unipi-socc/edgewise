@@ -9,10 +9,7 @@ from colorama import Fore, init
 from tabulate import tabulate
 
 QUERY = "cost({ntype}, {compid}, Cost)"
-L_COST = 0.5
-L_BINPACK = 0.5
-
-assert L_COST + L_BINPACK == 1, "Lambdas must be summed to 1."
+MAX_BIN = 2
 
 
 def init_parser() -> ap.ArgumentParser:
@@ -83,6 +80,9 @@ def or_solver(app_name, infr_name, dummy=False, show_placement=False, result="")
 	x = {(i, j): solver.IntVar(0, 1, '') for i in range(S) for j in range(N)}
 	b = {j: solver.IntVar(0, 1, '') for j in range(N)}
 
+	# Budgeting: no more than MAX_BIN nodes can be used
+	solver.Add(solver.Sum(b[j] for j in range(N)) <= MAX_BIN)
+
 	# Constraint: one instance at most in one node.
 	for i in range(S):
 		solver.Add(solver.Sum([x[i, j] for j in range(N)]) == 1)
@@ -90,11 +90,6 @@ def or_solver(app_name, infr_name, dummy=False, show_placement=False, result="")
 	# Constraint: cannot exceed the hw capacity of a node.
 	coeffs = [s.comp.hwreqs for s in instances]
 	bounds = [a['hwcaps'] for _, a in nodes]
-
-	"""for j in range(N):
-		constraint = solver.RowConstraint(0, bounds[j]-infr.hwTh, '')
-		for i in range(S):
-			constraint.SetCoefficient(x[i, j], coeffs[i])"""
 
 	for j in range(N):
 		solver.Add(solver.Sum([coeffs[i] * x[i, j] for i in range(S)]) <= b[j] * (bounds[j] - infr.hwTh))
@@ -107,6 +102,11 @@ def or_solver(app_name, infr_name, dummy=False, show_placement=False, result="")
 		j = nids.index(n)
 		j1 = nids.index(n1)
 		for df in dfs:  # foreach data flow
+
+			sec_reqs = set(df.sec_reqs) 
+			if (not sec_reqs.issubset(set(infr.nodes[n]['seccaps']))) or (not sec_reqs.issubset(set(infr.nodes[n1]['seccaps']))):
+				continue
+
 
 			i = instances.index(df.source) if type(df.source) != ThingInstance else None
 			i1 = instances.index(df.target) if type(df.target) != ThingInstance else None
@@ -125,20 +125,13 @@ def or_solver(app_name, infr_name, dummy=False, show_placement=False, result="")
 			bw_constraint.SetCoefficient(c, df.bw)
 
 	#  OBJECTIVE FUNCTION
-	# costs = np.random.uniform(low=1, high=50, size=(S, N))
 	costs = get_costs(app.file, infr.file, instances, nodes)
-	"""objective = solver.Objective()
+	objective = solver.Objective()
 	for i in range(S):
 		for j in range(N):
-			objective.SetCoefficient(x[i, j], costs[i][j])
-	objective.SetMinimization()"""
+			objective.SetCoefficient(x[i, j], costs[i, j])
+	objective.SetMinimization()
 
-	min_cost_expr = [L_COST * costs[i, j] * x[i, j] for i in range(S) for j in range(N)]
-	binpack_expr = [L_BINPACK * b[j] for j in range(N)]
-
-	obj_expr = min_cost_expr + binpack_expr
-
-	solver.Minimize(solver.Sum(obj_expr))
 	status = solver.Solve()
 	
 	tot_cost = 0
@@ -146,7 +139,7 @@ def or_solver(app_name, infr_name, dummy=False, show_placement=False, result="")
 	n_distinct = set()
 	placement = {}
 
-	if status == pywraplp.Solver.OPTIMAL or status == pywraplp.Solver.FEASIBLE:
+	if status == pywraplp.Solver.OPTIMAL:# or status == pywraplp.Solver.FEASIBLE:
 		for i in range(S):
 			row = [x[i,j].solution_value() for j in range(N)]
 			j = row.index(max(row))
