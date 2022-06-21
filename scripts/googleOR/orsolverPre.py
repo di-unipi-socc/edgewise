@@ -1,5 +1,6 @@
 import os
 import argparse as ap
+from unicodedata import name
 import numpy as np
 import sys
 
@@ -10,11 +11,7 @@ from tabulate import tabulate
 
 # todo normalization costs cij - cmin / cmax - cmin
 QUERY = "preprocess({app_name}, Compatibles)"
-L_COST = 0.01
-L_BINPACK = 1 - L_COST
-
-# assert L_COST + L_BINPACK == 1, "Lambdas must be summed to 1."
-
+MAX_BIN = 10
 
 def init_parser() -> ap.ArgumentParser:
 	description = "Compare several placement strategies."
@@ -83,28 +80,33 @@ def or_solver(app_name, infr_name, dummy=False, show_placement=False, result="")
 	L = len(links)
 	DF = len(dfs)
 
-	compatibles = get_compatibles(app_name, app.file, infr.file)
-	print([(k,len(v)) for k,v in compatibles.items()])
-
-	info = [['Infrastructure', infr_name], ['Instances', S], ['Nodes', N], ['Links', L], ['Data Flows', DF]]
+	info = [['Instances', S], ['Nodes', N], ['Links', L], ['Data Flows', DF]]
 	print(Fore.LIGHTCYAN_EX + tabulate(info))
 
+	compatibles = get_compatibles(app_name, app.file, infr.file)
+	for k, v in compatibles.items():
+		if not len(v):
+			print(Fore.LIGHTRED_EX + "No compatibles for '{}'.".format(k))
+			return
+		else:
+			print(Fore.LIGHTGREEN_EX + "Compatibles for '{}': {}".format(k, v))
+
 	# Create the solver.
-	solver = pywraplp.Solver.CreateSolver('GLOP')
+	solver = pywraplp.Solver.CreateSolver('BOP')
 	solver.SetNumThreads(32)
 
 	# Create the variables for binpack B.
-	b = {j: solver.IntVar(0, 1, '') for j in range(N)}
+	# b = {j: solver.IntVar(0, 1, '') for j in range(N)}
+	b = {j: solver.BoolVar('') for j in range(N)}
 
 	# Create bool vars matrix X.
 	# at the same time, create costs matrix C
 	costs = np.zeros((S, N))
-	# x = {(i, j): solver.IntVar(0, 1, '') for i in range(S) for j in range(N)}
 	x = {(i, j): 0 for i in range(S) for j in range(N)}
 	for i, s in enumerate(instances):
 		for j, n in enumerate(nids):
 			if n in compatibles[s.id]:
-				x[i, j] = solver.IntVar(0, 1, '')
+				x[i, j] = solver.BoolVar('')
 				costs[i, j] = compatibles[s.id][n]
 	
 	# Constraint: one instance at most in one node.
@@ -118,9 +120,13 @@ def or_solver(app_name, infr_name, dummy=False, show_placement=False, result="")
 	for j in range(N):
 		solver.Add(solver.Sum([coeffs[i] * x[i, j] for i in range(S)]) <= b[j] * (bounds[j] - infr.hwTh))
 
+	# Budgeting: no more than MAX_BIN nodes are used.
+	solver.Add(solver.Sum([b[j] for j in range(N)]) <= MAX_BIN)
+
 	# Constraints:
 	# - cannot exceed the bandwidth of a link. (FeatBW >= sum(ReqBW))
 	# - satisfy latency requirements of data flows. (FeatLat <= ReqLat)
+	lecci = []
 	for n, n1, a in links:  # foreach link
 		bw_constraint = solver.RowConstraint(0, a['bw']-infr.bwTh, '')
 		j = nids.index(n)
@@ -129,53 +135,58 @@ def or_solver(app_name, infr_name, dummy=False, show_placement=False, result="")
 			
 			sec_reqs = set(df.sec_reqs) 
 			if (not sec_reqs.issubset(set(infr.nodes[n]['seccaps']))) or (not sec_reqs.issubset(set(infr.nodes[n1]['seccaps']))):
-				continue
+				continue			
+			
+			# i = instances.index(df.source) if type(df.source) != ThingInstance else None
+			# i1 = instances.index(df.target) if type(df.target) != ThingInstance else None
 
-			i = instances.index(df.source) if type(df.source) != ThingInstance else None
-			i1 = instances.index(df.target) if type(df.target) != ThingInstance else None
+			if isinstance(df.source, ThingInstance):
+				if df.source.node == n:
+					i = -1
+				else:
+					continue
+			else:
+				i = instances.index(df.source)
 
-			xij = x[i, j] if i else 1
-			xi1j1 = x[i1, j1] if i1 else 1
+			if isinstance(df.target, ThingInstance):
+				if df.target.node == n1:
+					i1 = -1
+				else:
+					continue
+			else:
+				i1 = instances.index(df.target)
+
+			xij = x[i, j] if i != -1 else 0
+			xi1j1 = x[i1, j1] if i1 != -1 else 0
+
+			# print(df.source.id, df.target.id, xij, xi1j1, i, i1)
 
 			# linearize the constraint
-			c = solver.IntVar(0, 1, '')
+			c = solver.BoolVar(f"{df.source.id}-{df.target.id}-{n}:{n1}")
+			lecci.append(c)
 			solver.Add(c <= xij)
 			solver.Add(c <= xi1j1)
 			solver.Add(c >= xij + xi1j1 - 1)
-
 			solver.Add(c * a['lat'] <= df.latency)
 
 			bw_constraint.SetCoefficient(c, df.bw)
 
 	# costs = np.random.uniform(low=1, high=50, size=(S, N))
-
 	# OBJECTIVE FUNCTION
-	
-	cmin = np.sum([np.min(row[np.nonzero(row)]) for row in costs])
-	cmax = np.sum(costs.max(axis=1))
-
-	bmin = 1
-	bmax = S
-
-	# min_cost_expr = [L_COST * cmax / (cmax-cmin)] + [(L_COST * costs[i, j] * x[i, j]) / (cmin-cmax) for i in range(S) for j in range(N)]
-	# binpack_expr = [L_BINPACK * bmax / (bmax-bmin)] + [(L_BINPACK * b[j]) / (bmin-bmax) for j in range(N)]
-
-	# min_cost_expr = L_COST * ([costs[i,j]*x[i,j] for i in range(S) for j in range(N)] + [-cmin]) / (cmax - cmin)
-	# binpack_expr = L_BINPACK * ([costs[i,j]*x[i,j] for i in range(S) for j in range(N)] + [-bmin]) / (bmax - bmin)
-	
-	min_cost_expr = [L_COST * costs[i, j] * x[i, j] for i in range(S) for j in range(N)]
-	binpack_expr = [L_BINPACK * b[j] for j in range(N)]
-
-	obj_expr = min_cost_expr + binpack_expr
+	obj_expr = [costs[i, j] * x[i, j] for i in range(S) for j in range(N)]
 	solver.Minimize(solver.Sum(obj_expr))
 	status = solver.Solve()
+
+	print("LENGTH:", len(lecci))
+	for c in lecci:
+		if c.solution_value() == 1:
+			print(c.name(), end='\n')
 	
-	tot_cost = 0
 	tot_time = 0
 	n_distinct = set()
 	placement = {}
 	res = {}
-	if status == pywraplp.Solver.OPTIMAL or status == pywraplp.Solver.FEASIBLE:
+	if status == pywraplp.Solver.OPTIMAL: # or status == pywraplp.Solver.FEASIBLE:
 		for i in range(S):
 			row = [x[i,j].solution_value() if not isinstance(x[i,j], int) else 0 for j in range(N)]
 			j = row.index(max(row))
@@ -183,17 +194,19 @@ def or_solver(app_name, infr_name, dummy=False, show_placement=False, result="")
 			n = nodes[j][0]
 			placement[s] = n
 			n_distinct.add(n)
-			tot_cost += costs[i, j]
+			# tot_cost += costs[i, j]
 
+		str_pl = "[" + ", ".join(["({}, {})".format(s, n) for s, n in placement.items()]) + "]"
+		print(str_pl)
 
-		res = {'App': app_name, 'Time': tot_time, 'Cost': round(tot_cost, 4), 'NDistinct': len(n_distinct), 'Constraints': solver.NumConstraints()}
 		if show_placement:
 			print(tabulate(placement.items(), tablefmt='fancy_grid', stralign='center'))
-		# tot_cost = solver.Objective().Value() # if only cost in Objective function
+
+		tot_cost = solver.Objective().Value() # if only cost in Objective function
 		tot_time = solver.WallTime() / 1000  # in seconds
+		res = {'App': app_name, 'Time': tot_time, 'Cost': round(tot_cost, 4), 'NDistinct': len(n_distinct), 'Constraints': solver.NumConstraints()}
 
 		print(Fore.LIGHTGREEN_EX + tabulate(res.items(), numalign='right'))
-
 	else:
 		print('The problem does not have a solution.')
 	

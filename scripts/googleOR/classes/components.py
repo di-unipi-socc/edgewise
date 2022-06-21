@@ -47,6 +47,7 @@ class ServiceInstance:
 		self.id = id
 		self.comp = comp
 		self.compatibles = []
+		self.node = None
 
 	def __str__(self):
 		data = self.__dict__.copy()
@@ -71,6 +72,7 @@ class FunctionInstance:
 		self.req_x_month = req_x_month
 		self.req_duration = req_duration
 		self.compatibles = []
+		self.node = None
 
 	def __str__(self):
 		data = self.__dict__.copy()

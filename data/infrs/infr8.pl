@@ -1,14 +1,14 @@
 bwTh(3).
 hwTh(1).
 
-node(n1, cloud, [ubuntu, mySQL, python, php, js, gcc], (x86, 1024), [enc, auth], []).
-node(n4, isp, [ubuntu, gcc, python, js], (x86, 256), [enc], []).
+node(n1, cloud, [ubuntu, mySQL, python, php, js, gcc], (x86, 1024), [enc, auth], [piCamera1, piCamera2]).
+node(n4, isp, [ubuntu, gcc, python, js], (x86, 256), [enc], [heat, soil, nutrient]).
 node(n2, cabinet, [ubuntu, python, php, mySQL], (x86, 256), [enc, auth], []).
 node(n0, cabinet, [php, mySQL], (arm64, 128), [enc, auth], []).
-node(n5, accesspoint, [mySQL, gcc, js, python], (arm64, 64), [enc, auth], []).
+node(n5, accesspoint, [mySQL, gcc, js, python], (arm64, 64), [enc, auth], [water, energy]).
 node(n6, isp, [js, python, gcc, ubuntu], (x86, 256), [enc], []).
 node(n7, cloud, [ubuntu, mySQL, python, php, js, gcc], (x86, 1024), [enc, auth], []).
-node(n3, thing, [python], (arm64, 32), [enc, auth], []).
+node(n3, thing, [python], (arm64, 32), [enc, auth], [arViewer]).
 
 link(n0, n3, 15, 35).
 link(n6, n7, 110, 1000).

@@ -1,4 +1,4 @@
-:-['../data/infrs/infr16.pl', '../data/apps/distSecurity.pl'].
+:-['../data/infrs/dummy/infr8.pl', '../data/apps/distSecurity.pl'].
 :-['../requirements.pl', '../costs.pl'].
 
 :- set_prolog_flag(answer_write_options,[max_depth(0)]). % write answers' text entirely
@@ -119,8 +119,8 @@ qosOK(Ps) :-
 
 checkDF([((N1,N2),ReqLat,SecReqs)|DFs], Ps) :-
     checkDF(DFs, Ps),
-    secOK(N1, N2, SecReqs),
     link(N1, N2, FeatLat, FeatBW),
+    secOK(N1, N2, SecReqs),
     FeatLat =< ReqLat, bwOK((N1,N2), FeatBW, Ps).
 checkDF([], _).
 

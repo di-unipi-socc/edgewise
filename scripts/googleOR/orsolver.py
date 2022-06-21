@@ -9,7 +9,7 @@ from colorama import Fore, init
 from tabulate import tabulate
 
 QUERY = "cost({ntype}, {compid}, Cost)"
-MAX_BIN = 2
+MAX_BIN = 5
 
 
 def init_parser() -> ap.ArgumentParser:
@@ -69,16 +69,16 @@ def or_solver(app_name, infr_name, dummy=False, show_placement=False, result="")
 	L = len(links)
 	DF = len(dfs)
 
-	info = [['Infrastructure', infr_name], ['Instances', S], ['Nodes', N], ['Links', L], ['Data Flows', DF]]
+	info = [['Instances', S], ['Nodes', N], ['Links', L], ['Data Flows', DF]]
 	print(Fore.LIGHTCYAN_EX + tabulate(info))
 
 	# Create the solver.
-	solver = pywraplp.Solver.CreateSolver('GLOP')
+	solver = pywraplp.Solver.CreateSolver('BOP')
 	solver.SetNumThreads(32)
 
 	# Create the variables.
-	x = {(i, j): solver.IntVar(0, 1, '') for i in range(S) for j in range(N)}
-	b = {j: solver.IntVar(0, 1, '') for j in range(N)}
+	x = {(i, j): solver.BoolVar('') for i in range(S) for j in range(N)}
+	b = {j: solver.BoolVar('') for j in range(N)}
 
 	# Budgeting: no more than MAX_BIN nodes can be used
 	solver.Add(solver.Sum(b[j] for j in range(N)) <= MAX_BIN)
@@ -115,7 +115,7 @@ def or_solver(app_name, infr_name, dummy=False, show_placement=False, result="")
 			xi1j1 = x[i1, j1] if i1 else 1
 
 			# linearize the constraint
-			c = solver.IntVar(0, 1, '')
+			c = solver.BoolVar('')
 			solver.Add(c <= xij)
 			solver.Add(c <= xi1j1)
 			solver.Add(c >= xij + xi1j1 - 1)
@@ -134,7 +134,6 @@ def or_solver(app_name, infr_name, dummy=False, show_placement=False, result="")
 
 	status = solver.Solve()
 	
-	tot_cost = 0
 	tot_time = 0
 	n_distinct = set()
 	placement = {}
@@ -147,14 +146,15 @@ def or_solver(app_name, infr_name, dummy=False, show_placement=False, result="")
 			n = nodes[j][0]
 			placement[s] = n
 			n_distinct.add(n)
-			tot_cost += costs[i, j]
+			# tot_cost += costs[i, j]
 
 
-		res = {'App': app_name, 'Time': tot_time, 'Cost': round(tot_cost, 4), 'NDistinct': len(n_distinct), 'Constraints': solver.NumConstraints()}
 		if show_placement:
 			print(tabulate(placement.items(), tablefmt='fancy_grid', stralign='center'))
-		# tot_cost = solver.Objective().Value()
+		tot_cost = solver.Objective().Value()
 		tot_time = solver.WallTime() / 1000  # in seconds
+
+		res = {'App': app_name, 'Time': tot_time, 'Cost': round(tot_cost, 4), 'NDistinct': len(n_distinct), 'Constraints': solver.NumConstraints()}
 
 		print(Fore.LIGHTGREEN_EX + tabulate(res.items(), numalign='right'))
 
