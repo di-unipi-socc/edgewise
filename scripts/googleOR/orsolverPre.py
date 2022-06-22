@@ -1,6 +1,5 @@
 import os
 import argparse as ap
-from unicodedata import name
 import numpy as np
 import sys
 
@@ -8,6 +7,7 @@ from ortools.linear_solver import pywraplp
 from pyswip import Prolog
 from colorama import Fore, init
 from tabulate import tabulate
+from classes import *
 
 # todo normalization costs cij - cmin / cmax - cmin
 QUERY = "preprocess({app_name}, Compatibles)"
@@ -57,7 +57,7 @@ def parse_compatibles(r):
 	
 	return compatibles
 		
-def or_solver(app_name, infr_name, dummy=False, show_placement=False, result=""):
+def or_solver(app_name, infr_name, dummy=False, show_placement=False, model=False, result=""):
 
 	if type(result) != str:  # if result is not a string, redirect output tu /dev/null
 		sys.stdout = open(os.devnull, 'w')
@@ -74,6 +74,7 @@ def or_solver(app_name, infr_name, dummy=False, show_placement=False, result="")
 	dfs = app.data_flows
 
 	nids = list(infr.nodes())  # list of node ids
+	
 
 	S = len(instances)
 	N = len(nodes)
@@ -84,20 +85,21 @@ def or_solver(app_name, infr_name, dummy=False, show_placement=False, result="")
 	print(Fore.LIGHTCYAN_EX + tabulate(info))
 
 	compatibles = get_compatibles(app_name, app.file, infr.file)
+	'''
 	for k, v in compatibles.items():
 		if not len(v):
 			print(Fore.LIGHTRED_EX + "No compatibles for '{}'.".format(k))
 			return
 		else:
 			print(Fore.LIGHTGREEN_EX + "Compatibles for '{}': {}".format(k, v))
-
+	'''
 	# Create the solver.
 	solver = pywraplp.Solver.CreateSolver('BOP')
 	solver.SetNumThreads(32)
 
 	# Create the variables for binpack B.
 	# b = {j: solver.IntVar(0, 1, '') for j in range(N)}
-	b = {j: solver.BoolVar('') for j in range(N)}
+	b = {j: solver.BoolVar(f'b_{nids[j]}') for j in range(N)}
 
 	# Create bool vars matrix X.
 	# at the same time, create costs matrix C
@@ -106,29 +108,29 @@ def or_solver(app_name, infr_name, dummy=False, show_placement=False, result="")
 	for i, s in enumerate(instances):
 		for j, n in enumerate(nids):
 			if n in compatibles[s.id]:
-				x[i, j] = solver.BoolVar('')
+				x[i, j] = solver.BoolVar(f'{s.id}_{n}')
 				costs[i, j] = compatibles[s.id][n]
 	
 	# Constraint: one instance at most in one node.
 	for i in range(S):
-		solver.Add(solver.Sum([x[i, j] for j in range(N)]) == 1)
+		solver.Add(solver.Sum([x[i, j] for j in range(N)]) == 1, name=f'only_one_{instances[i].id}')
 
 	# Constraint: cannot exceed the hw capacity of a node.
 	coeffs = [s.comp.hwreqs for s in instances]
 	bounds = [a['hwcaps'] for _, a in nodes]
 
 	for j in range(N):
-		solver.Add(solver.Sum([coeffs[i] * x[i, j] for i in range(S)]) <= b[j] * (bounds[j] - infr.hwTh))
+		solver.Add(solver.Sum([coeffs[i] * x[i, j] for i in range(S)]) <= b[j] * (bounds[j] - infr.hwTh), name=f'hw_{nids[j]}')
 
 	# Budgeting: no more than MAX_BIN nodes are used.
-	solver.Add(solver.Sum([b[j] for j in range(N)]) <= MAX_BIN)
+	solver.Add(solver.Sum([b[j] for j in range(N)]) <= MAX_BIN, name='budget')
 
 	# Constraints:
 	# - cannot exceed the bandwidth of a link. (FeatBW >= sum(ReqBW))
 	# - satisfy latency requirements of data flows. (FeatLat <= ReqLat)
 	lecci = []
 	for n, n1, a in links:  # foreach link
-		bw_constraint = solver.RowConstraint(0, a['bw']-infr.bwTh, '')
+		bw_constraint = solver.RowConstraint(0, a['bw']-infr.bwTh, f'{n}_{n1}_bw')
 		j = nids.index(n)
 		j1 = nids.index(n1)
 		for df in dfs:  # foreach data flow
@@ -156,18 +158,18 @@ def or_solver(app_name, infr_name, dummy=False, show_placement=False, result="")
 			else:
 				i1 = instances.index(df.target)
 
-			xij = x[i, j] if i != -1 else 0
-			xi1j1 = x[i1, j1] if i1 != -1 else 0
+			xij = x[i, j] if i != -1 else 1
+			xi1j1 = x[i1, j1] if i1 != -1 else 1
 
 			# print(df.source.id, df.target.id, xij, xi1j1, i, i1)
 
 			# linearize the constraint
 			c = solver.BoolVar(f"{df.source.id}-{df.target.id}-{n}:{n1}")
 			lecci.append(c)
-			solver.Add(c <= xij)
-			solver.Add(c <= xi1j1)
-			solver.Add(c >= xij + xi1j1 - 1)
-			solver.Add(c * a['lat'] <= df.latency)
+			solver.Add(c <= xij, name=f'lin_1_{c.name()}')
+			solver.Add(c <= xi1j1, name=f'lin_2_{c.name()}')
+			solver.Add(c >= xij + xi1j1 - 1, name=f'lin_3_{c.name()}')
+			solver.Add(c * a['lat'] <= df.latency, name=f'{c.name()}_lat')
 
 			bw_constraint.SetCoefficient(c, df.bw)
 
@@ -177,10 +179,16 @@ def or_solver(app_name, infr_name, dummy=False, show_placement=False, result="")
 	solver.Minimize(solver.Sum(obj_expr))
 	status = solver.Solve()
 
+	if model:
+		with open(join(MODELS_DIR,f'model_{app_name}_{infr_name}_{dummy}.lp'), 'w') as f:
+			print(solver.ExportModelAsLpFormat(obfuscated=False), file=f)
+
+	'''
 	print("LENGTH:", len(lecci))
 	for c in lecci:
 		if c.solution_value() == 1:
 			print(c.name(), end='\n')
+	'''
 	
 	tot_time = 0
 	n_distinct = set()
@@ -197,7 +205,6 @@ def or_solver(app_name, infr_name, dummy=False, show_placement=False, result="")
 			# tot_cost += costs[i, j]
 
 		str_pl = "[" + ", ".join(["({}, {})".format(s, n) for s, n in placement.items()]) + "]"
-		print(str_pl)
 
 		if show_placement:
 			print(tabulate(placement.items(), tablefmt='fancy_grid', stralign='center'))
@@ -228,7 +235,7 @@ if __name__ == '__main__':
 	parser = init_parser()
 	args = parser.parse_args()
 
-	or_solver(app_name=args.app, infr_name=args.infr, show_placement=args.placement, dummy=args.dummy)
+	or_solver(app_name=args.app, infr_name=args.infr, show_placement=args.placement, dummy=args.dummy, model=True)
 
 	# absolute import
 else:
