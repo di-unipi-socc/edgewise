@@ -7,11 +7,10 @@ from ortools.linear_solver import pywraplp
 from pyswip import Prolog
 from colorama import Fore, init
 from tabulate import tabulate
-from classes import *
 
 # todo normalization costs cij - cmin / cmax - cmin
 QUERY = "preprocess({app_name}, Compatibles)"
-MAX_BIN = 10
+MAX_BIN = 5
 
 def init_parser() -> ap.ArgumentParser:
 	description = "Compare several placement strategies."
@@ -31,7 +30,7 @@ def get_compatibles(app_name, app, infr):
 	prolog.consult(app)
 	prolog.consult(infr)
 	prolog.consult(join(VERSIONS_DIR, "preprocessing.pl"))
-	
+
 	try:
 		q = prolog.query(QUERY.format(app_name=app_name))
 		r = next(q)['Compatibles']
@@ -85,16 +84,16 @@ def or_solver(app_name, infr_name, dummy=False, show_placement=False, model=Fals
 	print(Fore.LIGHTCYAN_EX + tabulate(info))
 
 	compatibles = get_compatibles(app_name, app.file, infr.file)
-	'''
+	
 	for k, v in compatibles.items():
 		if not len(v):
 			print(Fore.LIGHTRED_EX + "No compatibles for '{}'.".format(k))
 			return
 		else:
 			print(Fore.LIGHTGREEN_EX + "Compatibles for '{}': {}".format(k, v))
-	'''
+	
 	# Create the solver.
-	solver = pywraplp.Solver.CreateSolver('BOP')
+	solver = pywraplp.Solver.CreateSolver('SCIP')
 	solver.SetNumThreads(32)
 
 	# Create the variables for binpack B.
@@ -113,7 +112,7 @@ def or_solver(app_name, infr_name, dummy=False, show_placement=False, model=Fals
 	
 	# Constraint: one instance at most in one node.
 	for i in range(S):
-		solver.Add(solver.Sum([x[i, j] for j in range(N)]) == 1, name=f'only_one_{instances[i].id}')
+		solver.Add(solver.Sum([x[i, j] for j in range(N)]) == 1, name=f'one_node_{instances[i].id}')
 
 	# Constraint: cannot exceed the hw capacity of a node.
 	coeffs = [s.comp.hwreqs for s in instances]
@@ -128,13 +127,16 @@ def or_solver(app_name, infr_name, dummy=False, show_placement=False, model=Fals
 	# Constraints:
 	# - cannot exceed the bandwidth of a link. (FeatBW >= sum(ReqBW))
 	# - satisfy latency requirements of data flows. (FeatLat <= ReqLat)
-	lecci = []
+	tmp = {(d, l): 0 for d in range(DF) for l in range(L+N)}
 	for n, n1, a in links:  # foreach link
-		bw_constraint = solver.RowConstraint(0, a['bw']-infr.bwTh, f'{n}_{n1}_bw')
+		# bw_constraint = solver.RowConstraint(0, a['bw']-infr.bwTh, f'{n}_{n1}_bw')
+		coeffs = {}
 		j = nids.index(n)
 		j1 = nids.index(n1)
-		for df in dfs:  # foreach data flow
+		lidx=-1
+		for didx, df in enumerate(dfs):  # foreach data flow
 			
+			lidx += 1
 			sec_reqs = set(df.sec_reqs) 
 			if (not sec_reqs.issubset(set(infr.nodes[n]['seccaps']))) or (not sec_reqs.issubset(set(infr.nodes[n1]['seccaps']))):
 				continue			
@@ -146,42 +148,70 @@ def or_solver(app_name, infr_name, dummy=False, show_placement=False, model=Fals
 				if df.source.node == n:
 					i = -1
 				else:
+					#print("no thg source {}".format(f"{df.source.id}_{n}_{df.target.id}_{n1}"))
 					continue
 			else:
-				i = instances.index(df.source)
+				if n in compatibles[df.source.id]:
+					i = instances.index(df.source)
+				else:
+					#print("no comp source {}".format(f"{df.source.id}_{n}_{df.target.id}_{n1}"))
+					continue
 
 			if isinstance(df.target, ThingInstance):
 				if df.target.node == n1:
 					i1 = -1
 				else:
+					#print("no thg dest {}".format(f"{df.source.id}_{n}_{df.target.id}_{n1}"))
 					continue
 			else:
-				i1 = instances.index(df.target)
+				if n1 in compatibles[df.target.id]:
+					i1 = instances.index(df.target)
+				else:
+					#print("no comp dest {}".format(f"{df.source.id}_{n}_{df.target.id}_{n1}"))
+					continue
 
 			xij = x[i, j] if i != -1 else 1
 			xi1j1 = x[i1, j1] if i1 != -1 else 1
 
-			# print(df.source.id, df.target.id, xij, xi1j1, i, i1)
-
 			# linearize the constraint
-			c = solver.BoolVar(f"{df.source.id}-{df.target.id}-{n}:{n1}")
-			lecci.append(c)
+			tmp[didx, lidx] = solver.BoolVar(f"{df.source.id}_{n}_{df.target.id}_{n1}")
+			c = tmp[didx, lidx]
 			solver.Add(c <= xij, name=f'lin_1_{c.name()}')
 			solver.Add(c <= xi1j1, name=f'lin_2_{c.name()}')
 			solver.Add(c >= xij + xi1j1 - 1, name=f'lin_3_{c.name()}')
 			solver.Add(c * a['lat'] <= df.latency, name=f'{c.name()}_lat')
 
-			bw_constraint.SetCoefficient(c, df.bw)
+			#bw_constraint.SetCoefficient(c, df.bw)
+			coeffs[c] = df.bw
+
+		if len(coeffs):
+			bw_constraint = solver.RowConstraint(0, a['bw']-infr.bwTh, f'{n}_{n1}_bw')
+			for c, b in coeffs.items():
+				bw_constraint.SetCoefficient(c, df.bw)
+
+
+	for d, df in enumerate(dfs):
+		c_src = list(compatibles[df.source.id]) if not isinstance(df.source, ThingInstance) else [df.source.node]
+		c_trg = list(compatibles[df.target.id]) if not isinstance(df.target, ThingInstance) else [df.target.node]
+		ccomp = list(set(c_src).intersection(c_trg))
+		for n in ccomp:
+			nidx = nids.index(n)
+			nidx += L
+			tmp[didx, nidx] = solver.BoolVar(f"{df.source.id}_{n}_{df.target.id}_{n}")
+		solver.Add(solver.Sum([tmp[d, l] for l in range(L+N)]) == 1, name=f'one_link_{df.source.id}_{df.target.id}')
 
 	# costs = np.random.uniform(low=1, high=50, size=(S, N))
 	# OBJECTIVE FUNCTION
 	obj_expr = [costs[i, j] * x[i, j] for i in range(S) for j in range(N)]
 	solver.Minimize(solver.Sum(obj_expr))
-	status = solver.Solve()
+
+	# print(solver.constraint(11).name())
 
 	if model:
 		with open(join(MODELS_DIR,f'model_{app_name}_{infr_name}_{dummy}.lp'), 'w') as f:
 			print(solver.ExportModelAsLpFormat(obfuscated=False), file=f)
+
+	status = solver.Solve()
 
 	'''
 	print("LENGTH:", len(lecci))
@@ -194,7 +224,7 @@ def or_solver(app_name, infr_name, dummy=False, show_placement=False, model=Fals
 	n_distinct = set()
 	placement = {}
 	res = {}
-	if status == pywraplp.Solver.OPTIMAL: # or status == pywraplp.Solver.FEASIBLE:
+	if status == pywraplp.Solver.OPTIMAL:# or status == pywraplp.Solver.FEASIBLE:
 		for i in range(S):
 			row = [x[i,j].solution_value() if not isinstance(x[i,j], int) else 0 for j in range(N)]
 			j = row.index(max(row))
@@ -205,6 +235,7 @@ def or_solver(app_name, infr_name, dummy=False, show_placement=False, model=Fals
 			# tot_cost += costs[i, j]
 
 		str_pl = "[" + ", ".join(["({}, {})".format(s, n) for s, n in placement.items()]) + "]"
+		print(str_pl)
 
 		if show_placement:
 			print(tabulate(placement.items(), tablefmt='fancy_grid', stralign='center'))
