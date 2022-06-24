@@ -16,9 +16,10 @@ def init_parser() -> ap.ArgumentParser:
 	description = "Compare several placement strategies."
 	p = ap.ArgumentParser(prog=__file__, description=description)
 
-	p.add_argument("-p", "--placement", action="store_true", help="if set, shows the obtained placement"),
-	p.add_argument("-d", "--dummy", action="store_true",
-	               help="if set, uses an infrastructure with dummy links (low lat, high bw)."),
+	p.add_argument("-p", "--placement", action="store_true", help="if set, shows the obtained placement."),
+	p.add_argument("-d", "--dummy", action="store_true", help="if set, uses an infrastructure with dummy links (low lat, high bw)."),
+	p.add_argument("-c", "--compatibles", action="store_true", help="if set, shows the obtained compatibles."),
+	p.add_argument("-m", "--model", action="store_true", help="if set, saves the model in LP format."),
 	p.add_argument("app", help="Application name.")
 	p.add_argument("infr", help="Infrastructure name.")
 
@@ -56,8 +57,8 @@ def parse_compatibles(r):
 	
 	return compatibles
 		
-def or_solver(app_name, infr_name, dummy=False, show_placement=False, model=False, result=""):
-
+def or_solver(app_name, infr_name, dummy=False, show_placement=False, show_compatibles=False, model=False, result=""):
+	
 	if type(result) != str:  # if result is not a string, redirect output tu /dev/null
 		sys.stdout = open(os.devnull, 'w')
 
@@ -84,20 +85,20 @@ def or_solver(app_name, infr_name, dummy=False, show_placement=False, model=Fals
 	print(Fore.LIGHTCYAN_EX + tabulate(info))
 
 	compatibles = get_compatibles(app_name, app.file, infr.file)
+	if show_compatibles:
+		for k, v in compatibles.items():
+			if not len(v):
+				print(Fore.LIGHTRED_EX + "No compatibles for '{}'.".format(k))
+				return
+			else:
+				print(Fore.LIGHTGREEN_EX + "Compatibles for '{}': {}".format(k, v))
 	
-	for k, v in compatibles.items():
-		if not len(v):
-			print(Fore.LIGHTRED_EX + "No compatibles for '{}'.".format(k))
-			return
-		else:
-			print(Fore.LIGHTGREEN_EX + "Compatibles for '{}': {}".format(k, v))
 	
 	# Create the solver.
 	solver = pywraplp.Solver.CreateSolver('SCIP')
-	solver.SetNumThreads(32)
+	#solver.SetNumThreads(32)
 
 	# Create the variables for binpack B.
-	# b = {j: solver.IntVar(0, 1, '') for j in range(N)}
 	b = {j: solver.BoolVar(f'b_{nids[j]}') for j in range(N)}
 
 	# Create bool vars matrix X.
@@ -119,112 +120,85 @@ def or_solver(app_name, infr_name, dummy=False, show_placement=False, model=Fals
 	bounds = [a['hwcaps'] for _, a in nodes]
 
 	for j in range(N):
-		solver.Add(solver.Sum([coeffs[i] * x[i, j] for i in range(S)]) <= b[j] * (bounds[j] - infr.hwTh), name=f'hw_{nids[j]}')
+		solver.Add(solver.Sum([coeffs[i] * x[i, j] for i in range(S)]) <= (bounds[j] - infr.hwTh), name=f'hw_{nids[j]}')
+
 
 	# Budgeting: no more than MAX_BIN nodes are used.
+	for i in range(S):
+		for j in range(N):
+			solver.Add(x[i, j] <= b[j], name=f'bin_{instances[i].id}_{nids[j]}')
+	
 	solver.Add(solver.Sum([b[j] for j in range(N)]) <= MAX_BIN, name='budget')
 
 	# Constraints:
 	# - cannot exceed the bandwidth of a link. (FeatBW >= sum(ReqBW))
 	# - satisfy latency requirements of data flows. (FeatLat <= ReqLat)
-	tmp = {(d, l): 0 for d in range(DF) for l in range(L+N)}
 	for n, n1, a in links:  # foreach link
-		# bw_constraint = solver.RowConstraint(0, a['bw']-infr.bwTh, f'{n}_{n1}_bw')
 		coeffs = {}
 		j = nids.index(n)
 		j1 = nids.index(n1)
-		lidx=-1
-		for didx, df in enumerate(dfs):  # foreach data flow
-			
-			lidx += 1
-			sec_reqs = set(df.sec_reqs) 
-			if (not sec_reqs.issubset(set(infr.nodes[n]['seccaps']))) or (not sec_reqs.issubset(set(infr.nodes[n1]['seccaps']))):
-				continue			
-			
-			# i = instances.index(df.source) if type(df.source) != ThingInstance else None
-			# i1 = instances.index(df.target) if type(df.target) != ThingInstance else None
+		for df in dfs:  # foreach data flow
+
+			name = f"{df.source.id}_{df.target.id}_{n}_{n1}"
 
 			if isinstance(df.source, ThingInstance):
 				if df.source.node == n:
 					i = -1
 				else:
-					#print("no thg source {}".format(f"{df.source.id}_{n}_{df.target.id}_{n1}"))
 					continue
 			else:
 				if n in compatibles[df.source.id]:
 					i = instances.index(df.source)
 				else:
-					#print("no comp source {}".format(f"{df.source.id}_{n}_{df.target.id}_{n1}"))
 					continue
 
 			if isinstance(df.target, ThingInstance):
 				if df.target.node == n1:
 					i1 = -1
 				else:
-					#print("no thg dest {}".format(f"{df.source.id}_{n}_{df.target.id}_{n1}"))
 					continue
 			else:
 				if n1 in compatibles[df.target.id]:
 					i1 = instances.index(df.target)
 				else:
-					#print("no comp dest {}".format(f"{df.source.id}_{n}_{df.target.id}_{n1}"))
 					continue
 
 			xij = x[i, j] if i != -1 else 1
 			xi1j1 = x[i1, j1] if i1 != -1 else 1
 
-			# linearize the constraint
-			tmp[didx, lidx] = solver.BoolVar(f"{df.source.id}_{n}_{df.target.id}_{n1}")
-			c = tmp[didx, lidx]
-			solver.Add(c <= xij, name=f'lin_1_{c.name()}')
-			solver.Add(c <= xi1j1, name=f'lin_2_{c.name()}')
-			solver.Add(c >= xij + xi1j1 - 1, name=f'lin_3_{c.name()}')
-			solver.Add(c * a['lat'] <= df.latency, name=f'{c.name()}_lat')
+			# FRANGIO
+			sec_reqs = set(df.sec_reqs) 
+			if (a['lat'] > df.latency) or (not (sec_reqs.issubset(set(infr.nodes[n]['seccaps'])) and sec_reqs.issubset(set(infr.nodes[n1]['seccaps'])))):
+				solver.Add(xij + xi1j1 <= 1, name=f'{name}_no_reqs')
+			else:
+				# linearize the constraint
+				c = solver.BoolVar(name)
+				solver.Add(c <= xij, name=f'lin_1_{c.name()}')
+				solver.Add(c <= xi1j1, name=f'lin_2_{c.name()}')
+				solver.Add(c >= xij + xi1j1 - 1, name=f'lin_3_{c.name()}')
 
-			#bw_constraint.SetCoefficient(c, df.bw)
-			coeffs[c] = df.bw
+				coeffs[c] = df.bw
+				
 
 		if len(coeffs):
 			bw_constraint = solver.RowConstraint(0, a['bw']-infr.bwTh, f'{n}_{n1}_bw')
 			for c, b in coeffs.items():
 				bw_constraint.SetCoefficient(c, df.bw)
 
-
-	for d, df in enumerate(dfs):
-		c_src = list(compatibles[df.source.id]) if not isinstance(df.source, ThingInstance) else [df.source.node]
-		c_trg = list(compatibles[df.target.id]) if not isinstance(df.target, ThingInstance) else [df.target.node]
-		ccomp = list(set(c_src).intersection(c_trg))
-		for n in ccomp:
-			nidx = nids.index(n)
-			nidx += L
-			tmp[didx, nidx] = solver.BoolVar(f"{df.source.id}_{n}_{df.target.id}_{n}")
-		solver.Add(solver.Sum([tmp[d, l] for l in range(L+N)]) == 1, name=f'one_link_{df.source.id}_{df.target.id}')
-
-	# costs = np.random.uniform(low=1, high=50, size=(S, N))
 	# OBJECTIVE FUNCTION
 	obj_expr = [costs[i, j] * x[i, j] for i in range(S) for j in range(N)]
 	solver.Minimize(solver.Sum(obj_expr))
 
-	# print(solver.constraint(11).name())
-
 	if model:
-		with open(join(MODELS_DIR,f'model_{app_name}_{infr_name}_{dummy}.lp'), 'w') as f:
+		with open(join(MODELS_DIR,f'model_{app_name}_{infr_name}{"_dummy" if dummy else ""}_pre.lp'), 'w') as f:
 			print(solver.ExportModelAsLpFormat(obfuscated=False), file=f)
 
 	status = solver.Solve()
-
-	'''
-	print("LENGTH:", len(lecci))
-	for c in lecci:
-		if c.solution_value() == 1:
-			print(c.name(), end='\n')
-	'''
 	
-	tot_time = 0
 	n_distinct = set()
 	placement = {}
 	res = {}
-	if status == pywraplp.Solver.OPTIMAL:# or status == pywraplp.Solver.FEASIBLE:
+	if status == pywraplp.Solver.OPTIMAL:
 		for i in range(S):
 			row = [x[i,j].solution_value() if not isinstance(x[i,j], int) else 0 for j in range(N)]
 			j = row.index(max(row))
@@ -232,10 +206,9 @@ def or_solver(app_name, infr_name, dummy=False, show_placement=False, model=Fals
 			n = nodes[j][0]
 			placement[s] = n
 			n_distinct.add(n)
-			# tot_cost += costs[i, j]
 
 		str_pl = "[" + ", ".join(["({}, {})".format(s, n) for s, n in placement.items()]) + "]"
-		print(str_pl)
+		print(Fore.LIGHTGREEN_EX + f"Prolog: {str_pl}")
 
 		if show_placement:
 			print(tabulate(placement.items(), tablefmt='fancy_grid', stralign='center'))
@@ -246,7 +219,7 @@ def or_solver(app_name, infr_name, dummy=False, show_placement=False, model=Fals
 
 		print(Fore.LIGHTGREEN_EX + tabulate(res.items(), numalign='right'))
 	else:
-		print('The problem does not have a solution.')
+		print(Fore.LIGHTRED_EX + 'The problem does not have a solution.')
 	
 
 	if type(result) != str and res:  # if set, send or-tools results to "compare.py"
@@ -266,7 +239,7 @@ if __name__ == '__main__':
 	parser = init_parser()
 	args = parser.parse_args()
 
-	or_solver(app_name=args.app, infr_name=args.infr, show_placement=args.placement, dummy=args.dummy, model=True)
+	or_solver(app_name=args.app, infr_name=args.infr, dummy=args.dummy, show_placement=args.placement, show_compatibles=args.compatibles, model=args.model)
 
 	# absolute import
 else:

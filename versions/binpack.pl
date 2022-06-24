@@ -1,6 +1,9 @@
 % :-['../data/infrs/dummy/infr8.pl', '../data/apps/distSecurity.pl'].
 :-['../requirements.pl', '../costs.pl'].
 
+:- multifile link/4.
+link(X, X, 0, inf).
+
 :- set_prolog_flag(answer_write_options,[max_depth(0)]). % write answers' text entirely
 :- set_prolog_flag(stack_limit, 32 000 000 000).
 :- set_prolog_flag(last_call_optimisation, true).
@@ -46,19 +49,17 @@ findCompatibles([(_,C)|Cs], [(C,SCompatibles)|Rest]):-
 findCompatibles([],[]).
 
 lightNodeOK(S,N,H,SCost) :-
-    serviceInstance(S, SId),
-    service(SId, SWReqs, (Arch, HWReqs)),
+    serviceInstance(S, SId), service(SId, SWReqs, (Arch, HWReqs)),
     node(N, NType, SWCaps, (Arch, HWCaps), _, _),
-    subset(SWReqs, SWCaps),
-    HWCaps >= HWReqs, H is 1/HWCaps, % H used to sort Compatibles (ascending H --> descending HWCaps)) 
+    requirements(SId, N),
+    subset(SWReqs, SWCaps), HWCaps >= HWReqs, H is 1/HWCaps, % H used to sort Compatibles (ascending H --> descending HWCaps)) 
     cost(NType, S, SCost).
 
 lightNodeOK(F,N,H,FCost) :-
-    functionInstance(F, FId, _), 
-    function(FId, SWPlatform, (Arch, HWReqs)),
+    functionInstance(F, FId, _), function(FId, SWPlatform, (Arch, HWReqs)),
     node(N, NType, SWCaps, (Arch, HWCaps), _, _),
-    member(SWPlatform, SWCaps),
-    HWCaps >= HWReqs, H is 1/HWCaps,
+    requirements(FId, N),
+    member(SWPlatform, SWCaps), HWCaps >= HWReqs, H is 1/HWCaps,
     cost(NType, F, FCost).
 
 placement(Cs, Placement, Budget, NewCost) :-
@@ -69,18 +70,6 @@ placement([(C, Comps)|Cs], OldP, NewP, Budget, OldCost, NewCost) :-
     TCost is OldCost + CCost, TCost < Budget,
     placement(Cs, [(C,N)|OldP], NewP, Budget, TCost, NewCost).
 placement([], P, P, _, Cost, Cost).
-
-/*pickNode(N, Ps, Comps, Cost):-
-    (member((_,N), Ps), member((Cost,_,N), Comps));
-    (member((Cost,_,N), Comps), \+ member((_,N),Ps)).
-
-componentPlacement(F, Comps, N, Ps, FCost) :-
-    functionInstance(F, FId, _), function(FId, _, _, HWReqs),
-    pickNode(N, Ps, Comps, FCost), compatible(N, HWReqs, Ps).
-
-componentPlacement(S, Comps, N, Ps, SCost) :-
-    serviceInstance(S, SId), service(SId, _, _, HWReqs),
-    pickNode(N, Ps, Comps, SCost), compatible(N, HWReqs, Ps).*/
 
 componentPlacement(F, Comps, N, Ps, FCost) :-
     functionInstance(F, FId, _), function(FId, _, HWReqs),
@@ -100,11 +89,9 @@ componentPlacement(S, Comps, N, Ps, SCost) :-
     member((SCost,_,N), Comps), \+ member((_,N),Ps),
     compatible(N, HWReqs, Ps).
 
-
-compatible(N, (_,HWReqs), Ps) :-
-    node(N, _, _, (_, HWCaps), _, _), 
-    hwOK(N, HWCaps, HWReqs, Ps). 
-    %requirements(TType, T, N),
+compatible(N, (Arch,HWReqs), Ps) :-
+    node(N, _, _, (Arch, HWCaps), _, _), 
+    hwOK(N, HWCaps, HWReqs, Ps).
 
 hwOK(N,HWCaps,HWReqs,Ps) :-
     findall(HW, hwOnN(N, Ps, HW), HWs), sum_list(HWs,TotHW),
@@ -130,10 +117,10 @@ bwOK(N1N2, FeatBW, Ps):-
 
 secOK(N1, N2, SecReqs) :-
     node(N1, _, _, _, SecCaps1, _), subset(SecReqs, SecCaps1),
-    node(N2, _, _, _, SecCaps2, _),  subset(SecReqs, SecCaps2).
+    node(N2, _, _, _, SecCaps2, _), subset(SecReqs, SecCaps2).
 
 relevant((N1,N2), Ps, Lat, BW, Sec):-
     dataFlow(T1, T2, _, Sec, Size, Rate, Lat),
     (member((T1,N1), Ps); node(N1, _, _, _, _, IoTCaps), member(T1, IoTCaps)),
     (member((T2,N2), Ps); node(N2, _, _, _, _, IoTCaps), member(T2, IoTCaps)),
-    dif(N1,N2), BW is Size*Rate.
+    BW is Size*Rate.

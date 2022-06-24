@@ -9,7 +9,7 @@ from colorama import Fore, init
 from tabulate import tabulate
 
 QUERY = "cost({ntype}, {compid}, Cost)"
-MAX_BIN = 5
+MAX_BIN = 3
 
 
 def init_parser() -> ap.ArgumentParser:
@@ -19,6 +19,7 @@ def init_parser() -> ap.ArgumentParser:
 	p.add_argument("-p", "--placement", action="store_true", help="if set, shows the obtained placement"),
 	p.add_argument("-d", "--dummy", action="store_true",
 	               help="if set, uses an infrastructure with dummy links (low lat, high bw)."),
+	p.add_argument("-m", "--model", action="store_true", help="if set, saves the model in LP format."),
 	p.add_argument("app", help="Application name.")
 	p.add_argument("infr", help="Infrastructure name.")
 
@@ -46,8 +47,8 @@ def get_costs(app, infr, instances, nodes):
 	return costs
 
 
-def or_solver(app_name, infr_name, dummy=False, show_placement=False, result=""):
-
+def or_solver(app_name, infr_name, dummy=False, show_placement=False, model=False, result=""):
+	
 	if type(result) != str:  # if result is not a string, redirect output tu /dev/null
 		sys.stdout = open(os.devnull, 'w')
 
@@ -55,7 +56,7 @@ def or_solver(app_name, infr_name, dummy=False, show_placement=False, result="")
 	infr = Infrastructure(infr_name, dummy=dummy)
 
 	# Set ThingInstance nodes, knowing the infrastructure
-	#app.set_things_from_infr(infr)
+	app.set_things_from_infr(infr)
 
 	instances = app.services + app.functions
 	nodes = list(infr.nodes(data=True))  # (nid, {attrs})
@@ -76,11 +77,17 @@ def or_solver(app_name, infr_name, dummy=False, show_placement=False, result="")
 	solver = pywraplp.Solver.CreateSolver('BOP')
 	solver.SetNumThreads(32)
 
-	# Create the variables.
-	x = {(i, j): solver.BoolVar('') for i in range(S) for j in range(N)}
-	b = {j: solver.BoolVar('') for j in range(N)}
+	# Create the variables for placement X.
+	x = {(i, j): solver.BoolVar(f'{s.id}_{n}') for i, s in enumerate(instances) for j, n in enumerate(nids)}
+
+	# Create the variables for binpack B.
+	b = {j: solver.BoolVar(f'b_{nids[j]}') for j in range(N)}
 
 	# Budgeting: no more than MAX_BIN nodes can be used
+	for i in range(S):
+		for j in range(N):
+			solver.Add(x[i, j] <= b[j])
+
 	solver.Add(solver.Sum(b[j] for j in range(N)) <= MAX_BIN)
 
 	# Constraint: one instance at most in one node.
@@ -92,76 +99,93 @@ def or_solver(app_name, infr_name, dummy=False, show_placement=False, result="")
 	bounds = [a['hwcaps'] for _, a in nodes]
 
 	for j in range(N):
-		solver.Add(solver.Sum([coeffs[i] * x[i, j] for i in range(S)]) <= b[j] * (bounds[j] - infr.hwTh))
+		solver.Add(solver.Sum([coeffs[i] * x[i, j] for i in range(S)]) <= (bounds[j] - infr.hwTh))
 
-	# Constraints:
-	# - cannot exceed the bandwidth of a link. (FeatBW >= sum(ReqBW))
-	# - satisfy latency requirements of data flows. (FeatLat <= ReqLat)
 	for n, n1, a in links:  # foreach link
-		bw_constraint = solver.RowConstraint(0, a['bw']-infr.bwTh, '')
+		coeffs = {}
 		j = nids.index(n)
 		j1 = nids.index(n1)
 		for df in dfs:  # foreach data flow
 
+			name = f"{df.source.id}_{df.target.id}_{n}_{n1}"
+
+			if isinstance(df.source, ThingInstance):
+				if df.source.node == n:
+					i = -1
+				else:
+					continue
+			else:
+				i = instances.index(df.source)
+
+			if isinstance(df.target, ThingInstance):
+				if df.target.node == n1:
+					i1 = -1
+				else:
+					continue
+			else:
+				i1 = instances.index(df.target)
+
+			xij = x[i, j] if i != -1 else 1
+			xi1j1 = x[i1, j1] if i1 != -1 else 1
+
+			# FRANGIO
 			sec_reqs = set(df.sec_reqs) 
-			if (not sec_reqs.issubset(set(infr.nodes[n]['seccaps']))) or (not sec_reqs.issubset(set(infr.nodes[n1]['seccaps']))):
-				continue
+			if (a['lat'] > df.latency) or (not (sec_reqs.issubset(set(infr.nodes[n]['seccaps'])) and sec_reqs.issubset(set(infr.nodes[n1]['seccaps'])))):
+				solver.Add(xij + xi1j1 <= 1, name=f'{name}_no_reqs')
+			else:
+				# linearize the constraint
+				c = solver.BoolVar(name)
+				solver.Add(c <= xij, name=f'lin_1_{c.name()}')
+				solver.Add(c <= xi1j1, name=f'lin_2_{c.name()}')
+				solver.Add(c >= xij + xi1j1 - 1, name=f'lin_3_{c.name()}')
 
+				coeffs[c] = df.bw
+				
 
-			i = instances.index(df.source) if type(df.source) != ThingInstance else None
-			i1 = instances.index(df.target) if type(df.target) != ThingInstance else None
-
-			xij = x[i, j] if i else 1
-			xi1j1 = x[i1, j1] if i1 else 1
-
-			# linearize the constraint
-			c = solver.BoolVar('')
-			solver.Add(c <= xij)
-			solver.Add(c <= xi1j1)
-			solver.Add(c >= xij + xi1j1 - 1)
-
-			solver.Add(c * a['lat'] <= df.latency)
-
-			bw_constraint.SetCoefficient(c, df.bw)
+		if len(coeffs):
+			bw_constraint = solver.RowConstraint(0, a['bw']-infr.bwTh, f'{n}_{n1}_bw')
+			for c, b in coeffs.items():
+				bw_constraint.SetCoefficient(c, df.bw)
 
 	#  OBJECTIVE FUNCTION
 	costs = get_costs(app.file, infr.file, instances, nodes)
-	objective = solver.Objective()
-	for i in range(S):
-		for j in range(N):
-			objective.SetCoefficient(x[i, j], costs[i, j])
-	objective.SetMinimization()
+	# OBJECTIVE FUNCTION
+	obj_expr = [costs[i, j] * x[i, j] for i in range(S) for j in range(N)]
+	solver.Minimize(solver.Sum(obj_expr))
+
+	if model:
+		with open(join(MODELS_DIR,f'model_{app_name}_{infr_name}_{"dummy" if dummy else ""}_pre.lp'), 'w') as f:
+			print(solver.ExportModelAsLpFormat(obfuscated=False), file=f)
 
 	status = solver.Solve()
 	
-	tot_time = 0
 	n_distinct = set()
 	placement = {}
-
-	if status == pywraplp.Solver.OPTIMAL:# or status == pywraplp.Solver.FEASIBLE:
+	res = {}
+	if status == pywraplp.Solver.OPTIMAL:
 		for i in range(S):
-			row = [x[i,j].solution_value() for j in range(N)]
+			row = [x[i,j].solution_value() if not isinstance(x[i,j], int) else 0 for j in range(N)]
 			j = row.index(max(row))
 			s = instances[i].id
 			n = nodes[j][0]
 			placement[s] = n
 			n_distinct.add(n)
-			# tot_cost += costs[i, j]
 
+		str_pl = "[" + ", ".join(["({}, {})".format(s, n) for s, n in placement.items()]) + "]"
+		print(Fore.LIGHTGREEN_EX + f"Prolog: {str_pl}")
 
 		if show_placement:
 			print(tabulate(placement.items(), tablefmt='fancy_grid', stralign='center'))
-		tot_cost = solver.Objective().Value()
-		tot_time = solver.WallTime() / 1000  # in seconds
 
+		tot_cost = solver.Objective().Value() # if only cost in Objective function
+		tot_time = solver.WallTime() / 1000  # in seconds
 		res = {'App': app_name, 'Time': tot_time, 'Cost': round(tot_cost, 4), 'NDistinct': len(n_distinct), 'Constraints': solver.NumConstraints()}
 
 		print(Fore.LIGHTGREEN_EX + tabulate(res.items(), numalign='right'))
-
 	else:
-		print('The problem does not have a solution.')
+		print(Fore.LIGHTRED_EX + 'The problem does not have a solution.')
 	
-
+	print(res)
 	if type(result) != str and res:  # if set, send or-tools results to "compare.py"
 		res['Placement'] = placement, 
 		del res['Constraints']
@@ -179,7 +203,7 @@ if __name__ == '__main__':
 	parser = init_parser()
 	args = parser.parse_args()
 
-	or_solver(app_name=args.app, infr_name=args.infr, show_placement=args.placement, dummy=args.dummy)
+	or_solver(app_name=args.app, infr_name=args.infr, dummy=args.dummy, show_placement=args.placement, model=args.model)
 
 	# absolute import
 else:

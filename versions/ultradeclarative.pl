@@ -1,20 +1,14 @@
-% :-['../data/infrs/infres.pl', '../data/apps/es.pl'].
+:-['../data/infrs/infr512.pl', '../data/apps/distSecurity.pl'].
 :-['../requirements.pl', '../costs.pl'].
+
+:- multifile link/4.
+link(X, X, 0, inf).
 
 :- set_prolog_flag(answer_write_options,[max_depth(0)]). % write answers' text entirely
 :- set_prolog_flag(stack_limit, 32 000 000 000).
 :- set_prolog_flag(last_call_optimisation, true).
 
 tolerance(0.0).
-
-/*best(App, Placement, Cost, Budget) :-
-    application(App, Functions, Services), 
-    findall((C,P), eligiblePlacement(Functions, Services, Budget, P, C), Pls), sort(Pls,[(Cost, Placement)|_]), 
-    writeln("Found first placement"), writeln(Placement), writeln(Cost),
-    (eligiblePlacement(Functions, Services, Budget, P1, C1), dif(Placement, P1), C1 < Cost),
-    writeln("This last Placement is optimal").
-    %countDistinct(Placement). % only for testing
-*/
 
 stats(App, Placement, Cost, NDistinct, Infs, Time, Budget) :-
     statistics(inferences, InfA),
@@ -28,8 +22,7 @@ stats(App, Placement, Cost, NDistinct, Infs, Time, Budget) :-
     Time is TimeB - TimeA.
 
 best(App, Placement, Cost, Budget) :-
-    application(App, Functions, Services), 
-    checkThings,
+    application(App, Functions, Services), checkThings,
     eligiblePlacement(Functions, Services, Budget, Placement, Cost).
 
 eligiblePlacement(Functions, Services, Budget, Placement, Cost):-
@@ -56,12 +49,12 @@ placement([], []).
 componentPlacement(F, N) :-
     functionInstance(F, FId, _), function(FId, SWPlat, (Arch,_)),
     node(N, _, SWCaps, (Arch,_), _, _), 
-    %requirements(FId, F, N), 
+    requirements(FId, N), 
     member(SWPlat, SWCaps).
 componentPlacement(S, N) :-
     serviceInstance(S, SId), service(SId, SWReqs, (Arch,_)),
     node(N, _, SWCaps, (Arch,_), _, _), 
-    %requirements(SId, S, N), 
+    requirements(SId, N), 
     subset(SWReqs, SWCaps).
 
 costOK(Placement, Budget, Cost) :-
@@ -109,4 +102,4 @@ relevant((N1,N2), Ps, Lat, BW, Sec):-
     dataFlow(T1, T2, _, Sec, Size, Rate, Lat),
     (member((T1,N1), Ps); node(N1, _, _, _, _, IoTCaps), member(T1, IoTCaps)),
     (member((T2,N2), Ps); node(N2, _, _, _, _, IoTCaps), member(T2, IoTCaps)),
-    dif(N1,N2), BW is Size*Rate.
+    BW is Size*Rate.

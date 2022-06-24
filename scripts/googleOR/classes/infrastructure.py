@@ -42,6 +42,7 @@ class Infrastructure(nx.DiGraph):
 			self.set_thresholds(bw_th, hw_th)
 			self.add_nodes(nodes)
 			self.add_links(links)
+			# self.add_self_edges()
 
 	def parse_node(self, data):
 		out = p.parse(NODE, data, dict(to_list=to_list, to_list2=to_list_maybe_empty))
@@ -66,6 +67,10 @@ class Infrastructure(nx.DiGraph):
 	def add_links(self, links):
 		for e in links:
 			self.parse_link(e)
+
+	def add_self_edges(self):
+		for n in self.nodes():
+			self.add_edge(n, n, lat=0, bw=float('inf'))
 
 	def set_thresholds(self, bw_th, hw_th):
 		out_bw = p.parse(BW_TH, bw_th).named['t']
@@ -94,7 +99,8 @@ class Infrastructure(nx.DiGraph):
 		links = list(self.edges(data=True))
 
 		for n1, n2, lattr in links:
-			links_str += "link({}, {}, {lat}, {bw}).\n".format(n1, n2, **lattr).replace("'", "")
+			if n1 != n2: 
+				links_str += "link({}, {}, {lat}, {bw}).\n".format(n1, n2, **lattr).replace("'", "")
 		return links_str
 
 	def __str__(self):
