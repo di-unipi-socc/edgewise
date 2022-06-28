@@ -56,16 +56,16 @@ class Infra(nx.DiGraph):
 
 	def set_nodes(self, n, seed):
 		i = int(log2(n))
-		H = nx.barabasi_albert_graph(n, i, seed=seed)
-		H = nx.relabel_nodes(H, lambda x: f"n{x}")
-		self.add_nodes_from(H, things=[])
+		R = nx.barabasi_albert_graph(n, n-1, seed=seed)
+		R = nx.relabel_nodes(R, lambda x: f"n{x}")
+		self.add_nodes_from(R, things=[])
 		for node in self.nodes:
 			ntype = rnd.choice(TYPES, p=PROBS)
 			method = 'set_as_{}'.format(ntype)
 			getattr(self, method)(node)
 		self.set_grouped_nodes()
 
-		self.add_edges_from(H.edges)
+		self.add_edges_from(R.edges)
 
 	def set_grouped_nodes(self):
 		for t in TYPES:
@@ -127,9 +127,11 @@ class Infra(nx.DiGraph):
 	def dummy_links(self, lat, bw):
 		for n1 in self.nodes:
 			for n2 in self.nodes:
-				if n1 != n2 and self.has_edge(n1, n2):
-					#self.add_edge(n1, n2, lat=lat, bw=bw)
-					nx.set_edge_attributes(self, {(n1,n2): {'lat':lat, 'bw':bw}})
+				if n1 != n2: #self.has_edge(n1, n2):
+					if self.has_edge(n1, n2):
+						nx.set_edge_attributes(self, {(n1,n2): {'lat':lat, 'bw':bw}})
+					else:
+						self.add_edge(n1, n2, lat=lat, bw=bw)
 
 	def get_thresholds(self):
 		bwTh = "bwTh({}).".format(self._bwTh)
@@ -146,9 +148,7 @@ class Infra(nx.DiGraph):
 		rnd.shuffle(nodes)
 
 		for (nid, nattr) in nodes:
-			nodes_str += "node({}, {ntype}, {software}, {hardware}, {security}, {things}).\n".format(nid,
-			                                                                                         **nattr).replace(
-				"'", "")
+			nodes_str += "node({}, {ntype}, {software}, {hardware}, {security}, {things}).\n".format(nid,**nattr).replace("'", "")
 		return nodes_str
 
 	def get_links(self):
@@ -170,7 +170,6 @@ class Infra(nx.DiGraph):
 		return infra
 
 	def get_gnodes(self):
-		#return "\n".join(["{}: {}".format(k, len(v)) for k, v in self.gnodes.items()])
 		return list([[k, len(v)] for k,v in self.gnodes.items()])
 
 	def upload(self, file=None):

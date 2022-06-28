@@ -1,6 +1,7 @@
 import networkx as nx
 import parse as p
 from .utils import check_infr
+from itertools import permutations
 
 BW_TH = "bwTh({t:g})."
 HW_TH = "hwTh({t:g})."
@@ -42,7 +43,6 @@ class Infrastructure(nx.DiGraph):
 			self.set_thresholds(bw_th, hw_th)
 			self.add_nodes(nodes)
 			self.add_links(links)
-			# self.add_self_edges()
 
 	def parse_node(self, data):
 		out = p.parse(NODE, data, dict(to_list=to_list, to_list2=to_list_maybe_empty))
@@ -58,17 +58,26 @@ class Infrastructure(nx.DiGraph):
 			raise ParseException("Link parse error: {}".format(data))
 
 		out = out.named
-		self.add_edge(out.pop("source"), out.pop("target"), **out)
+		# self.add_edge(out.pop("source"), out.pop("target"), **out)
+		nx.set_edge_attributes(self, {(out.pop("source"), out.pop("target")): out})
 
 	def add_nodes(self, nodes):
 		for n in nodes:
 			self.parse_node(n)
 
 	def add_links(self, links):
+		# initialize links with lat = 'inf' and bw = 0
+		all_links = list(permutations(self.nodes(), 2))
+		self.add_edges_from(all_links, lat=float('inf'), bw=0)
+
+		# dummy links to a node itself
+		self.add_self_links()
+
+		# add links info from infrastructure file
 		for e in links:
 			self.parse_link(e)
 
-	def add_self_edges(self):
+	def add_self_links(self):
 		for n in self.nodes():
 			self.add_edge(n, n, lat=0, bw=float('inf'))
 

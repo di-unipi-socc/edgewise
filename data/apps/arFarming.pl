@@ -1,8 +1,8 @@
 % service(ServiceId, SWReqs, (Arch, HWReqs)).
 service(database, [mySQL, ubuntu], (x86, 50)).
-service(queue, [python], (x86, 5)).
-service(imageRecognition, [python, gcc], (arm64, 10)).
-service(dashboard, [mySQL, js], (x86, 4)).
+service(queue, [python], (arm64, 5)).
+service(imageRecognition, [python, gcc], (x86, 10)).
+service(dashboard, [js], (x86, 4)).
 
 % function(FunctionId, SWPlatform, (Arch, HWReqs)).
 function(camCalibration, python, (arm64, 8)).

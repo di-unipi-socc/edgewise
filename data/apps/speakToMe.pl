@@ -39,17 +39,17 @@ thingInstance(iphoneXS, smph).
 thingInstance(echoDot, spk).
 
 % dataFlow(Source, Dest, DataId, SecReqs, Size, Rate, MaxLat).
-dataFlow(iphoneXS, uploadPost, post, [enc], 0.4, 5, 60).
-dataFlow(uploadPost, textBucket, post, [enc], 0.4, 5, 80).
-dataFlow(textBucket, metaPost, post, [enc], 0.4, 6, 40).
-dataFlow(metaPost, mainDB, meta, [enc], 0.1, 6, 30).
-dataFlow(textBucket, publishPost, post, [enc], 0.4, 5, 60).
-dataFlow(publishPost, postQueue, post, [enc], 0.2, 5, 50).
-dataFlow(postQueue, convertTxt, post, [enc], 0.2, 8, 40).
-dataFlow(convertTxt, converter, post, [enc], 0.2, 8, 40).
-dataFlow(converter, convertTxt, speech, [enc], 0.2, 8, 30).
-dataFlow(convertTxt, echoDot, speech, [enc], 0.5, 8, 30).
-dataFlow(convertTxt, metaAudio, speech, [enc], 0.5, 8, 70).
-dataFlow(metaAudio, mainDB, meta, [enc], 0.1, 10, 20).
-dataFlow(convertTxt, uploadAudio, speech, [enc], 0.8, 8, 30).
-dataFlow(uploadAudio, audioBucket, speech, [enc], 0.8, 8, 40).
+dataFlow(iphoneXS, uploadPost, post, [enc], 0.01, 5, 500).
+dataFlow(uploadPost, textBucket, post, [enc], 0.01, 5, 500).
+dataFlow(textBucket, metaPost, post, [enc], 0.01, 6, 500).
+dataFlow(metaPost, mainDB, meta, [enc], 0.01, 6, 500).
+dataFlow(textBucket, publishPost, post, [enc], 0.004, 5, 500).
+dataFlow(publishPost, postQueue, post, [enc], 0.002, 5, 500).
+dataFlow(postQueue, convertTxt, post, [enc], 0.002, 8, 400).
+dataFlow(convertTxt, converter, post, [enc], 0.002, 8, 400).
+dataFlow(converter, convertTxt, speech, [enc], 0.002, 8, 300).
+dataFlow(convertTxt, echoDot, speech, [enc], 0.005, 8, 300).
+dataFlow(convertTxt, metaAudio, speech, [enc], 0.005, 8, 700).
+dataFlow(metaAudio, mainDB, meta, [enc], 0.001, 10, 2000).
+dataFlow(convertTxt, uploadAudio, speech, [enc], 0.008, 8, 300).
+dataFlow(uploadAudio, audioBucket, speech, [enc], 0.008, 8, 400).

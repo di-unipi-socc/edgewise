@@ -173,17 +173,16 @@ def or_solver(app_name, infr_name, dummy=False, show_placement=False, show_compa
 			else:
 				# linearize the constraint
 				c = solver.BoolVar(name)
-				solver.Add(c <= xij, name=f'lin_1_{c.name()}')
-				solver.Add(c <= xi1j1, name=f'lin_2_{c.name()}')
+				# solver.Add(c <= xij, name=f'lin_1_{c.name()}')
+				# solver.Add(c <= xi1j1, name=f'lin_2_{c.name()}')
 				solver.Add(c >= xij + xi1j1 - 1, name=f'lin_3_{c.name()}')
 
 				coeffs[c] = df.bw
-				
 
 		if len(coeffs):
 			bw_constraint = solver.RowConstraint(0, a['bw']-infr.bwTh, f'{n}_{n1}_bw')
 			for c, b in coeffs.items():
-				bw_constraint.SetCoefficient(c, df.bw)
+				bw_constraint.SetCoefficient(c, b)
 
 	# OBJECTIVE FUNCTION
 	obj_expr = [costs[i, j] * x[i, j] for i in range(S) for j in range(N)]
