@@ -1,8 +1,9 @@
 import argparse as ap
 from os.path import join
+from itertools import product
 
 import networkx as nx
-from numpy import log2
+from numpy import log2, set_printoptions
 from numpy import random as rnd
 
 from colorama import Fore, init
@@ -35,17 +36,20 @@ def get_random_things(n=1):
 	return t
 
 
-
-class Infra(nx.DiGraph):
+class Infra(nx.Graph):
 	def __init__(self, n, seed, dummy=False):
 		super().__init__()
-		self.gnodes = {}  # nodes grouped by TYPES
-		self.file = "infr{}.pl".format(n)
 		self._bwTh = 3
 		self._hwTh = 1
 
-		self.set_nodes(n, seed)
+		self.n = n
+		self.file = "infr{}.pl".format(self.n) 	
+		self.gnodes = {}  # nodes grouped by TYPES
+
 		self.set_filepath(dummy)
+		self.set_nodes(n, seed)
+		self.set_links()
+		nx.relabel_nodes(self, lambda x: f"n{x}", copy=False)
 
 	def set_filepath(self, dummy):
 		path = INFRS_DIR
@@ -56,8 +60,9 @@ class Infra(nx.DiGraph):
 
 	def set_nodes(self, n, seed):
 		i = int(log2(n))
-		R = nx.barabasi_albert_graph(n, n-1, seed=seed)
-		R = nx.relabel_nodes(R, lambda x: f"n{x}")
+		R = nx.barabasi_albert_graph(n, 3, seed=seed)
+		# R = nx.complete_graph(n, nx.DiGraph())
+		# R = nx.relabel_nodes(R, lambda x: f"n{x}")
 		self.add_nodes_from(R, things=[])
 		for node in self.nodes:
 			ntype = rnd.choice(TYPES, p=PROBS)
@@ -65,18 +70,28 @@ class Infra(nx.DiGraph):
 			getattr(self, method)(node)
 		self.set_grouped_nodes()
 
-		self.add_edges_from(R.edges)
+		self.add_edges_from(R.edges)#, bw=rnd.randint(1, 500), lat=5)
+		for e in self.edges():
+			nx.set_edge_attributes(self, {e: {'lat': rnd.randint(1, 20)}}) 
 
 	def set_grouped_nodes(self):
 		for t in TYPES:
 			self.gnodes[t] = [x for x, y in nx.get_node_attributes(self, 'ntype').items() if y == t]
 
-	def add_links(self, type1, type2, lat=1, bw=500):
+	""" def add_links(self, type1, type2, lat=1, bw=500):
 		for n1 in self.gnodes[type1]:
 			for n2 in self.gnodes[type2]:
 				if n1 != n2 and self.has_edge(n1, n2):
-					# self.add_edge(n1, n2, lat=lat, bw=bw)
-					nx.set_edge_attributes(self, {(n1,n2): {'lat':lat, 'bw':bw}})
+					nx.set_edge_attributes(self, {(n1,n2): {'lat':lat, 'bw':bw}}) """
+
+	def set_links(self):
+		sp = nx.floyd_warshall_numpy(self, weight='lat')
+		for i,j in product(range(self.n), repeat=2):
+			bw = rnd.randint(20, 250) if i!= j else float('inf')
+			if self.has_edge(i, j):
+				nx.set_edge_attributes(self, {(i, j): {'bw': bw}}) 
+			else:
+				self.add_edge(i, j, lat=int(sp[i,j]), bw=bw)
 
 	def set_as_cloud(self, nid):
 		node = self.nodes[nid]
@@ -111,7 +126,7 @@ class Infra(nx.DiGraph):
 		hw_platform = rnd.choice(HW_PLATFORMS)
 		node['hardware'] = (hw_platform, 64)
 		node['security'] = ["enc", "auth"]
-		# randomly assign 1 IoT device(s)
+		# randomly assign IoT device(s)
 		node['things'] = get_random_things(n=rnd.randint(1, 3))
 
 	def set_as_thing(self, nid):
@@ -121,17 +136,16 @@ class Infra(nx.DiGraph):
 		hw_platform = rnd.choice(HW_PLATFORMS)
 		node['hardware'] = (hw_platform, 32)
 		node['security'] = ["enc", "auth"]
-		# randomly assign 1 IoT device(s)
+		# randomly assign IoT device(s)
 		node['things'] = get_random_things(n=rnd.randint(1, 4))
 
 	def dummy_links(self, lat, bw):
-		for n1 in self.nodes:
-			for n2 in self.nodes:
-				if n1 != n2: #self.has_edge(n1, n2):
-					if self.has_edge(n1, n2):
-						nx.set_edge_attributes(self, {(n1,n2): {'lat':lat, 'bw':bw}})
-					else:
-						self.add_edge(n1, n2, lat=lat, bw=bw)
+		for n1, n2 in product(self.nodes(), repeat=2):
+			if n1 != n2: #self.has_edge(n1, n2):
+				if self.has_edge(n1, n2):
+					nx.set_edge_attributes(self, {(n1,n2): {'lat':lat, 'bw':bw}})
+				else:
+					self.add_edge(n1, n2, lat=lat, bw=bw)
 
 	def get_thresholds(self):
 		bwTh = "bwTh({}).".format(self._bwTh)
@@ -158,6 +172,8 @@ class Infra(nx.DiGraph):
 
 		for n1, n2, lattr in links:
 			links_str += "link({}, {}, {lat}, {bw}).\n".format(n1, n2, **lattr).replace("'", "")
+			if n1 != n2:
+				links_str += "link({}, {}, {lat}, {bw}).\n".format(n2, n1, **lattr).replace("'", "")
 		return links_str
 
 	def __str__(self):
@@ -179,49 +195,44 @@ class Infra(nx.DiGraph):
 			f.write(str(self))
 
 
-def generate_from_basename(g, n, basename=""):
-	nodes = [basename + str(i) for i in range(0, n)]
-	g.add_nodes_from(nodes)
-	return nodes
-
-
 def main(n, seed=None, dummy=False):
 	infra = Infra(n, seed=seed, dummy=dummy)
-	assert(NOT_PLACED_THINGS == 0)
+	#assert(NOT_PLACED_THINGS == 0)
 	info = [['SEED:', seed], ['DUMMY:', 'YES' if dummy else 'NO']]
 
 	if dummy:
 		infra.dummy_links(lat=5, bw=700)
 	else:
-		infra.add_links('cloud', 'cloud', 20, 1000)
-		infra.add_links('cloud', 'isp', 110, 1000)
-		infra.add_links('cloud', 'cabinet', 135, 100)
-		infra.add_links('cloud', 'accesspoint', 148, 20)
-		infra.add_links('cloud', 'thing', 150, 18)
+		pass
+		""" infra.add_links('cloud', 'cloud', 20, 1000)
+		infra.add_links('cloud', 'isp', 50, 1000)
+		infra.add_links('cloud', 'cabinet', 50, 100)
+		infra.add_links('cloud', 'accesspoint', 60, 20)
+		infra.add_links('cloud', 'thing', 65, 30)
 
-		infra.add_links('isp', 'cloud', 110, 1000)
+		infra.add_links('isp', 'cloud', 50, 1000)
 		infra.add_links('isp', 'isp', 20, 1000)
 		infra.add_links('isp', 'cabinet', 25, 500)
-		infra.add_links('isp', 'accesspoint', 38, 50)
+		infra.add_links('isp', 'accesspoint', 30, 50)
 		infra.add_links('isp', 'thing', 20, 1000)
 
-		infra.add_links('cabinet', 'cloud', 135, 100)
+		infra.add_links('cabinet', 'cloud', 60, 100)
 		infra.add_links('cabinet', 'isp', 25, 50)
 		infra.add_links('cabinet', 'cabinet', 20, 100)
 		infra.add_links('cabinet', 'accesspoint', 13, 50)
 		infra.add_links('cabinet', 'thing', 15, 35)
 
-		infra.add_links('accesspoint', 'cloud', 148, 50)
-		infra.add_links('accesspoint', 'isp', 38, 80)
-		infra.add_links('accesspoint', 'cabinet', 13, 80)
+		infra.add_links('accesspoint', 'cloud', 65, 50)
+		infra.add_links('accesspoint', 'isp', 30, 80)
+		infra.add_links('accesspoint', 'cabinet', 10, 80)
 		infra.add_links('accesspoint', 'accesspoint', 10, 10)
 		infra.add_links('accesspoint', 'thing', 2, 20)
 
-		infra.add_links('thing', 'cloud', 150, 50)
+		infra.add_links('thing', 'cloud', 65, 30)
 		infra.add_links('thing', 'isp', 40, 50)
 		infra.add_links('thing', 'cabinet', 15, 50)
 		infra.add_links('thing', 'accesspoint', 2, 20)
-		infra.add_links('thing', 'thing', 15, 50)
+		infra.add_links('thing', 'thing', 15, 50) """
 
 	info.append(['PATH:', infra.file])
 	print(Fore.LIGHTCYAN_EX + tabulate(info))
@@ -244,7 +255,8 @@ def init_parser() -> ap.ArgumentParser:
 
 
 if __name__ == "__main__":
-
+	import sys
+	set_printoptions(threshold=sys.maxsize)
 	init(autoreset=True)
 	parser = init_parser()
 	args = parser.parse_args()

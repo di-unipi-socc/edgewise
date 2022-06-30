@@ -1,4 +1,4 @@
-:-['../data/infrs/infr32.pl', '../data/apps/speakToMe.pl'].
+:-['../data/infrs/infrUC.pl', '../data/apps/distSecurity.pl'].
 :-['../requirements.pl', '../costs.pl'].
 
 :- multifile link/4.

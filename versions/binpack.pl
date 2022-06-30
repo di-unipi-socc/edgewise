@@ -1,4 +1,4 @@
-:-['../data/infrs/dummy/infr128.pl', '../data/apps/speakToMe.pl'].
+%:-['../data/infrs/infr128.pl', '../data/apps/speakToMe.pl'].
 :-['../requirements.pl', '../costs.pl'].
 
 :- multifile link/4.
@@ -25,9 +25,9 @@ best(App, Placement, Cost, Budget) :-
     ranking(Functions, Services, RankedComps),  % RankedComps:  [(Rank, Comp)|Rest] --> sort "Comp" by increasing HWReqs
     findCompatibles(RankedComps, Components),   % Components:   [(Comp, Compatibles)|Rest]--> sort "Compatibles" nodes by decreasing HWCaps
     placement(Components, Placement, Budget, Cost),
-    qosOK(Placement).
-    /*statistics(cputime, StartTime),
-    timer(StartTime, Placement).*/
+    statistics(cputime, StartTime),
+    timer(StartTime, Placement).
+    %qosOK(Placement).
 
 checkThings :-
     findall(T, thingInstance(T, _), Things),
@@ -35,7 +35,7 @@ checkThings :-
     subset(Things, IoT).
 
 timer(StartTime, Placement) :-
-    MaxTime is StartTime+5, statistics(cputime, CurrTime),
+    MaxTime is StartTime+300, statistics(cputime, CurrTime),
     (CurrTime < MaxTime -> qosOK(Placement); !, false).
 
 countDistinct(P, L) :-
@@ -51,15 +51,17 @@ findCompatibles([],[]).
 lightNodeOK(S,N,H,SCost) :-
     serviceInstance(S, SId), service(SId, SWReqs, (Arch, HWReqs)),
     node(N, NType, SWCaps, (Arch, HWCaps), _, _),
-    requirements(SId, N),
-    subset(SWReqs, SWCaps), HWCaps >= HWReqs, H is 1/HWCaps, % H used to sort Compatibles (ascending H --> descending HWCaps)) 
+    %requirements(SId, N),
+    %subset(SWReqs, SWCaps), 
+    HWCaps >= HWReqs, H is 1/HWCaps, % H used to sort Compatibles (ascending H --> descending HWCaps)) 
     cost(NType, S, SCost).
 
 lightNodeOK(F,N,H,FCost) :-
     functionInstance(F, FId, _), function(FId, SWPlatform, (Arch, HWReqs)),
     node(N, NType, SWCaps, (Arch, HWCaps), _, _),
-    requirements(FId, N),
-    member(SWPlatform, SWCaps), HWCaps >= HWReqs, H is 1/HWCaps,
+    %requirements(FId, N),
+    %member(SWPlatform, SWCaps), 
+    HWCaps >= HWReqs, H is 1/HWCaps,
     cost(NType, F, FCost).
 
 placement(Cs, Placement, Budget, NewCost) :-
@@ -106,8 +108,8 @@ qosOK(Ps) :-
 
 checkDF([((N1,N2),ReqLat,SecReqs)|DFs], Ps) :-
     checkDF(DFs, Ps),
-    link(N1, N2, FeatLat, FeatBW),
-    secOK(N1, N2, SecReqs),
+    (link(N1, N2, FeatLat, FeatBW); link(N2, N1, FeatLat, FeatBW)),
+    %secOK(N1, N2, SecReqs),
     FeatLat =< ReqLat, bwOK((N1,N2), FeatBW, Ps).
 checkDF([], _).
 

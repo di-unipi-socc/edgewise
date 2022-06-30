@@ -1,38 +1,279 @@
 bwTh(3).
 hwTh(1).
 
-node(n1, accesspoint, [js, gcc], (arm64, 64), [enc, auth], [water]).
-node(n14, cloud, [ubuntu, mySQL, python, js, gcc], (x86, 1024), [enc, auth], []).
-node(n10, isp, [js, python, mySQL, gcc], (x86, 512), [enc], []).
-node(n0, accesspoint, [python, js, gcc], (arm64, 64), [enc, auth], [echoDot, soil]).
-node(n13, cabinet, [gcc, ubuntu, python], (arm64, 128), [enc, auth], []).
-node(n7, thing, [js], (arm64, 32), [enc, auth], [cam12]).
-node(n3, accesspoint, [python, gcc, ubuntu], (arm64, 64), [enc, auth], [nutrient, arViewer]).
-node(n15, cabinet, [gcc, python, ubuntu, mySQL], (arm64, 256), [enc, auth], []).
-node(n5, cabinet, [mySQL, python], (x86, 128), [enc, auth], [heat, cam21]).
-node(n12, cabinet, [ubuntu, js], (arm64, 128), [enc, auth], [piCamera1, iphoneXS]).
-node(n6, cabinet, [js, ubuntu], (arm64, 128), [enc, auth], [cam11, piCamera2]).
-node(n11, cloud, [ubuntu, mySQL, python, js, gcc], (x86, 1024), [enc, auth], []).
-node(n8, isp, [python, js, ubuntu, mySQL], (x86, 256), [enc], []).
-node(n2, cloud, [ubuntu, mySQL, python, js, gcc], (arm64, 1024), [enc, auth], []).
-node(n9, cabinet, [python, ubuntu], (x86, 256), [enc, auth], [cam22]).
-node(n4, accesspoint, [python, gcc, js], (x86, 64), [enc, auth], [energy]).
+node(n4, cabinet, [ubuntu, python], (x86, 128), [enc, auth], [soil]).
+node(n2, isp, [js, mySQL], (arm64, 512), [enc], []).
+node(n6, isp, [python, mySQL, js], (x86, 512), [enc], []).
+node(n1, isp, [mySQL, js, python, ubuntu], (x86, 256), [enc], []).
+node(n5, thing, [js, ubuntu], (arm64, 32), [enc, auth], [heat]).
+node(n3, accesspoint, [python, js], (x86, 64), [enc, auth], [arViewer, water]).
+node(n10, thing, [python], (arm64, 32), [enc, auth], [echoDot, nutrient, cam21]).
+node(n11, cabinet, [python, ubuntu, gcc], (x86, 256), [enc, auth], [piCamera1, cam11]).
+node(n13, accesspoint, [mySQL, js, ubuntu], (arm64, 64), [enc, auth], [piCamera2]).
+node(n15, cloud, [ubuntu, mySQL, python, js, gcc], (arm64, 1024), [enc, auth], []).
+node(n8, cabinet, [gcc, ubuntu, mySQL], (x86, 256), [enc, auth], [cam22, iphoneXS]).
+node(n7, thing, [gcc, js], (arm64, 32), [enc, auth], [energy, cam12]).
+node(n14, cabinet, [gcc, python, ubuntu], (arm64, 128), [enc, auth], []).
+node(n0, cloud, [ubuntu, mySQL, python, js, gcc], (x86, 1024), [enc, auth], []).
+node(n12, cloud, [ubuntu, mySQL, python, js, gcc], (x86, 1024), [enc, auth], []).
+node(n9, cloud, [ubuntu, mySQL, python, js, gcc], (arm64, 1024), [enc, auth], []).
 
-link(n0, n15, 13, 80).
-link(n0, n7, 2, 20).
-link(n0, n9, 13, 80).
-link(n0, n11, 148, 50).
-link(n0, n2, 148, 50).
-link(n0, n3, 10, 10).
-link(n0, n13, 13, 80).
-link(n0, n10, 38, 80).
-link(n0, n8, 38, 80).
-link(n0, n5, 13, 80).
-link(n0, n12, 13, 80).
-link(n0, n6, 13, 80).
-link(n0, n14, 148, 50).
-link(n0, n4, 10, 10).
-link(n0, n1, 10, 10).
+link(n0, n0, 0, inf).
+link(n1, n6, 10, 26).
+link(n6, n1, 10, 26).
+link(n3, n13, 10, 99).
+link(n13, n3, 10, 99).
+link(n2, n8, 11, 70).
+link(n8, n2, 11, 70).
+link(n11, n11, 0, inf).
+link(n0, n3, 11, 128).
+link(n3, n0, 11, 128).
+link(n8, n11, 18, 119).
+link(n11, n8, 18, 119).
+link(n4, n12, 10, 178).
+link(n12, n4, 10, 178).
+link(n7, n10, 5, 142).
+link(n10, n7, 5, 142).
+link(n6, n14, 8, 174).
+link(n14, n6, 8, 174).
+link(n8, n8, 0, inf).
+link(n0, n8, 17, 173).
+link(n8, n0, 17, 173).
+link(n3, n3, 0, inf).
+link(n0, n15, 16, 191).
+link(n15, n0, 16, 191).
+link(n8, n14, 21, 198).
+link(n14, n8, 21, 198).
+link(n1, n4, 8, 136).
+link(n4, n1, 8, 136).
+link(n7, n13, 1, 78).
+link(n13, n7, 1, 78).
+link(n9, n14, 11, 32).
+link(n14, n9, 11, 32).
+link(n3, n12, 13, 159).
+link(n12, n3, 13, 159).
+link(n6, n15, 12, 248).
+link(n15, n6, 12, 248).
+link(n8, n12, 5, 192).
+link(n12, n8, 5, 192).
+link(n14, n14, 0, inf).
+link(n1, n8, 20, 204).
+link(n8, n1, 20, 204).
+link(n2, n14, 10, 194).
+link(n14, n2, 10, 194).
+link(n2, n5, 7, 189).
+link(n5, n2, 7, 189).
+link(n7, n11, 8, 22).
+link(n11, n7, 8, 22).
+link(n0, n12, 15, 165).
+link(n12, n0, 15, 165).
+link(n0, n4, 12, 27).
+link(n4, n0, 12, 27).
+link(n4, n10, 3, 41).
+link(n10, n4, 3, 41).
+link(n3, n14, 10, 109).
+link(n14, n3, 10, 109).
+link(n7, n7, 0, inf).
+link(n0, n9, 7, 246).
+link(n9, n0, 7, 246).
+link(n5, n10, 6, 231).
+link(n10, n5, 6, 231).
+link(n10, n15, 13, 20).
+link(n15, n10, 13, 20).
+link(n2, n15, 22, 132).
+link(n15, n2, 22, 132).
+link(n0, n5, 1, 159).
+link(n5, n0, 1, 159).
+link(n4, n11, 6, 116).
+link(n11, n4, 6, 116).
+link(n6, n9, 9, 187).
+link(n9, n6, 9, 187).
+link(n3, n6, 7, 56).
+link(n6, n3, 7, 56).
+link(n0, n7, 8, 238).
+link(n7, n0, 8, 238).
+link(n7, n12, 7, 42).
+link(n12, n7, 7, 42).
+link(n12, n12, 0, inf).
+link(n3, n10, 6, 125).
+link(n10, n3, 6, 125).
+link(n6, n12, 11, 240).
+link(n12, n6, 11, 240).
+link(n1, n1, 0, inf).
+link(n2, n9, 13, 26).
+link(n9, n2, 13, 26).
+link(n10, n14, 9, 156).
+link(n14, n10, 9, 156).
+link(n4, n4, 0, inf).
+link(n5, n12, 15, 74).
+link(n12, n5, 15, 74).
+link(n15, n15, 0, inf).
+link(n3, n8, 15, 27).
+link(n8, n3, 15, 27).
+link(n13, n14, 13, 37).
+link(n14, n13, 13, 37).
+link(n5, n13, 10, 219).
+link(n13, n5, 10, 219).
+link(n3, n5, 5, 72).
+link(n5, n3, 5, 72).
+link(n4, n13, 7, 75).
+link(n13, n4, 7, 75).
+link(n1, n9, 16, 203).
+link(n9, n1, 16, 203).
+link(n4, n5, 5, 237).
+link(n5, n4, 5, 237).
+link(n3, n15, 15, 57).
+link(n15, n3, 15, 57).
+link(n4, n7, 11, 137).
+link(n7, n4, 11, 137).
+link(n13, n15, 9, 182).
+link(n15, n13, 9, 182).
+link(n7, n8, 12, 62).
+link(n8, n7, 12, 62).
+link(n6, n7, 4, 96).
+link(n7, n6, 4, 96).
+link(n4, n8, 12, 188).
+link(n8, n4, 12, 188).
+link(n1, n7, 17, 198).
+link(n7, n1, 17, 198).
+link(n10, n12, 12, 181).
+link(n12, n10, 12, 181).
+link(n8, n13, 13, 123).
+link(n13, n8, 13, 123).
+link(n2, n10, 15, 68).
+link(n10, n2, 15, 68).
+link(n11, n14, 12, 97).
+link(n14, n11, 12, 97).
+link(n8, n10, 15, 163).
+link(n10, n8, 15, 163).
+link(n0, n1, 10, 228).
+link(n1, n0, 10, 228).
+link(n13, n13, 0, inf).
+link(n9, n12, 18, 39).
+link(n12, n9, 18, 39).
+link(n0, n11, 8, 218).
+link(n11, n0, 8, 218).
+link(n1, n2, 16, 91).
+link(n2, n1, 16, 91).
+link(n10, n11, 5, 131).
+link(n11, n10, 5, 131).
+link(n2, n3, 12, 105).
+link(n3, n2, 12, 105).
+link(n4, n6, 2, 167).
+link(n6, n4, 2, 167).
+link(n2, n7, 14, 210).
+link(n7, n2, 14, 210).
+link(n5, n5, 0, inf).
+link(n1, n10, 11, 128).
+link(n10, n1, 11, 128).
+link(n3, n7, 9, 89).
+link(n7, n3, 9, 89).
+link(n11, n15, 16, 71).
+link(n15, n11, 16, 71).
+link(n11, n12, 15, 128).
+link(n12, n11, 15, 128).
+link(n5, n6, 5, 70).
+link(n6, n5, 5, 70).
+link(n5, n15, 17, 180).
+link(n15, n5, 17, 180).
+link(n4, n15, 12, 98).
+link(n15, n4, 12, 98).
+link(n2, n11, 14, 84).
+link(n11, n2, 14, 84).
+link(n1, n13, 17, 105).
+link(n13, n1, 17, 105).
+link(n1, n11, 14, 232).
+link(n11, n1, 14, 232).
+link(n2, n2, 0, inf).
+link(n2, n12, 16, 120).
+link(n12, n2, 16, 120).
+link(n7, n15, 8, 73).
+link(n15, n7, 8, 73).
+link(n10, n10, 0, inf).
+link(n0, n14, 4, 112).
+link(n14, n0, 4, 112).
+link(n9, n13, 14, 166).
+link(n13, n9, 14, 166).
+link(n2, n6, 10, 93).
+link(n6, n2, 10, 93).
+link(n8, n9, 20, 83).
+link(n9, n8, 20, 83).
+link(n4, n9, 8, 206).
+link(n9, n4, 8, 206).
+link(n11, n13, 9, 79).
+link(n13, n11, 9, 79).
+link(n4, n14, 10, 142).
+link(n14, n4, 10, 142).
+link(n7, n9, 13, 199).
+link(n9, n7, 13, 199).
+link(n1, n5, 11, 244).
+link(n5, n1, 11, 244).
+link(n6, n11, 4, 197).
+link(n11, n6, 4, 197).
+link(n5, n9, 14, 233).
+link(n9, n5, 14, 233).
+link(n0, n2, 6, 60).
+link(n2, n0, 6, 60).
+link(n5, n8, 17, 101).
+link(n8, n5, 17, 101).
+link(n9, n9, 0, inf).
+link(n6, n10, 1, 177).
+link(n10, n6, 1, 177).
+link(n12, n15, 16, 59).
+link(n15, n12, 16, 59).
+link(n9, n11, 5, 99).
+link(n11, n9, 5, 99).
+link(n2, n13, 15, 199).
+link(n13, n2, 15, 199).
+link(n7, n14, 12, 124).
+link(n14, n7, 12, 124).
+link(n1, n3, 11, 215).
+link(n3, n1, 11, 215).
+link(n3, n4, 3, 168).
+link(n4, n3, 3, 168).
+link(n3, n11, 18, 50).
+link(n11, n3, 18, 50).
+link(n10, n13, 6, 34).
+link(n13, n10, 6, 34).
+link(n1, n12, 18, 233).
+link(n12, n1, 18, 233).
+link(n1, n15, 20, 63).
+link(n15, n1, 20, 63).
+link(n12, n13, 8, 34).
+link(n13, n12, 8, 34).
+link(n0, n6, 4, 233).
+link(n6, n0, 4, 233).
+link(n0, n10, 17, 96).
+link(n10, n0, 17, 96).
+link(n5, n11, 9, 71).
+link(n11, n5, 9, 71).
+link(n9, n15, 20, 134).
+link(n15, n9, 20, 134).
+link(n1, n14, 11, 247).
+link(n14, n1, 11, 247).
+link(n3, n9, 11, 116).
+link(n9, n3, 11, 116).
+link(n5, n7, 9, 171).
+link(n7, n5, 9, 171).
+link(n2, n4, 12, 70).
+link(n4, n2, 12, 70).
+link(n14, n15, 20, 91).
+link(n15, n14, 20, 91).
+link(n6, n6, 0, inf).
+link(n8, n15, 20, 161).
+link(n15, n8, 20, 161).
+link(n6, n8, 14, 225).
+link(n8, n6, 14, 225).
+link(n5, n14, 13, 39).
+link(n14, n5, 13, 39).
+link(n0, n13, 9, 75).
+link(n13, n0, 9, 75).
+link(n12, n14, 19, 148).
+link(n14, n12, 19, 148).
+link(n9, n10, 10, 146).
+link(n10, n9, 10, 146).
+link(n6, n13, 7, 83).
+link(n13, n6, 7, 83).
 
 domain(all, [_]).
 

@@ -74,7 +74,6 @@ def or_solver(app_name, infr_name, dummy=False, show_placement=False, show_compa
 	dfs = app.data_flows
 
 	nids = list(infr.nodes())  # list of node ids
-	
 
 	S = len(instances)
 	N = len(nodes)
@@ -93,10 +92,9 @@ def or_solver(app_name, infr_name, dummy=False, show_placement=False, show_compa
 			else:
 				print(Fore.LIGHTGREEN_EX + "Compatibles for '{}': {}".format(k, v))
 	
-	
 	# Create the solver.
 	solver = pywraplp.Solver.CreateSolver('SCIP')
-	#solver.SetNumThreads(32)
+	# solver.SetNumThreads(32)
 
 	# Create the variables for binpack B.
 	b = {j: solver.BoolVar(f'b_{nids[j]}') for j in range(N)}
@@ -173,14 +171,14 @@ def or_solver(app_name, infr_name, dummy=False, show_placement=False, show_compa
 			else:
 				# linearize the constraint
 				c = solver.BoolVar(name)
-				# solver.Add(c <= xij, name=f'lin_1_{c.name()}')
-				# solver.Add(c <= xi1j1, name=f'lin_2_{c.name()}')
+				# solver.Add(c * a['lat'] <= df.latency, name=f'{name}_lat')
 				solver.Add(c >= xij + xi1j1 - 1, name=f'lin_3_{c.name()}')
 
 				coeffs[c] = df.bw
 
 		if len(coeffs):
-			bw_constraint = solver.RowConstraint(0, a['bw']-infr.bwTh, f'{n}_{n1}_bw')
+			upper_bound = a['bw']-infr.bwTh if a['bw']-infr.bwTh > 0 else 0
+			bw_constraint = solver.RowConstraint(0, upper_bound, f'{n}_{n1}_bw')
 			for c, b in coeffs.items():
 				bw_constraint.SetCoefficient(c, b)
 
@@ -192,8 +190,8 @@ def or_solver(app_name, infr_name, dummy=False, show_placement=False, show_compa
 		with open(join(MODELS_DIR,f'model_{app_name}_{infr_name}{"_dummy" if dummy else ""}_pre.lp'), 'w') as f:
 			print(solver.ExportModelAsLpFormat(obfuscated=False), file=f)
 
+	print(Fore.LIGHTYELLOW_EX + "Model created. Start solving...")
 	status = solver.Solve()
-	
 	n_distinct = set()
 	placement = {}
 	res = {}
@@ -214,7 +212,7 @@ def or_solver(app_name, infr_name, dummy=False, show_placement=False, show_compa
 
 		tot_cost = solver.Objective().Value() # if only cost in Objective function
 		tot_time = solver.WallTime() / 1000  # in seconds
-		res = {'App': app_name, 'Time': tot_time, 'Cost': round(tot_cost, 4), 'NDistinct': len(n_distinct), 'Constraints': solver.NumConstraints()}
+		res = {'App': app_name, 'Time': tot_time, 'Cost': round(tot_cost, 4), 'NDistinct': len(n_distinct), 'Infs': solver.NumConstraints(), 'Size': N}
 
 		print(Fore.LIGHTGREEN_EX + tabulate(res.items(), numalign='right'))
 	else:
@@ -223,7 +221,7 @@ def or_solver(app_name, infr_name, dummy=False, show_placement=False, show_compa
 
 	if type(result) != str and res:  # if set, send or-tools results to "compare.py"
 		res['Placement'] = placement, 
-		del res['Constraints']
+		# del res['Constraints']
 		result['ortools-pre'] = res
 
 

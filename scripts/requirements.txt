@@ -16,5 +16,7 @@ pyparsing==3.0.9
 pyswip @ git+https://github.com/yuce/pyswip@89955611467cec37ab89bf6fbf7f7567cbcb194b
 python-dateutil==2.8.2
 pytz==2022.1
+scipy==1.8.1
+seaborn==0.11.2
 six==1.16.0
 tabulate==0.8.9

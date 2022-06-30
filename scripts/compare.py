@@ -9,7 +9,7 @@ from colorama import Fore, init
 from pyswip import Prolog
 from tabulate import tabulate
 
-from googleOR.classes.utils import check_files
+from googleOR.classes.utils import check_files, DATA_DIR
 
 QUERY = "once(stats(App, Placement, Cost, NDistinct, Infs, Time, {budget}))"
 
@@ -40,10 +40,26 @@ def print_result(result, show_placement):
 	
 	if result:
 		result = pd.DataFrame.from_dict(result, orient='index')
-		result.drop(columns=['App'], inplace=True)
+		result.index.name = 'Version'
 
-		result.rename(columns={"NDistinct": "# Distinct Nodes", "Infs": "# Inferences", "Time": "Time(s)"}, inplace=True)
+		if 'ortools' in result.index:
+			opt_cost = float(result.loc[['ortools']]['Cost'])
+			result['Change'] = result['Cost'].apply(lambda x: get_change(x, opt_cost))#.round(2).astype(str) + " %"
+
+		if 'ortools-pre' in result.index:
+			opt_cost = float(result.loc[['ortools-pre']]['Cost'])
+			result['Change'] = result['Cost'].apply(lambda x: get_change(x, opt_cost))#.round(2).astype(str) + " %"
+
 		placements = result.pop('Placement')
+		# save results on csv
+		filename = os.path.join(DATA_DIR, 'results.csv')
+		if not os.path.isfile(filename):
+			result.to_csv(filename)
+		else:
+			result.to_csv(filename, mode='a', header=False)
+
+		result.drop(columns=['App', 'Size'], inplace=True)
+		result.rename(columns={"NDistinct": "# Distinct Nodes", "Infs": "# Inferences", "Time": "Time(s)"}, inplace=True)
 
 		if show_placement:
 			n_distinct = result.pop('# Distinct Nodes')
@@ -54,16 +70,7 @@ def print_result(result, show_placement):
 			p_tab = tabulate(placements, headers='keys', tablefmt='fancy_grid', numalign='center', stralign='center')
 			print(Fore.LIGHTRED_EX + "\nPLACEMENTS:")
 			print(Fore.LIGHTRED_EX + p_tab)
-
-		if 'ortools' in result.index:
-			opt_cost = float(result.loc[['ortools']]['Cost'])
-			result['Change'] = result['Cost'].apply(lambda x: get_change(x, opt_cost)).round(2).astype(str) + " %"
-
-		if 'ortools-pre' in result.index:
-			opt_cost = float(result.loc[['ortools-pre']]['Cost'])
-			result['Change (pre)'] = result['Cost'].apply(lambda x: get_change(x, opt_cost)).round(2).astype(str) + " %"
-
-
+		
 		result.sort_values(by='Cost', ascending=True, inplace=True)
 
 		tab = tabulate(result, headers="keys", tablefmt="fancy_grid", numalign="center", stralign="center")  
@@ -82,7 +89,7 @@ def get_change(current, optimal):
 	if current == optimal:
 		return 0
 	try:
-		return (abs(current - optimal) / current) * 100.0
+		return (current - optimal) / current * 100.0
 	except ZeroDivisionError:
 		return float('inf')
 
@@ -101,17 +108,20 @@ def pl_process(version, app, budget, infr, result):
 	try:
 		q = pl_query(p, QUERY.format(budget=budget))
 		q = format_placement(q)
+		q['Size'] = splitext(basename(infr))[0][4:]
 	except StopIteration:
 		print(Fore.LIGHTRED_EX + "No PL solution found for {}.".format(basename(version)))
 		q = None
 
-	result[basename(version)] = q
+	result[basename(version)+"_num"] = q
 
 
 def main(app, infr, budget, versions, show_placement=False, ortools=False, ortools_pre=False, dummy=False):
 	manager = Manager()
 	result = manager.dict()
 	processes = []
+
+	infr_name = splitext(basename(infr))[0][4:]
 
 	for v in versions:
 		p = Process(target=pl_process, args=(v, app, budget, infr, result))
@@ -121,7 +131,6 @@ def main(app, infr, budget, versions, show_placement=False, ortools=False, ortoo
 	# add OR-Tools process
 	if ortools:
 		app_name = splitext(basename(app))[0]
-		infr_name = splitext(basename(infr))[0][4:]
 
 		p = Process(target=or_solver, args=(app_name, infr_name, dummy, show_placement, False, result))
 		p.start()
@@ -133,7 +142,6 @@ def main(app, infr, budget, versions, show_placement=False, ortools=False, ortoo
 	# add OR-Tools(pre) process
 	if ortools_pre:
 		app_name = splitext(basename(app))[0]
-		infr_name = splitext(basename(infr))[0][4:]
 
 		p = Process(target=or_solver_pre, args=(app_name, infr_name, dummy, show_placement, False, False, result))
 		p.start()

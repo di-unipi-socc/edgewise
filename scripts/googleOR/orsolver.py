@@ -9,7 +9,7 @@ from colorama import Fore, init
 from tabulate import tabulate
 
 QUERY = "cost({ntype}, {compid}, Cost)"
-MAX_BIN = 3
+MAX_BIN = 20
 
 
 def init_parser() -> ap.ArgumentParser:
@@ -130,13 +130,11 @@ def or_solver(app_name, infr_name, dummy=False, show_placement=False, model=Fals
 
 			# FRANGIO
 			sec_reqs = set(df.sec_reqs) 
-			if (a['lat'] > df.latency) or (not (sec_reqs.issubset(set(infr.nodes[n]['seccaps'])) and sec_reqs.issubset(set(infr.nodes[n1]['seccaps'])))):
+			if (a['lat'] > df.latency): # or (not (sec_reqs.issubset(set(infr.nodes[n]['seccaps'])) and sec_reqs.issubset(set(infr.nodes[n1]['seccaps'])))):
 				solver.Add(xij + xi1j1 <= 1, name=f'{name}_no_reqs')
 			else:
 				# linearize the constraint
 				c = solver.BoolVar(name)
-				solver.Add(c <= xij, name=f'lin_1_{c.name()}')
-				solver.Add(c <= xi1j1, name=f'lin_2_{c.name()}')
 				solver.Add(c >= xij + xi1j1 - 1, name=f'lin_3_{c.name()}')
 
 				coeffs[c] = df.bw
@@ -149,14 +147,14 @@ def or_solver(app_name, infr_name, dummy=False, show_placement=False, model=Fals
 
 	#  OBJECTIVE FUNCTION
 	costs = get_costs(app.file, infr.file, instances, nodes)
-	# OBJECTIVE FUNCTION
 	obj_expr = [costs[i, j] * x[i, j] for i in range(S) for j in range(N)]
 	solver.Minimize(solver.Sum(obj_expr))
 
 	if model:
-		with open(join(MODELS_DIR,f'model_{app_name}_{infr_name}_{"dummy" if dummy else ""}_pre.lp'), 'w') as f:
+		with open(join(MODELS_DIR,f'model_{app_name}_{infr_name}_{"dummy" if dummy else ""}.lp'), 'w') as f:
 			print(solver.ExportModelAsLpFormat(obfuscated=False), file=f)
 
+	print(Fore.LIGHTYELLOW_EX + "Model created. Starting solving...")
 	status = solver.Solve()
 	
 	n_distinct = set()
@@ -179,16 +177,15 @@ def or_solver(app_name, infr_name, dummy=False, show_placement=False, model=Fals
 
 		tot_cost = solver.Objective().Value() # if only cost in Objective function
 		tot_time = solver.WallTime() / 1000  # in seconds
-		res = {'App': app_name, 'Time': tot_time, 'Cost': round(tot_cost, 4), 'NDistinct': len(n_distinct), 'Constraints': solver.NumConstraints()}
+		res = {'App': app_name, 'Time': tot_time, 'Cost': round(tot_cost, 4), 'NDistinct': len(n_distinct), 'Infs': solver.NumConstraints(), 'Size': N}
 
 		print(Fore.LIGHTGREEN_EX + tabulate(res.items(), numalign='right'))
 	else:
 		print(Fore.LIGHTRED_EX + 'The problem does not have a solution.')
 	
-	print(res)
 	if type(result) != str and res:  # if set, send or-tools results to "compare.py"
 		res['Placement'] = placement, 
-		del res['Constraints']
+		# del res['Constraints']
 		result['ortools'] = res
 
 

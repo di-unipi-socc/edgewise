@@ -7,6 +7,7 @@ VERSIONS_DIR = join(ROOT_DIR, 'versions')
 INFRS_DIR = join(DATA_DIR, 'infrs')
 APPS_DIR = join(DATA_DIR, 'apps')
 MODELS_DIR = join(DATA_DIR, 'models')
+EXPERIMENTS_DIR = join(DATA_DIR, 'experiments')
 
 
 def check_files(app=None, infr=None, dummy_infr=False, versions=None):
