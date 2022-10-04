@@ -113,7 +113,7 @@ def pl_process(version, app, budget, infr, result):
 		print(Fore.LIGHTRED_EX + "No PL solution found for {}.".format(basename(version)))
 		q = None
 
-	result[basename(version)+"_num"] = q
+	result[basename(version)] = q
 
 
 def main(app, infr, budget, versions, show_placement=False, ortools=False, ortools_pre=False, dummy=False):

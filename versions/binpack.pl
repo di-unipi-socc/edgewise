@@ -1,9 +1,6 @@
 %:-['../data/infrs/infr128.pl', '../data/apps/speakToMe.pl'].
 :-['../requirements.pl', '../costs.pl'].
 
-:- multifile link/4.
-link(X, X, 0, inf).
-
 :- set_prolog_flag(answer_write_options,[max_depth(0)]). % write answers' text entirely
 :- set_prolog_flag(stack_limit, 32 000 000 000).
 :- set_prolog_flag(last_call_optimisation, true).
@@ -51,16 +48,16 @@ findCompatibles([],[]).
 lightNodeOK(S,N,H,SCost) :-
     serviceInstance(S, SId), service(SId, SWReqs, (Arch, HWReqs)),
     node(N, NType, SWCaps, (Arch, HWCaps), _, _),
-    %requirements(SId, N),
-    %subset(SWReqs, SWCaps), 
+    requirements(SId, N),
+    subset(SWReqs, SWCaps), 
     HWCaps >= HWReqs, H is 1/HWCaps, % H used to sort Compatibles (ascending H --> descending HWCaps)) 
     cost(NType, S, SCost).
 
 lightNodeOK(F,N,H,FCost) :-
     functionInstance(F, FId, _), function(FId, SWPlatform, (Arch, HWReqs)),
     node(N, NType, SWCaps, (Arch, HWCaps), _, _),
-    %requirements(FId, N),
-    %member(SWPlatform, SWCaps), 
+    requirements(FId, N),
+    member(SWPlatform, SWCaps), 
     HWCaps >= HWReqs, H is 1/HWCaps,
     cost(NType, F, FCost).
 
@@ -109,7 +106,7 @@ qosOK(Ps) :-
 checkDF([((N1,N2),ReqLat,SecReqs)|DFs], Ps) :-
     checkDF(DFs, Ps),
     (link(N1, N2, FeatLat, FeatBW); link(N2, N1, FeatLat, FeatBW)),
-    %secOK(N1, N2, SecReqs),
+    secOK(N1, N2, SecReqs),
     FeatLat =< ReqLat, bwOK((N1,N2), FeatBW, Ps).
 checkDF([], _).
 

@@ -10,6 +10,7 @@ from colorama import Fore, init
 from tabulate import tabulate
 
 from googleOR.classes.utils import INFRS_DIR
+from distribution import normal_distribution
 
 HW_PLATFORMS = ['arm64', 'x86']
 SW_CAPS = ['ubuntu', 'mySQL', 'python', 'js', 'gcc']
@@ -60,11 +61,16 @@ class Infra(nx.Graph):
 
 	def set_nodes(self, n, seed):
 		i = int(log2(n))
-		R = nx.barabasi_albert_graph(n, 3, seed=seed)
-		# R = nx.complete_graph(n, nx.DiGraph())
-		# R = nx.relabel_nodes(R, lambda x: f"n{x}")
+		# R = nx.barabasi_albert_graph(n, 3, seed=seed)
+		R = nx.complete_graph(n, nx.DiGraph())
 		self.add_nodes_from(R, things=[])
+
+		dist = normal_distribution(size_of_federation=n)
+
 		for node in self.nodes:
+			hw_platform = rnd.choice(HW_PLATFORMS)
+			self.nodes[node]['hardware'] = (hw_platform, dist[node])
+
 			ntype = rnd.choice(TYPES, p=PROBS)
 			method = 'set_as_{}'.format(ntype)
 			getattr(self, method)(node)
@@ -87,7 +93,7 @@ class Infra(nx.Graph):
 	def set_links(self):
 		sp = nx.floyd_warshall_numpy(self, weight='lat')
 		for i,j in product(range(self.n), repeat=2):
-			bw = rnd.randint(20, 250) if i!= j else float('inf')
+			bw = rnd.randint(20, 250) if i != j else float('inf')
 			if self.has_edge(i, j):
 				nx.set_edge_attributes(self, {(i, j): {'bw': bw}}) 
 			else:
@@ -97,24 +103,24 @@ class Infra(nx.Graph):
 		node = self.nodes[nid]
 		node['ntype'] = 'cloud'
 		node['software'] = SW_CAPS
-		hw_platform = rnd.choice(HW_PLATFORMS)
-		node['hardware'] = (hw_platform, 1024)
+		# hw_platform = rnd.choice(HW_PLATFORMS)
+		# node['hardware'] = (hw_platform, 1024)
 		node['security'] = ["enc", "auth"]
 
 	def set_as_isp(self, nid):
 		node = self.nodes[nid]
 		node['ntype'] = 'isp'
 		node['software'] = get_random_sw_caps(size=rnd.randint(2, 5))
-		hw_platform = rnd.choice(HW_PLATFORMS)
-		node['hardware'] = (hw_platform, rnd.choice([256, 512]))
+		# hw_platform = rnd.choice(HW_PLATFORMS)
+		# node['hardware'] = (hw_platform, rnd.choice([256, 512]))
 		node['security'] = ["enc"]
 
 	def set_as_cabinet(self, nid):
 		node = self.nodes[nid]
 		node['ntype'] = 'cabinet'
 		node['software'] = get_random_sw_caps(size=rnd.randint(2, 5))
-		hw_platform = rnd.choice(HW_PLATFORMS)
-		node['hardware'] = (hw_platform, rnd.choice([128, 256]))
+		# hw_platform = rnd.choice(HW_PLATFORMS)
+		# node['hardware'] = (hw_platform, rnd.choice([128, 256]))
 		node['security'] = ["enc", "auth"]
 		# randomly assign IoT device(s)
 		node['things'] = get_random_things(n=rnd.randint(1, 3))
@@ -123,8 +129,8 @@ class Infra(nx.Graph):
 		node = self.nodes[nid]
 		node['ntype'] = 'accesspoint'
 		node['software'] = get_random_sw_caps(size=rnd.randint(2, 5))
-		hw_platform = rnd.choice(HW_PLATFORMS)
-		node['hardware'] = (hw_platform, 64)
+		# hw_platform = rnd.choice(HW_PLATFORMS)
+		# node['hardware'] = (hw_platform, 64)
 		node['security'] = ["enc", "auth"]
 		# randomly assign IoT device(s)
 		node['things'] = get_random_things(n=rnd.randint(1, 3))
@@ -133,8 +139,8 @@ class Infra(nx.Graph):
 		node = self.nodes[nid]
 		node['ntype'] = 'thing'
 		node['software'] = get_random_sw_caps(size=rnd.randint(1, 4))
-		hw_platform = rnd.choice(HW_PLATFORMS)
-		node['hardware'] = (hw_platform, 32)
+		# hw_platform = rnd.choice(HW_PLATFORMS)
+		# node['hardware'] = (hw_platform, 32)
 		node['security'] = ["enc", "auth"]
 		# randomly assign IoT device(s)
 		node['things'] = get_random_things(n=rnd.randint(1, 4))
@@ -197,42 +203,11 @@ class Infra(nx.Graph):
 
 def main(n, seed=None, dummy=False):
 	infra = Infra(n, seed=seed, dummy=dummy)
-	#assert(NOT_PLACED_THINGS == 0)
-	info = [['SEED:', seed], ['DUMMY:', 'YES' if dummy else 'NO']]
+	# assert(NOT_PLACED_THINGS == 0)
+	info = [['SEED:', seed if seed else '<not set>'], ['DUMMY:', 'YES' if dummy else 'NO']]
 
 	if dummy:
 		infra.dummy_links(lat=5, bw=700)
-	else:
-		pass
-		""" infra.add_links('cloud', 'cloud', 20, 1000)
-		infra.add_links('cloud', 'isp', 50, 1000)
-		infra.add_links('cloud', 'cabinet', 50, 100)
-		infra.add_links('cloud', 'accesspoint', 60, 20)
-		infra.add_links('cloud', 'thing', 65, 30)
-
-		infra.add_links('isp', 'cloud', 50, 1000)
-		infra.add_links('isp', 'isp', 20, 1000)
-		infra.add_links('isp', 'cabinet', 25, 500)
-		infra.add_links('isp', 'accesspoint', 30, 50)
-		infra.add_links('isp', 'thing', 20, 1000)
-
-		infra.add_links('cabinet', 'cloud', 60, 100)
-		infra.add_links('cabinet', 'isp', 25, 50)
-		infra.add_links('cabinet', 'cabinet', 20, 100)
-		infra.add_links('cabinet', 'accesspoint', 13, 50)
-		infra.add_links('cabinet', 'thing', 15, 35)
-
-		infra.add_links('accesspoint', 'cloud', 65, 50)
-		infra.add_links('accesspoint', 'isp', 30, 80)
-		infra.add_links('accesspoint', 'cabinet', 10, 80)
-		infra.add_links('accesspoint', 'accesspoint', 10, 10)
-		infra.add_links('accesspoint', 'thing', 2, 20)
-
-		infra.add_links('thing', 'cloud', 65, 30)
-		infra.add_links('thing', 'isp', 40, 50)
-		infra.add_links('thing', 'cabinet', 15, 50)
-		infra.add_links('thing', 'accesspoint', 2, 20)
-		infra.add_links('thing', 'thing', 15, 50) """
 
 	info.append(['PATH:', infra.file])
 	print(Fore.LIGHTCYAN_EX + tabulate(info))
@@ -258,6 +233,7 @@ if __name__ == "__main__":
 	import sys
 	set_printoptions(threshold=sys.maxsize)
 	init(autoreset=True)
+
 	parser = init_parser()
 	args = parser.parse_args()
 
