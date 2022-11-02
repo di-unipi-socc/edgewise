@@ -9,7 +9,7 @@ from colorama import Fore, init
 from tabulate import tabulate
 
 QUERY = "cost({ntype}, {compid}, Cost)"
-MAX_BIN = 20
+MAX_BIN = 10
 
 
 def init_parser() -> ap.ArgumentParser:

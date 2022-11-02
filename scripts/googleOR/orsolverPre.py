@@ -10,7 +10,7 @@ from tabulate import tabulate
 
 # todo normalization costs cij - cmin / cmax - cmin
 QUERY = "preprocess({app_name}, Compatibles)"
-MAX_BIN = 5
+MAX_BIN = 10
 
 def init_parser() -> ap.ArgumentParser:
 	description = "Compare several placement strategies."
