@@ -10,7 +10,6 @@ from tabulate import tabulate
 
 # todo normalization costs cij - cmin / cmax - cmin
 QUERY = "preprocess({app_name}, Compatibles)"
-MAX_BIN = 10
 
 def init_parser() -> ap.ArgumentParser:
 	description = "Compare several placement strategies."
@@ -57,7 +56,7 @@ def parse_compatibles(r):
 	
 	return compatibles
 		
-def or_solver(app_name, infr_name, dummy=False, show_placement=False, show_compatibles=False, model=False, result=""):
+def or_solver(app_name, infr_name, max_bin=None, dummy=False, show_placement=False, show_compatibles=False, model=False, result=""):
 	
 	if type(result) != str:  # if result is not a string, redirect output tu /dev/null
 		sys.stdout = open(os.devnull, 'w')
@@ -79,6 +78,9 @@ def or_solver(app_name, infr_name, dummy=False, show_placement=False, show_compa
 	N = len(nodes)
 	L = len(links)
 	DF = len(dfs)
+
+	# set max bins to the number of services if not specified
+	MAX_BIN = max_bin if max_bin else S
 
 	info = [['Instances', S], ['Nodes', N], ['Links', L], ['Data Flows', DF]]
 	print(Fore.LIGHTCYAN_EX + tabulate(info))
@@ -218,11 +220,12 @@ def or_solver(app_name, infr_name, dummy=False, show_placement=False, show_compa
 	else:
 		print(Fore.LIGHTRED_EX + 'The problem does not have a solution.')
 	
-
 	if type(result) != str and res:  # if set, send or-tools results to "compare.py"
 		res['Placement'] = placement, 
-		# del res['Constraints']
-		result['ortools-pre'] = res
+		if max_bin: # results for budgeting
+			result[max_bin] = res
+		else:
+			result['ortools-pre'] = res
 
 
 if __name__ == '__main__':

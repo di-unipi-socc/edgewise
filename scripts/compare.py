@@ -132,7 +132,7 @@ def main(app, infr, budget, versions, show_placement=False, ortools=False, ortoo
 	if ortools:
 		app_name = splitext(basename(app))[0]
 
-		p = Process(target=or_solver, args=(app_name, infr_name, dummy, show_placement, False, result))
+		p = Process(target=or_solver, args=(app_name, infr_name, None, dummy, show_placement, False, result))
 		p.start()
 		processes.append(p)
 
@@ -143,7 +143,7 @@ def main(app, infr, budget, versions, show_placement=False, ortools=False, ortoo
 	if ortools_pre:
 		app_name = splitext(basename(app))[0]
 
-		p = Process(target=or_solver_pre, args=(app_name, infr_name, dummy, show_placement, False, False, result))
+		p = Process(target=or_solver_pre, args=(app_name, infr_name, None, dummy, show_placement, False, False, result))
 		p.start()
 		processes.append(p)
 
