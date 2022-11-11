@@ -1,7 +1,8 @@
 import argparse as ap
 from multiprocessing import Process, Manager
 from os.path import basename, splitext
-from googleOR import or_solver_pre, or_solver
+from googleOR import or_solver_pre as or_solver
+from budgeting import or_budgeting
 
 import os
 import pandas as pd
@@ -21,8 +22,9 @@ def init_parser() -> ap.ArgumentParser:
 	p.add_argument("-p", "--placement", action="store_true", help="if set, shows the obtained placement"),
 	p.add_argument("-d", "--dummy", action="store_true",
 	               help="if set, uses an infrastructure with dummy links (low lat, high bw)."),
+	p.add_argument("-b", "--budgeting", action="store_true", help="use budgeting for OR-Tools model."),
 	p.add_argument("-o", "--ortools", action="store_true", help="if set, compares also with Google OR-Tools model."),
-	p.add_argument("-op", "--ortools-pre", action="store_true", help="if set, compares also with Google OR-Tools model (with Prolog pre-processing)."),
+	# p.add_argument("-op", "--ortools-pre", action="store_true", help="if set, compares also with Google OR-Tools model (with Prolog pre-processing)."),
 	p.add_argument("app", help="Application name.")
 	p.add_argument("infr", help="Infrastructure name.")
 	p.add_argument("budget", type=int, help="Maximum budget.")
@@ -116,7 +118,7 @@ def pl_process(version, app, budget, infr, result):
 	result[basename(version)] = q
 
 
-def main(app, infr, budget, versions, show_placement=False, ortools=False, ortools_pre=False, dummy=False):
+def main(app, infr, budget, versions, budgeting=False, show_placement=False, ortools=False, ortools_pre=False, dummy=False):
 	manager = Manager()
 	result = manager.dict()
 	processes = []
@@ -128,6 +130,7 @@ def main(app, infr, budget, versions, show_placement=False, ortools=False, ortoo
 		p.start()
 		processes.append(p)
 
+	'''
 	# add OR-Tools process
 	if ortools:
 		app_name = splitext(basename(app))[0]
@@ -138,12 +141,17 @@ def main(app, infr, budget, versions, show_placement=False, ortools=False, ortoo
 
 	for p in processes:
 		p.join()
+	'''
 
 	# add OR-Tools(pre) process
-	if ortools_pre:
+	if ortools:
 		app_name = splitext(basename(app))[0]
 
-		p = Process(target=or_solver_pre, args=(app_name, infr_name, None, dummy, show_placement, False, False, result))
+		if budgeting:
+			p = Process(target=or_budgeting, args=(app_name, infr_name, result))
+		else:
+			p = Process(target=or_solver, args=(app_name, infr_name, None, dummy, show_placement, False, False, result))
+					
 		p.start()
 		processes.append(p)
 
@@ -166,8 +174,7 @@ if __name__ == "__main__":
 			['INFRASTRUCTURE:', ("dummy" + os.sep if args.dummy else "") + basename(infr)],
 			['BUDGET:', args.budget],
 			['OR-TOOLS:', "YES" if args.ortools else "NO"],
-			['OR-TOOLS (pre):', "YES" if args.ortools_pre else "NO"],
 			['PL VERSIONS:', [basename(v) for v in vs]]]
 	print(Fore.LIGHTCYAN_EX + tabulate(info))
 
-	main(app=app, infr=infr, versions=vs, budget=args.budget, show_placement=args.placement, ortools=args.ortools, ortools_pre=args.ortools_pre, dummy=args.dummy)
+	main(app=app, infr=infr, versions=vs, budget=args.budget, show_placement=args.placement, budgeting=args.budgeting, ortools=args.ortools, dummy=args.dummy)

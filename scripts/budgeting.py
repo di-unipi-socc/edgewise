@@ -32,7 +32,7 @@ def find_best(results: pd.DataFrame):
     return best
 
 
-def print_results(results):
+def get_best(results):
     df = pd.DataFrame.from_dict(results, orient='index')
     df.index.name = 'MaxBins'
     df.sort_index(inplace=True)
@@ -40,34 +40,39 @@ def print_results(results):
     tab = tabulate(df, headers='keys', tablefmt='fancy_grid', numalign="center", stralign="center")
     print(Fore.LIGHTYELLOW_EX + tab)
     
-    best = [find_best(df).to_dict()]
-    best_tab = tabulate(best, headers='keys', tablefmt='fancy_grid', numalign="center", stralign="center")
+    best = find_best(df).to_dict()
+    best_tab = tabulate([best], headers='keys', tablefmt='fancy_grid', numalign="center", stralign="center")
     print(Fore.LIGHTGREEN_EX + best_tab)
 
     # save results on csv
-    '''filename = os.path.join(DATA_DIR, 'budgets.csv')
+    filename = os.path.join(DATA_DIR, 'budgets.csv')
     if not os.path.isfile(filename):
         df.to_csv(filename)
     else:
         df.to_csv(filename, mode='a', header=False)
-    '''
 
-def main(app_name, infr_name):
+    return best
+
+def or_budgeting(app_name, infr_name, result=""):
+
+    if type(result) != str:  # if result is not a string, redirect output tu /dev/null
+        sys.stdout = open(os.devnull, 'w')
+    
     app = Application(app_name)
     S = len(app.services + app.functions)
 
     manager = Manager()
-    result = manager.dict()
+    bdg_result = manager.dict()
     processes = []
     for i in range(S):
-        p = Process(target=or_solver, args=(app_name, infr_name, i+1, False, False, False, False, result))
+        p = Process(target=or_solver, args=(app_name, infr_name, i+1, False, False, False, False, bdg_result))
         p.start()
         processes.append(p)
 
     for p in processes:
         p.join()
 
-    print_results(result)
+    result['or-budget'] = get_best(bdg_result)
 
 
 if __name__ == '__main__':
@@ -78,4 +83,4 @@ if __name__ == '__main__':
 	parser = init_parser()
 	args = parser.parse_args()
 
-	main(app_name=args.app, infr_name=args.infr)
+	or_budgeting(app_name=args.app, infr_name=args.infr)
