@@ -48,9 +48,11 @@ def print_result(result, show_placement):
 			opt_cost = float(result.loc[['ortools']]['Cost'])
 			result['Change'] = result['Cost'].apply(lambda x: get_change(x, opt_cost))#.round(2).astype(str) + " %"
 
+		'''
 		if 'ortools-pre' in result.index:
 			opt_cost = float(result.loc[['ortools-pre']]['Cost'])
 			result['Change'] = result['Cost'].apply(lambda x: get_change(x, opt_cost))#.round(2).astype(str) + " %"
+		'''
 
 		placements = result.pop('Placement')
 		# save results on csv

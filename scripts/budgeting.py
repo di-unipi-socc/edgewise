@@ -72,7 +72,7 @@ def or_budgeting(app_name, infr_name, result=""):
     for p in processes:
         p.join()
 
-    result['or-budget'] = get_best(bdg_result)
+    result['ortools'] = get_best(bdg_result)
 
 
 if __name__ == '__main__':
