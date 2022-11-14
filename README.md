@@ -17,7 +17,9 @@ newDAP
 │   │   ├── classes
 │   │   └── orsolver.py
 │   ├── builder.py
-│   └── compare.py
+│   ├── compare.py
+│   ├── experiment.py
+│   └── run.sh
 └── versions
 ```
 
@@ -28,10 +30,11 @@ newDAP
 - [`scripts`](https://github.com/jacopo-massa/newDAP/tree/main/scripts): contains some useful scripts
     - [`googleOR`](https://github.com/jacopo-massa/newDAP/tree/main/scripts/googleOR):
         - [`classes`](https://github.com/jacopo-massa/newDAP/tree/main/scripts/googleOR/classes): contains the classes to model application and infrastructure
-        - [`orsolver.py`](https://github.com/jacopo-massa/newDAP/blob/main/scripts/googleOR/orsolver.py): the main script, which contains the main logic with
-        the solver within its constraints, and the visualization of the results.
+        - [`orsolver.py`](https://github.com/jacopo-massa/newDAP/blob/main/scripts/googleOR/orsolver.py): the main script, which contains the main logic with the solver within its constraints, and the visualization of the results.
     - [`builder.py`](https://github.com/jacopo-massa/newDAP/blob/main/scripts/builder.py): the script to build randomly generated infrastructure of a given size
     - [`compare.py`](https://github.com/jacopo-massa/newDAP/blob/main/scripts/compare.py): the script to compare the results of different versions (and optionally the _or-tools_ one)
+    - [`experiment.py`](https://github.com/jacopo-massa/newDAP/blob/main/scripts/experiment.py): the script to create and show experiment result' graphs
+    - [`run.sh`](https://github.com/jacopo-massa/newDAP/blob/main/scripts/run.sh): a script to run the comparison for a given application (and a given budget) over all the infrastructure sizes
 - [`versions`](https://github.com/jacopo-massa/newDAP/tree/main/versions): contains several version of the Prolog reasoner
 implementing different heuristics.
 
