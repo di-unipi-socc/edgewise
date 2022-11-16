@@ -1,16 +1,15 @@
 import argparse as ap
-from os.path import join
 from itertools import product
+from os.path import join
 
 import networkx as nx
-from numpy import log2, set_printoptions
-from numpy import random as rnd
-
 from colorama import Fore, init
-from tabulate import tabulate
-
-from googleOR.classes.utils import INFRS_DIR
 from distribution import normal_distribution
+from googleOR.classes.utils import INFRS_DIR
+from numpy import log2
+from numpy import random as rnd
+from numpy import set_printoptions
+from tabulate import tabulate
 
 HW_PLATFORMS = ['arm64', 'x86']
 SW_CAPS = ['ubuntu', 'mySQL', 'python', 'js', 'gcc']

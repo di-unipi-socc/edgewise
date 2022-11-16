@@ -1,9 +1,9 @@
 import os
-import seaborn as sns
-import matplotlib.pyplot as plt
-import pandas as pd
-import numpy as np
 
+import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
+import seaborn as sns
 from googleOR.classes.utils import DATA_DIR, EXPERIMENTS_DIR
 
 sizes = ["16", "32", "64", "128", "256", "512"]

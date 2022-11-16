@@ -1,16 +1,15 @@
 import argparse as ap
-from multiprocessing import Process, Manager
-from os.path import basename, splitext
-from googleOR import or_solver_pre as or_solver
-from budgeting import or_budgeting
-
 import os
+from multiprocessing import Manager, Process
+from os.path import basename, splitext
+
 import pandas as pd
+from budgeting import or_budgeting
 from colorama import Fore, init
+from googleOR import or_solver_pre as or_solver
+from googleOR.classes.utils import DATA_DIR, check_files
 from pyswip import Prolog
 from tabulate import tabulate
-
-from googleOR.classes.utils import check_files, DATA_DIR
 
 QUERY = "once(stats(App, Placement, Cost, NDistinct, Infs, Time, {budget}))"
 

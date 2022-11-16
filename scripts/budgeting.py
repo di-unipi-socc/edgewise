@@ -1,15 +1,14 @@
+import argparse as ap
 import os
 import sys
-import argparse as ap
+from multiprocessing import Manager, Process
+
 import pandas as pd
-
 from colorama import Fore, init
-from multiprocessing import Process, Manager
-from tabulate import tabulate
-
 from googleOR import or_solver_pre as or_solver
 from googleOR.classes import Application
 from googleOR.classes.utils import DATA_DIR
+from tabulate import tabulate
 
 
 def init_parser() -> ap.ArgumentParser:

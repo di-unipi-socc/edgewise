@@ -1,5 +1,6 @@
-from scipy.stats import truncnorm
 import numpy
+from scipy.stats import truncnorm
+
 
 def normal_distribution(min_value=32, max_value=1024, center=512, size_of_federation=128, stepping=32, deviation=None):
 
