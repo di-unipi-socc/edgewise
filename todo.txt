@@ -1,0 +1,5 @@
+- scrivere prolog per allocazione delle BW e HW
+
+- scrivere python per gestire allocazione multipla della stessa applicazione
+
+- scrivere python per gestire distribuzione e variation rate della saturazione dell'infrastruttura
