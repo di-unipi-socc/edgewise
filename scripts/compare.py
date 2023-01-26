@@ -6,8 +6,8 @@ from os.path import basename, splitext
 import pandas as pd
 from budgeting import or_budgeting
 from colorama import Fore, init
-from googleOR import or_solver
-from googleOR.classes.utils import DATA_DIR, check_files
+from orsolver import or_solver
+from classes.utils import OUTPUT_DIR, check_files
 from pyswip import Prolog
 from tabulate import tabulate
 
@@ -51,7 +51,7 @@ def print_result(result, show_placement, save_results):
 
 		if save_results:
 			# save results on csv
-			filename = os.path.join(DATA_DIR, 'results.csv')
+			filename = os.path.join(OUTPUT_DIR, 'results.csv')
 			if not os.path.isfile(filename):
 				result.to_csv(filename)
 			else:

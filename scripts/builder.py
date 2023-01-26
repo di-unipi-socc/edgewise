@@ -5,7 +5,7 @@ from os.path import join
 import networkx as nx
 from colorama import Fore, init
 from distribution import normal_distribution
-from googleOR.classes.utils import INFRS_DIR
+from classes.utils import INFRS_DIR
 from numpy import log2
 from numpy import random as rnd
 from numpy import set_printoptions

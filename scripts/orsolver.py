@@ -7,6 +7,7 @@ from ortools.linear_solver import pywraplp
 from pyswip import Prolog
 from colorama import Fore, init
 from tabulate import tabulate
+from classes import *
 
 # todo normalization costs cij - cmin / cmax - cmin
 QUERY = "preprocess({app_name}, Compatibles)"
@@ -240,7 +241,3 @@ if __name__ == '__main__':
 	args = parser.parse_args()
 
 	or_solver(app_name=args.app, infr_name=args.infr, dummy=args.dummy, show_placement=args.placement, show_compatibles=args.compatibles, model=args.model)
-
-	# absolute import
-else:
-	from .classes import *

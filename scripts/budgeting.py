@@ -5,9 +5,9 @@ from multiprocessing import Manager, Process
 
 import pandas as pd
 from colorama import Fore, init
-from googleOR import or_solver
-from googleOR.classes import Application
-from googleOR.classes.utils import DATA_DIR
+from orsolver import or_solver
+from classes import Application
+from classes.utils import OUTPUT_DIR
 from tabulate import tabulate
 
 
@@ -44,7 +44,7 @@ def get_best(results):
     print(Fore.LIGHTGREEN_EX + best_tab)
 
     # save results on csv
-    filename = os.path.join(DATA_DIR, 'budgets.csv')
+    filename = os.path.join(OUTPUT_DIR, 'budgets.csv')
     if not os.path.isfile(filename):
         df.to_csv(filename)
     else:

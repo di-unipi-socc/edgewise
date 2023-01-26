@@ -1,14 +1,17 @@
 from os.path import abspath, dirname, join, exists
 
-ROOT_DIR = dirname(dirname(dirname(dirname(abspath(__file__)))))
+# path to the main directories
+ROOT_DIR = dirname(dirname(dirname(abspath(__file__))))
 DATA_DIR = join(ROOT_DIR, 'data')
 VERSIONS_DIR = join(ROOT_DIR, 'versions')
 UTILS_DIR = join(ROOT_DIR, 'utils')
+OUTPUT_DIR = join(ROOT_DIR, 'output')
 
 INFRS_DIR = join(DATA_DIR, 'infrs')
 APPS_DIR = join(DATA_DIR, 'apps')
 MODELS_DIR = join(DATA_DIR, 'models')
-EXPERIMENTS_DIR = join(DATA_DIR, 'experiments')
+
+PLOTS_DIR = join(OUTPUT_DIR, 'plots')
 
 
 def check_files(app=None, infr=None, dummy_infr=False, versions=None):
