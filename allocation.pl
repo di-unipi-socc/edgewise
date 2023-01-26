@@ -1,34 +1,49 @@
 :-['data/infrs/infr128.pl', 'data/apps/speakToMe.pl'].
 
-hwOnN(N, Ps, HW) :- serviceInstance(S, SId), service(SId,_,(_,HW)), member((S,N), Ps).
-hwOnN(N, Ps, HW) :- functionInstance(F, FId,_), function(FId,_,(_,HW)), member((F,N), Ps).
+:- set_prolog_flag(answer_write_options,[max_depth(0)]). % write answers' text entirely
+:- set_prolog_flag(stack_limit, 32 000 000 000).
+:- set_prolog_flag(last_call_optimisation, true).
 
-hwAllocation([], _, AllocHW, AllocHW).
-hwAllocation([N|Ns], P, OldHW, AllocHW) :-
-    findall(HW, hwOnN(N, P, HW), HWs), sum_list(HWs, TotHW),
-    hwAllocation(Ns, P, [(N, TotHW)|OldHW], AllocHW).
+resourceAllocation([], Alloc, Alloc).
+resourceAllocation([(N, R)|Rs], OldAlloc, NewAlloc) :-
+    select((N, OldRs), OldAlloc, Rest), NewRs is OldRs + R,
+    resourceAllocation(Rs, [(N, NewRs)|Rest], NewAlloc).
+resourceAllocation([(N, R)|Rs], OldAlloc, NewAlloc) :-
+    \+ member((N, _), OldAlloc),
+    resourceAllocation(Rs, [(N, R)|OldAlloc], NewAlloc).
 
-bwAllocation([], _, AllocBW, AllocBW).
-bwAllocation([N1N2|N1N2s], Ps, OldBW, AllocBW) :-
-    findall(BW, bwOnN1N2(N1N2, Ps, BW), BWs), sum_list(BWs, TotBW),
-    bwAllocation(N1N2s, Ps, [(N1N2, TotBW)|OldBW], AllocBW).
+/*
+hwAllocation([], AllocHW, AllocHW).
+hwAllocation([(N, HW)|HWs], OldAlloc, NewAlloc) :-
+    select((N, OldHW), OldAlloc, Rest), NewHW is OldHW + HW,
+    hwAllocation(HWs, [(N, NewHW)|Rest], NewAlloc).
+hwAllocation([(N, HW)|HWs], OldAlloc, NewAlloc) :-
+    \+ member((N, _), OldAlloc),
+    hwAllocation(HWs, [(N, HW)|OldAlloc], NewAlloc).
 
-bwOnN1N2((N1,N2), Ps, BW) :- 
+bwAllocation([], AllocBW, AllocBW).
+bwAllocation([(N1, N2, BW)|BWs], OldAlloc, NewAlloc) :-
+    select((N1, N2, OldBW), OldAlloc, Rest), NewBW is OldBW + BW,
+    bwAllocation(BWs, [(N1, N2, NewBW)|Rest], NewAlloc).
+bwAllocation([(N1, N2, BW)|BWs], OldAlloc, NewAlloc) :-
+    \+ member((N1, N2, _), OldAlloc),
+    bwAllocation(BWs, [(N1, N2, BW)|OldAlloc], NewAlloc).
+*/
+
+allocatedResources(Ps, AllocHW, AllocBW) :-
+    findall((N, HW), relevantNode(N, Ps, HW), HWs), 
+    resourceAllocation(HWs, [], AllocHW), % hwAllocation(HWs, [], AllocHW),
+    findall((N1N2, BW), relevantLink(N1N2, Ps, BW), BWs),
+    resourceAllocation(BWs, [], AllocBW). % bwAllocation(BWs, [], AllocBW).
+
+relevantNode(N, Ps, HW) :- serviceInstance(S, SId), service(SId,_,(_,HW)), member((S,N), Ps).
+relevantNode(N, Ps, HW) :- functionInstance(F, FId,_), function(FId,_,(_,HW)), member((F,N), Ps).
+
+relevantLink((N1,N2), Ps, BW) :- 
     dataFlow(T1, T2, _, _, Size, Rate, _),
     (member((T1,N1), Ps); node(N1, _, _, _, _, IoTCaps), member(T1, IoTCaps)),
     (member((T2,N2), Ps); node(N2, _, _, _, _, IoTCaps), member(T2, IoTCaps)),
-    BW is Size*Rate.
-    
-
-resourceAllocation(Ps, AllocHW, AllocBW) :-
-    findall(N, member((_, N), Ps), Ns), sort(Ns, SNs), % sort to remove duplicates
-    hwAllocation(SNs, Ps, [], AllocHW),
-    findall(N1N2, relevantLink(N1N2, SNs), N1N2s),
-    bwAllocation(N1N2s, Ps, [], AllocBW).
-
-
-relevantLink((N1,N2), Ns) :- link(N1,N2,_,_), member(N1, Ns), member(N2, Ns), dif(N1,N2).
-    
+    dif(N1,N2), link(N1,N2,_,_), BW is Size*Rate.
 
 start(HW,BW) :- % testing predicate
-    resourceAllocation([(textBucket,n105),(audioBucket,n105),(mainDB,n105),(convertTxt,n123),(uploadPost,n105),(uploadAudio,n105),(publishPost,n33),(converter,n123),(postQueue,n105),(metaPost,n123),(metaAudio,n123)], HW,BW).
+    allocatedResources([(textBucket,n105),(audioBucket,n105),(mainDB,n105),(convertTxt,n123),(uploadPost,n105),(uploadAudio,n105),(publishPost,n33),(converter,n123),(postQueue,n105),(metaPost,n123),(metaAudio,n123)], HW,BW).
