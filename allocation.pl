@@ -12,24 +12,6 @@ resourceAllocation([(N, R)|Rs], OldAlloc, NewAlloc) :-
     \+ member((N, _), OldAlloc),
     resourceAllocation(Rs, [(N, R)|OldAlloc], NewAlloc).
 
-/*
-hwAllocation([], AllocHW, AllocHW).
-hwAllocation([(N, HW)|HWs], OldAlloc, NewAlloc) :-
-    select((N, OldHW), OldAlloc, Rest), NewHW is OldHW + HW,
-    hwAllocation(HWs, [(N, NewHW)|Rest], NewAlloc).
-hwAllocation([(N, HW)|HWs], OldAlloc, NewAlloc) :-
-    \+ member((N, _), OldAlloc),
-    hwAllocation(HWs, [(N, HW)|OldAlloc], NewAlloc).
-
-bwAllocation([], AllocBW, AllocBW).
-bwAllocation([(N1, N2, BW)|BWs], OldAlloc, NewAlloc) :-
-    select((N1, N2, OldBW), OldAlloc, Rest), NewBW is OldBW + BW,
-    bwAllocation(BWs, [(N1, N2, NewBW)|Rest], NewAlloc).
-bwAllocation([(N1, N2, BW)|BWs], OldAlloc, NewAlloc) :-
-    \+ member((N1, N2, _), OldAlloc),
-    bwAllocation(BWs, [(N1, N2, BW)|OldAlloc], NewAlloc).
-*/
-
 allocatedResources(Ps, AllocHW, AllocBW) :-
     findall((N, HW), relevantNode(N, Ps, HW), HWs), 
     resourceAllocation(HWs, [], AllocHW), % hwAllocation(HWs, [], AllocHW),
