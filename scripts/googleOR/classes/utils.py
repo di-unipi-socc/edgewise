@@ -3,6 +3,7 @@ from os.path import abspath, dirname, join, exists
 ROOT_DIR = dirname(dirname(dirname(dirname(abspath(__file__)))))
 DATA_DIR = join(ROOT_DIR, 'data')
 VERSIONS_DIR = join(ROOT_DIR, 'versions')
+UTILS_DIR = join(ROOT_DIR, 'utils')
 
 INFRS_DIR = join(DATA_DIR, 'infrs')
 APPS_DIR = join(DATA_DIR, 'apps')

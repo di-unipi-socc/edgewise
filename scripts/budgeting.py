@@ -5,7 +5,7 @@ from multiprocessing import Manager, Process
 
 import pandas as pd
 from colorama import Fore, init
-from googleOR import or_solver_pre as or_solver
+from googleOR import or_solver
 from googleOR.classes import Application
 from googleOR.classes.utils import DATA_DIR
 from tabulate import tabulate

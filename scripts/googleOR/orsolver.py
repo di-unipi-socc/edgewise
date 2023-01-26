@@ -8,17 +8,16 @@ from pyswip import Prolog
 from colorama import Fore, init
 from tabulate import tabulate
 
-QUERY = "cost({ntype}, {compid}, Cost)"
-MAX_BIN = 10
-
+# todo normalization costs cij - cmin / cmax - cmin
+QUERY = "preprocess({app_name}, Compatibles)"
 
 def init_parser() -> ap.ArgumentParser:
 	description = "Compare several placement strategies."
 	p = ap.ArgumentParser(prog=__file__, description=description)
 
-	p.add_argument("-p", "--placement", action="store_true", help="if set, shows the obtained placement"),
-	p.add_argument("-d", "--dummy", action="store_true",
-	               help="if set, uses an infrastructure with dummy links (low lat, high bw)."),
+	p.add_argument("-p", "--placement", action="store_true", help="if set, shows the obtained placement."),
+	p.add_argument("-d", "--dummy", action="store_true", help="if set, uses an infrastructure with dummy links (low lat, high bw)."),
+	p.add_argument("-c", "--compatibles", action="store_true", help="if set, shows the obtained compatibles."),
 	p.add_argument("-m", "--model", action="store_true", help="if set, saves the model in LP format."),
 	p.add_argument("app", help="Application name.")
 	p.add_argument("infr", help="Infrastructure name.")
@@ -26,28 +25,38 @@ def init_parser() -> ap.ArgumentParser:
 	return p
 
 
-def get_costs(app, infr, instances, nodes):
+def get_compatibles(app_name, app, infr):
+	prolog = Prolog()
+	prolog.consult(app)
+	prolog.consult(infr)
+	prolog.consult(join(UTILS_DIR, "preprocessing.pl"))
 
-	p = Prolog()
-	p.consult(app)
-	p.consult(infr)
-	p.consult(join(ROOT_DIR, "costs.pl"))
+	try:
+		q = prolog.query(QUERY.format(app_name=app_name))
+		r = next(q)['Compatibles']
+		q.close()
+	except StopIteration:
+		raise ValueError("Error in preprocessing.pl")
 
-	costs = np.zeros((len(instances), len(nodes)))
-	for i, s in enumerate(instances):
-		for j, (_, a) in enumerate(nodes):
-			try:
-				q = p.query(QUERY.format(ntype=a['type'], compid=s.id))
-				r = next(q)
-				costs[i][j] = r['Cost']
-				q.close()
-			except StopIteration:
-				raise ValueError("No cost for {} in {}".format(a['type'], s.id))
+	return parse_compatibles(r)
 
-	return costs
+# bug in pyswip when retrieving lists/tuples with format ",(...)"
+def parse_compatibles(r):
+	compatibles = {}
+	for i in r:
+		i = i[2:-1].replace(",(", "(").split(", ", 1)
+		s = i[0]
+		comps = eval(i[1])
+		comps2 = {}
+		for c in comps:
+			c = c[1:-1].split(", ", 1)
+			comps2[c[0]] = round(float(c[1]), 4)
 
-
-def or_solver(app_name, infr_name, dummy=False, show_placement=False, model=False, result=""):
+		compatibles[s] = comps2
+	
+	return compatibles
+		
+def or_solver(app_name, infr_name, max_bin=None, dummy=False, show_placement=False, show_compatibles=False, model=False, result=""):
 	
 	if type(result) != str:  # if result is not a string, redirect output tu /dev/null
 		sys.stdout = open(os.devnull, 'w')
@@ -70,37 +79,60 @@ def or_solver(app_name, infr_name, dummy=False, show_placement=False, model=Fals
 	L = len(links)
 	DF = len(dfs)
 
+	# set max bins to the number of services if not specified
+	MAX_BIN = max_bin if max_bin else S
+
 	info = [['Instances', S], ['Nodes', N], ['Links', L], ['Data Flows', DF]]
 	print(Fore.LIGHTCYAN_EX + tabulate(info))
 
+	compatibles = get_compatibles(app_name, app.file, infr.file)
+	if show_compatibles:
+		for k, v in compatibles.items():
+			if not len(v):
+				print(Fore.LIGHTRED_EX + "No compatibles for '{}'.".format(k))
+				return
+			else:
+				print(Fore.LIGHTGREEN_EX + "Compatibles for '{}': {}".format(k, v))
+	
 	# Create the solver.
-	solver = pywraplp.Solver.CreateSolver('BOP')
-	solver.SetNumThreads(32)
-
-	# Create the variables for placement X.
-	x = {(i, j): solver.BoolVar(f'{s.id}_{n}') for i, s in enumerate(instances) for j, n in enumerate(nids)}
+	solver = pywraplp.Solver.CreateSolver('SCIP')
+	# solver.SetNumThreads(32)
 
 	# Create the variables for binpack B.
 	b = {j: solver.BoolVar(f'b_{nids[j]}') for j in range(N)}
 
-	# Budgeting: no more than MAX_BIN nodes can be used
-	for i in range(S):
-		for j in range(N):
-			solver.Add(x[i, j] <= b[j])
-
-	solver.Add(solver.Sum(b[j] for j in range(N)) <= MAX_BIN)
-
+	# Create bool vars matrix X.
+	# at the same time, create costs matrix C
+	costs = np.zeros((S, N))
+	x = {(i, j): 0 for i in range(S) for j in range(N)}
+	for i, s in enumerate(instances):
+		for j, n in enumerate(nids):
+			if n in compatibles[s.id]:
+				x[i, j] = solver.BoolVar(f'{s.id}_{n}')
+				costs[i, j] = compatibles[s.id][n]
+	
 	# Constraint: one instance at most in one node.
 	for i in range(S):
-		solver.Add(solver.Sum([x[i, j] for j in range(N)]) == 1)
+		solver.Add(solver.Sum([x[i, j] for j in range(N)]) == 1, name=f'one_node_{instances[i].id}')
 
 	# Constraint: cannot exceed the hw capacity of a node.
 	coeffs = [s.comp.hwreqs for s in instances]
 	bounds = [a['hwcaps'] for _, a in nodes]
 
 	for j in range(N):
-		solver.Add(solver.Sum([coeffs[i] * x[i, j] for i in range(S)]) <= (bounds[j] - infr.hwTh))
+		solver.Add(solver.Sum([coeffs[i] * x[i, j] for i in range(S)]) <= (bounds[j] - infr.hwTh), name=f'hw_{nids[j]}')
 
+
+	# Budgeting: no more than MAX_BIN nodes are used.
+	for i in range(S):
+		for j in range(N):
+			solver.Add(x[i, j] <= b[j], name=f'bin_{instances[i].id}_{nids[j]}')
+	
+	solver.Add(solver.Sum([b[j] for j in range(N)]) <= MAX_BIN, name='budget')
+
+	# Constraints:
+	# - cannot exceed the bandwidth of a link. (FeatBW >= sum(ReqBW))
+	# - satisfy latency requirements of data flows. (FeatLat <= ReqLat)
 	for n, n1, a in links:  # foreach link
 		coeffs = {}
 		j = nids.index(n)
@@ -115,7 +147,10 @@ def or_solver(app_name, infr_name, dummy=False, show_placement=False, model=Fals
 				else:
 					continue
 			else:
-				i = instances.index(df.source)
+				if n in compatibles[df.source.id]:
+					i = instances.index(df.source)
+				else:
+					continue
 
 			if isinstance(df.target, ThingInstance):
 				if df.target.node == n1:
@@ -123,7 +158,10 @@ def or_solver(app_name, infr_name, dummy=False, show_placement=False, model=Fals
 				else:
 					continue
 			else:
-				i1 = instances.index(df.target)
+				if n1 in compatibles[df.target.id]:
+					i1 = instances.index(df.target)
+				else:
+					continue
 
 			xij = x[i, j] if i != -1 else 1
 			xi1j1 = x[i1, j1] if i1 != -1 else 1
@@ -135,28 +173,27 @@ def or_solver(app_name, infr_name, dummy=False, show_placement=False, model=Fals
 			else:
 				# linearize the constraint
 				c = solver.BoolVar(name)
+				# solver.Add(c * a['lat'] <= df.latency, name=f'{name}_lat')
 				solver.Add(c >= xij + xi1j1 - 1, name=f'lin_3_{c.name()}')
 
 				coeffs[c] = df.bw
-				
 
 		if len(coeffs):
-			bw_constraint = solver.RowConstraint(0, a['bw']-infr.bwTh, f'{n}_{n1}_bw')
+			upper_bound = a['bw']-infr.bwTh if a['bw']-infr.bwTh > 0 else 0
+			bw_constraint = solver.RowConstraint(0, upper_bound, f'{n}_{n1}_bw')
 			for c, b in coeffs.items():
-				bw_constraint.SetCoefficient(c, df.bw)
+				bw_constraint.SetCoefficient(c, b)
 
-	#  OBJECTIVE FUNCTION
-	costs = get_costs(app.file, infr.file, instances, nodes)
+	# OBJECTIVE FUNCTION
 	obj_expr = [costs[i, j] * x[i, j] for i in range(S) for j in range(N)]
 	solver.Minimize(solver.Sum(obj_expr))
 
 	if model:
-		with open(join(MODELS_DIR,f'model_{app_name}_{infr_name}_{"dummy" if dummy else ""}.lp'), 'w') as f:
+		with open(join(MODELS_DIR,f'model_{app_name}_{infr_name}{"_dummy" if dummy else ""}_pre.lp'), 'w') as f:
 			print(solver.ExportModelAsLpFormat(obfuscated=False), file=f)
 
-	print(Fore.LIGHTYELLOW_EX + "Model created. Starting solving...")
+	print(Fore.LIGHTYELLOW_EX + "Model created. Start solving...")
 	status = solver.Solve()
-	
 	n_distinct = set()
 	placement = {}
 	res = {}
@@ -185,8 +222,10 @@ def or_solver(app_name, infr_name, dummy=False, show_placement=False, model=Fals
 	
 	if type(result) != str and res:  # if set, send or-tools results to "compare.py"
 		res['Placement'] = placement, 
-		# del res['Constraints']
-		result['ortools'] = res
+		if max_bin: # results for budgeting
+			result[max_bin] = res
+		else:
+			result['ortools-pre'] = res
 
 
 if __name__ == '__main__':
@@ -200,7 +239,7 @@ if __name__ == '__main__':
 	parser = init_parser()
 	args = parser.parse_args()
 
-	or_solver(app_name=args.app, infr_name=args.infr, dummy=args.dummy, show_placement=args.placement, model=args.model)
+	or_solver(app_name=args.app, infr_name=args.infr, dummy=args.dummy, show_placement=args.placement, show_compatibles=args.compatibles, model=args.model)
 
 	# absolute import
 else:

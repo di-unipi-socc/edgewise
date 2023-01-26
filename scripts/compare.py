@@ -6,7 +6,7 @@ from os.path import basename, splitext
 import pandas as pd
 from budgeting import or_budgeting
 from colorama import Fore, init
-from googleOR import or_solver_pre as or_solver
+from googleOR import or_solver
 from googleOR.classes.utils import DATA_DIR, check_files
 from pyswip import Prolog
 from tabulate import tabulate
@@ -23,7 +23,7 @@ def init_parser() -> ap.ArgumentParser:
 	               help="if set, uses an infrastructure with dummy links (low lat, high bw)."),
 	p.add_argument("-b", "--budgeting", action="store_true", help="use budgeting for OR-Tools model."),
 	p.add_argument("-o", "--ortools", action="store_true", help="if set, compares also with Google OR-Tools model."),
-	# p.add_argument("-op", "--ortools-pre", action="store_true", help="if set, compares also with Google OR-Tools model (with Prolog pre-processing)."),
+	p.add_argument("-s", "--save", action="store_true", help="if set, saves the results in csv format."),
 	p.add_argument("app", help="Application name.")
 	p.add_argument("infr", help="Infrastructure name.")
 	p.add_argument("budget", type=int, help="Maximum budget.")
@@ -33,7 +33,7 @@ def init_parser() -> ap.ArgumentParser:
 	return p
 
 
-def print_result(result, show_placement):
+def print_result(result, show_placement, save_results):
 	# remove None results (not shown in the table)
 	not_none = {k: v for k, v in result.items() if v is not None}
 	result.clear()
@@ -47,22 +47,18 @@ def print_result(result, show_placement):
 			opt_cost = float(result.loc[['ortools']]['Cost'])
 			result['Change'] = result['Cost'].apply(lambda x: get_change(x, opt_cost))#.round(2).astype(str) + " %"
 
-		'''
-		if 'ortools-pre' in result.index:
-			opt_cost = float(result.loc[['ortools-pre']]['Cost'])
-			result['Change'] = result['Cost'].apply(lambda x: get_change(x, opt_cost))#.round(2).astype(str) + " %"
-		'''
-
 		placements = result.pop('Placement')
-		# save results on csv
-		filename = os.path.join(DATA_DIR, 'results.csv')
-		if not os.path.isfile(filename):
-			result.to_csv(filename)
-		else:
-			result.to_csv(filename, mode='a', header=False)
+
+		if save_results:
+			# save results on csv
+			filename = os.path.join(DATA_DIR, 'results.csv')
+			if not os.path.isfile(filename):
+				result.to_csv(filename)
+			else:
+				result.to_csv(filename, mode='a', header=False)
 
 		result.drop(columns=['App', 'Size'], inplace=True)
-		result.rename(columns={"NDistinct": "# Distinct Nodes", "Infs": "# Inferences", "Time": "Time(s)"}, inplace=True)
+		result.rename(columns={"NDistinct": "Distinct Nodes", "Infs": "Dimension", "Time": "Time(s)"}, inplace=True)
 
 		if show_placement:
 			n_distinct = result.pop('# Distinct Nodes')
@@ -119,7 +115,7 @@ def pl_process(version, app, budget, infr, result):
 	result[basename(version)] = q
 
 
-def main(app, infr, budget, versions, budgeting=False, show_placement=False, ortools=False, ortools_pre=False, dummy=False):
+def main(app, infr, budget, versions, budgeting=False, show_placement=False, ortools=False, dummy=False, save=False):
 	manager = Manager()
 	result = manager.dict()
 	processes = []
@@ -130,19 +126,6 @@ def main(app, infr, budget, versions, budgeting=False, show_placement=False, ort
 		p = Process(target=pl_process, args=(v, app, budget, infr, result))
 		p.start()
 		processes.append(p)
-
-	'''
-	# add OR-Tools process
-	if ortools:
-		app_name = splitext(basename(app))[0]
-
-		p = Process(target=or_solver, args=(app_name, infr_name, None, dummy, show_placement, False, result))
-		p.start()
-		processes.append(p)
-
-	for p in processes:
-		p.join()
-	'''
 
 	# add OR-Tools(pre) process
 	if ortools:
@@ -159,7 +142,7 @@ def main(app, infr, budget, versions, budgeting=False, show_placement=False, ort
 	for p in processes:
 		p.join()
 
-	print_result(result, show_placement)
+	print_result(result, show_placement, save)
 
 
 if __name__ == "__main__":
@@ -175,7 +158,9 @@ if __name__ == "__main__":
 			['INFRASTRUCTURE:', ("dummy" + os.sep if args.dummy else "") + basename(infr)],
 			['BUDGET:', args.budget],
 			['OR-TOOLS:', "YES" if args.ortools else "NO"],
-			['PL VERSIONS:', [basename(v) for v in vs]]]
+			['PL VERSIONS:', [basename(v) for v in vs]],
+			['SAVE RESULTS:', "YES" if args.save else "NO"]]
 	print(Fore.LIGHTCYAN_EX + tabulate(info))
 
-	main(app=app, infr=infr, versions=vs, budget=args.budget, show_placement=args.placement, budgeting=args.budgeting, ortools=args.ortools, dummy=args.dummy)
+	main(app=app, infr=infr, versions=vs, budget=args.budget, show_placement=args.placement, 
+    	budgeting=args.budgeting, ortools=args.ortools, dummy=args.dummy, save=args.save)

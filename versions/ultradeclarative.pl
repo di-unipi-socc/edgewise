@@ -1,5 +1,5 @@
-:-['../data/infrs/infrUC.pl', '../data/apps/distSecurity.pl'].
-:-['../requirements.pl', '../costs.pl'].
+% :-['../data/infrs/infrUC.pl', '../data/apps/distSecurity.pl'].
+:-['../utils/requirements.pl', '../utils/costs.pl'].
 
 :- multifile link/4.
 link(X, X, 0, inf).

@@ -1,5 +1,5 @@
-%:-['../data/infrs/infr128.pl', '../data/apps/speakToMe.pl'].
-:-['../requirements.pl', '../costs.pl'].
+% :-['../data/infrs/infr128.pl', '../data/apps/speakToMe.pl'].
+:-['../utils/requirements.pl', '../utils/costs.pl'].
 
 :- set_prolog_flag(answer_write_options,[max_depth(0)]). % write answers' text entirely
 :- set_prolog_flag(stack_limit, 32 000 000 000).
