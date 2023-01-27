@@ -1,26 +1,21 @@
 from .components import *
 from .infrastructure import Infrastructure
 from .utils import check_app
+from os.path import basename
 
 
 class Application:
-	def __init__(self, app_name):
-		self.id = app_name
+	def __init__(self, file_path):
+		self.name = basename(file_path).split(".")[0]
 		self.components = []
 		self.services = []
 		self.functions = []
 		self.things = []
 		self.thing_instances = []
 		self.data_flows = []
-		self.file = None
+		self._file = file_path
 
-		self.parse(app_name)
-
-	def parse(self, app_name):
-		app_file = check_app(app_name)
-		self.file = app_file
-
-		with open(self.file, "r") as f:
+		with open(self._file, "r") as f:
 			lines = f.read().splitlines()
 
 			services = [i for i in lines if i.startswith("service(")]
@@ -38,7 +33,7 @@ class Application:
 			self.add_services(service_instances)
 			self.add_functions(function_instances)
 			self.add_thing_instances(thing_instances)
-			self.add_data_flows(data_flows)
+			self.add_data_flows(data_flows)		
 
 	def add_component(self, component: Component):
 		self.components.append(component)
@@ -106,6 +101,9 @@ class Application:
 			raise Exception(f'Instance with id {instance_id} not found')
 
 		return instance
+	
+	def get_file(self):
+		return self._file
 
 	def get_service_by_id(self, service_id):
 		return next((s for s in self.services if s.id == service_id), None)
@@ -126,7 +124,7 @@ class Application:
 		return next((df for df in self.data_flows if df.source.id == source_id and df.target.id == target_id), None)
 
 	def __str__(self):
-		str_app = f"Application {self.id}:\n"
+		str_app = f"Application {self.name}:\n"
 		for c in self.components:
 			str_app += f'{c}\n'
 		str_app += '\n'

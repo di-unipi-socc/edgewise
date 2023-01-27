@@ -4,7 +4,7 @@ from os.path import abspath, dirname, exists, join
 ROOT_DIR = dirname(dirname(dirname(abspath(__file__))))
 DATA_DIR = join(ROOT_DIR, 'data')
 VERSIONS_DIR = join(ROOT_DIR, 'versions')
-UTILS_DIR = join(ROOT_DIR, 'utils')
+PL_UTILS_DIR = join(ROOT_DIR, 'pl-utils')
 OUTPUT_DIR = join(ROOT_DIR, 'output')
 
 INFRS_DIR = join(DATA_DIR, 'infrs')
@@ -14,7 +14,7 @@ MODELS_DIR = join(DATA_DIR, 'models')
 PLOTS_DIR = join(OUTPUT_DIR, 'plots')
 
 
-def check_files(app=None, infr=None, dummy_infr=False, versions=None):
+def check_files(app=None, infr=None, versions=None, dummy_infr=False):
 	result = []
 	if app:
 		result.append(check_app(app))

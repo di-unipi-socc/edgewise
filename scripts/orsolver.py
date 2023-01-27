@@ -5,7 +5,7 @@ import sys
 import numpy as np
 from classes import Application, Infrastructure
 from classes.components import ThingInstance
-from classes.utils import MODELS_DIR, UTILS_DIR
+from classes.utils import MODELS_DIR, PL_UTILS_DIR, check_app, check_infr
 from colorama import Fore, init
 from ortools.linear_solver import pywraplp
 from swiplserver import PrologError, PrologMQI, prolog_args
@@ -28,12 +28,12 @@ def init_parser() -> ap.ArgumentParser:
 	return p
 
 
-def get_compatibles(app_name, app, infr):
+def get_compatibles(app_path, infr_path, app_name):
 	with PrologMQI() as mqi:
 		with mqi.create_thread() as prolog:
-			prolog.query(f"consult('{app}')")
-			prolog.query(f"consult('{infr}')")
-			prolog.query(f"consult('{os.path.join(UTILS_DIR, 'preprocessing.pl')}')")
+			prolog.query(f"consult('{app_path}')")
+			prolog.query(f"consult('{infr_path}')")
+			prolog.query(f"consult('{os.path.join(PL_UTILS_DIR, 'preprocessing.pl')}')")
 			try:
 				prolog.query_async(QUERY.format(app_name=app_name), find_all=False)
 				r = prolog.query_async_result()[0]['Compatibles']
@@ -53,13 +53,13 @@ def parse_compatibles(r):
 			compatibles[name][n] = round(float(cost), 4)
 	return compatibles
 		
-def or_solver(app_name, infr_name, max_bin=None, dummy=False, show_placement=False, show_compatibles=False, model=False, result=""):
+def or_solver(app, infr, max_bin=None, dummy=False, show_placement=False, show_compatibles=False, model=False, result=""):
 	
 	if type(result) != str:  # if result is not a string, redirect output tu /dev/null
 		sys.stdout = open(os.devnull, 'w')
 
-	app = Application(app_name)
-	infr = Infrastructure(infr_name, dummy=dummy)
+	app = Application(app)
+	infr = Infrastructure(infr)
 
 	# Set ThingInstance nodes, knowing the infrastructure
 	app.set_things_from_infr(infr)
@@ -82,7 +82,7 @@ def or_solver(app_name, infr_name, max_bin=None, dummy=False, show_placement=Fal
 	info = [['Instances', S], ['Nodes', N], ['Links', L], ['Data Flows', DF]]
 	print(Fore.LIGHTCYAN_EX + tabulate(info))
 
-	compatibles = get_compatibles(app_name, app.file, infr.file)
+	compatibles = get_compatibles(app.get_file(), infr.get_file(), app.name)
 	if show_compatibles:
 		for k, v in compatibles.items():
 			if not len(v):
@@ -186,7 +186,7 @@ def or_solver(app_name, infr_name, max_bin=None, dummy=False, show_placement=Fal
 	solver.Minimize(solver.Sum(obj_expr))
 
 	if model:
-		with open(os.path.join(MODELS_DIR,f'model_{app_name}_{infr_name}{"_dummy" if dummy else ""}.lp'), 'w') as f:
+		with open(os.path.join(MODELS_DIR,f'model_{app.name}_{infr.get_size()}{"_dummy" if dummy else ""}.lp'), 'w') as f:
 			print(solver.ExportModelAsLpFormat(obfuscated=False), file=f)
 
 	print(Fore.LIGHTYELLOW_EX + "Model created. Start solving...")
@@ -211,7 +211,7 @@ def or_solver(app_name, infr_name, max_bin=None, dummy=False, show_placement=Fal
 
 		tot_cost = solver.Objective().Value() # if only cost in Objective function
 		tot_time = solver.WallTime() / 1000  # in seconds
-		res = {'App': app_name, 'Time': tot_time, 'Cost': round(tot_cost, 4), 'NDistinct': len(n_distinct), 'Infs': solver.NumConstraints(), 'Size': N}
+		res = {'App': app.name, 'Time': tot_time, 'Cost': round(tot_cost, 4), 'NDistinct': len(n_distinct), 'Infs': solver.NumConstraints(), 'Size': N}
 
 		print(Fore.LIGHTGREEN_EX + tabulate(res.items(), numalign='right'))
 	else:
@@ -236,4 +236,7 @@ if __name__ == '__main__':
 	parser = init_parser()
 	args = parser.parse_args()
 
-	or_solver(app_name=args.app, infr_name=args.infr, dummy=args.dummy, show_placement=args.placement, show_compatibles=args.compatibles, model=args.model)
+	app = check_app(args.app)
+	infr = check_infr(args.infr, dummy=args.dummy)
+
+	or_solver(app=app, infr=infr, dummy=args.dummy, show_placement=args.placement, show_compatibles=args.compatibles, model=args.model)

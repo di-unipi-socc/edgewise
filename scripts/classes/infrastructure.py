@@ -22,19 +22,15 @@ def to_list(s):
 
 
 class Infrastructure(nx.DiGraph):
-	def __init__(self, size, dummy=False):
+	def __init__(self, file_path):
+		
 		super().__init__()
 		self.hwTh = None
 		self.bwTh = None
-		self.file = None
+		self._file = file_path
+		self._size = None
 
-		self.parse(size, dummy)
-
-	def parse(self, size, dummy):
-		infr_file = check_infr(size, dummy)
-		self.file = infr_file
-
-		with open(self.file, "r") as f:
+		with open(self._file, "r") as f:
 			lines = f.read().splitlines()
 
 			bw_th = next(i for i in lines if i.startswith("bwTh("))
@@ -44,7 +40,8 @@ class Infrastructure(nx.DiGraph):
 
 			self.set_thresholds(bw_th, hw_th)
 			self.add_nodes(nodes)
-			self.add_links(links)
+			self.add_links(links)	
+			self._size = len(self.nodes())	
 
 	def parse_node(self, data):
 		out = p.parse(NODE, data, dict(to_list=to_list, to_list2=to_list_maybe_empty))
@@ -62,9 +59,7 @@ class Infrastructure(nx.DiGraph):
 		out = out.named
 		src = out.pop("source")
 		trg = out.pop("target")
-		# self.add_edge(out.pop("source"), out.pop("target"), **out)
 		nx.set_edge_attributes(self, {(src, trg): out})
-		# nx.set_edge_attributes(self, {(trg, src): out})
 
 	def add_nodes(self, nodes):
 		for n in nodes:
@@ -116,10 +111,21 @@ class Infrastructure(nx.DiGraph):
 			if n1 != n2: 
 				links_str += "link({}, {}, {lat}, {bw}).\n".format(n1, n2, **lattr).replace("'", "")
 		return links_str
-
+	
+	def get_size(self):
+		return self._size
+	
+	def get_file(self):
+		return self._file
+	
 	def __str__(self):
 		return "{}\n{}\n{}".format(self.get_thresholds(), self.get_nodes(), self.get_links())
 
+	def upload(self, file=None):
+		if not file:
+			file = self._file
+		with open(file, 'w') as f:
+			f.write(str(self))
 
 class ParseException(Exception):
 	def __init__(self, message):

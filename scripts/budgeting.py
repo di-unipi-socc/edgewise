@@ -5,7 +5,7 @@ from multiprocessing import Manager, Process
 
 import pandas as pd
 from classes import Application
-from classes.utils import OUTPUT_DIR
+from classes.utils import OUTPUT_DIR, check_app, check_infr
 from colorama import Fore, init
 from orsolver import or_solver
 from tabulate import tabulate
@@ -16,6 +16,8 @@ def init_parser() -> ap.ArgumentParser:
 	p = ap.ArgumentParser(prog=__file__, description=description)
 
 	p.add_argument("-s", "--save", action="store_true", help="if set, saves the results in csv format.")
+	p.add_argument("-d", "--dummy", action="store_true",
+	               help="if set, uses an infrastructure with dummy links (low lat, high bw).")
 	p.add_argument("app", help="Application name.")
 	p.add_argument("infr", help="Infrastructure name.")
 
@@ -32,14 +34,14 @@ def find_best(results: pd.DataFrame):
     return best
 
 
-def get_best(results, save_results):
+def get_best(results, save_results=False):
     df = pd.DataFrame.from_dict(results, orient='index')
     df.index.name = 'MaxBins'
     df.sort_index(inplace=True)
     
     tab = tabulate(df, headers='keys', tablefmt='fancy_grid', numalign="center", stralign="center")
     print(Fore.LIGHTYELLOW_EX + tab)
-    
+
     best = find_best(df).to_dict()
     best_tab = tabulate([best], headers='keys', tablefmt='fancy_grid', numalign="center", stralign="center")
     print(Fore.LIGHTGREEN_EX + best_tab)
@@ -53,26 +55,28 @@ def get_best(results, save_results):
 
     return best
 
-def or_budgeting(app_name, infr_name, save=False, result=""):
+def or_budgeting(app, infr, save_results=False, result=""):
+	
+	if type(result) != str:  # if result is not a string, redirect output tu /dev/null
+		sys.stdout = open(os.devnull, 'w')
 
-    if type(result) != str:  # if result is not a string, redirect output tu /dev/null
-        sys.stdout = open(os.devnull, 'w')
-    
-    app = Application(app_name)
-    S = len(app.services + app.functions)
+	app = Application(app)
+	S = len(app.services + app.functions)
 
-    manager = Manager()
-    bdg_result = manager.dict()
-    processes = []
-    for i in range(S):
-        p = Process(target=or_solver, args=(app_name, infr_name, i+1, False, False, False, False, bdg_result))
-        p.start()
-        processes.append(p)
+	manager = Manager()
+	bdg_result = manager.dict()
+	processes = []
+	for i in range(S):
+		p = Process(target=or_solver, args=(app.get_file(), infr, i+1, False, False, False, False, bdg_result))
+		p.start()
+		processes.append(p)
 
-    for p in processes:
-        p.join()
+	for p in processes:
+		p.join()
 
-    result['ortools'] = get_best(bdg_result)
+	res = get_best(bdg_result, save_results=save_results)
+	if type(result) != str and res:
+		result['ortools'] = res
 
 
 if __name__ == '__main__':
@@ -82,5 +86,8 @@ if __name__ == '__main__':
 
 	parser = init_parser()
 	args = parser.parse_args()
+    
+	app = check_app(args.app)
+	infr = check_infr(args.infr, args.dummy)
 
-	or_budgeting(app_name=args.app, infr_name=args.infr, save=args.save)
+	or_budgeting(app=app, infr=infr, save_results=args.save)

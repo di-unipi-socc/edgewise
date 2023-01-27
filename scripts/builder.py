@@ -102,24 +102,18 @@ class Infra(nx.Graph):
 		node = self.nodes[nid]
 		node['ntype'] = 'cloud'
 		node['software'] = SW_CAPS
-		# hw_platform = rnd.choice(HW_PLATFORMS)
-		# node['hardware'] = (hw_platform, 1024)
 		node['security'] = ["enc", "auth"]
 
 	def set_as_isp(self, nid):
 		node = self.nodes[nid]
 		node['ntype'] = 'isp'
 		node['software'] = get_random_sw_caps(size=rnd.randint(2, 5))
-		# hw_platform = rnd.choice(HW_PLATFORMS)
-		# node['hardware'] = (hw_platform, rnd.choice([256, 512]))
 		node['security'] = ["enc"]
 
 	def set_as_cabinet(self, nid):
 		node = self.nodes[nid]
 		node['ntype'] = 'cabinet'
 		node['software'] = get_random_sw_caps(size=rnd.randint(2, 5))
-		# hw_platform = rnd.choice(HW_PLATFORMS)
-		# node['hardware'] = (hw_platform, rnd.choice([128, 256]))
 		node['security'] = ["enc", "auth"]
 		# randomly assign IoT device(s)
 		node['things'] = get_random_things(n=rnd.randint(1, 3))
@@ -128,8 +122,6 @@ class Infra(nx.Graph):
 		node = self.nodes[nid]
 		node['ntype'] = 'accesspoint'
 		node['software'] = get_random_sw_caps(size=rnd.randint(2, 5))
-		# hw_platform = rnd.choice(HW_PLATFORMS)
-		# node['hardware'] = (hw_platform, 64)
 		node['security'] = ["enc", "auth"]
 		# randomly assign IoT device(s)
 		node['things'] = get_random_things(n=rnd.randint(1, 3))
@@ -138,8 +130,6 @@ class Infra(nx.Graph):
 		node = self.nodes[nid]
 		node['ntype'] = 'thing'
 		node['software'] = get_random_sw_caps(size=rnd.randint(1, 4))
-		# hw_platform = rnd.choice(HW_PLATFORMS)
-		# node['hardware'] = (hw_platform, 32)
 		node['security'] = ["enc", "auth"]
 		# randomly assign IoT device(s)
 		node['things'] = get_random_things(n=rnd.randint(1, 4))
@@ -202,13 +192,11 @@ class Infra(nx.Graph):
 
 def main(n, seed=None, dummy=False):
 	infra = Infra(n, seed=seed, dummy=dummy)
-	# assert(NOT_PLACED_THINGS == 0)
-	info = [['SEED:', seed if seed else '<not set>'], ['DUMMY:', 'YES' if dummy else 'NO']]
+	info = [['SEED:', seed if seed else '<not set>'], ['DUMMY:', 'YES' if dummy else 'NO'], ['PATH:', infra.file]]
 
 	if dummy:
 		infra.dummy_links(lat=5, bw=700)
 
-	info.append(['PATH:', infra.file])
 	print(Fore.LIGHTCYAN_EX + tabulate(info))
 
 	print(Fore.GREEN + f"NODES: {n}", end="\n")

@@ -113,8 +113,6 @@ def main(app, infr, budget, versions, budgeting=False, show_placement=False, ort
 	result = manager.dict()
 	processes = []
 
-	infr_name = splitext(basename(infr))[0][4:]
-
 	for v in versions:
 		p = Process(target=pl_process, args=(v, app, budget, infr, result))
 		p.start()
@@ -122,12 +120,10 @@ def main(app, infr, budget, versions, budgeting=False, show_placement=False, ort
 
 	# add OR-Tools(pre) process
 	if ortools:
-		app_name = splitext(basename(app))[0]
-
 		if budgeting:
-			p = Process(target=or_budgeting, args=(app_name, infr_name, result))
+			p = Process(target=or_budgeting, args=(app, infr, result))
 		else:
-			p = Process(target=or_solver, args=(app_name, infr_name, None, dummy, show_placement, False, False, result))
+			p = Process(target=or_solver, args=(app, infr, None, dummy, show_placement, False, False, result))
 					
 		p.start()
 		processes.append(p)
@@ -136,6 +132,7 @@ def main(app, infr, budget, versions, budgeting=False, show_placement=False, ort
 		p.join()
 
 	print_result(result, show_placement, save)
+	return result
 
 
 if __name__ == "__main__":
