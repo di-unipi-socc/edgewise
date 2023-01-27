@@ -217,10 +217,10 @@ def or_solver(app, infr, max_bin=None, dummy=False, show_placement=False, show_c
 	else:
 		print(Fore.LIGHTRED_EX + 'The problem does not have a solution.')
 	
-	if type(result) != str and res:  # if set, send or-tools results to "compare.py"
-		res['Placement'] = placement, 
+	if type(result) != str and res:
+		res['Placement'] = placement
 		if max_bin: # results for budgeting
-			result[max_bin] = res
+			result[f'ortools-{max_bin}'] = res
 		else:
 			result['ortools'] = res
 

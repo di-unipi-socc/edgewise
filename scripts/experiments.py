@@ -7,9 +7,7 @@ from multiprocessing import Manager, Process
 from classes import Application, Infrastructure
 from classes.utils import PL_UTILS_DIR, check_files
 from swiplserver import PrologError, PrologMQI, prolog_args
-from compare import pl_process, main as cmp
-
-ALLOC_QUERY = "allocatedResources(Ps, AllocHW, AllocBW)"
+from compare import main as cmp
 
 def init_parser() -> ap.ArgumentParser:
 	description = "Perform several experiments on a given application and infrastructure"
@@ -36,8 +34,10 @@ def create_tmp_copy(path):
 
 def main(app, infr, budget, versions):
 
-    r = cmp(app, infr, budget, versions, budgeting=True, ortools=True)
-    print(r)
+    pl_sol = or_sol = True
+    # while pl_sol or or_sol:
+    r = cmp(app, infr, budget, versions, ortools=True, budgeting=True)
+
 
 if __name__ == '__main__':
     

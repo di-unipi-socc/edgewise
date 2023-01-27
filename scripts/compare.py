@@ -1,17 +1,18 @@
 import argparse as ap
 import os
 from multiprocessing import Manager, Process
-from os.path import basename, splitext
+from os.path import basename, splitext, join
 
 import pandas as pd
 from budgeting import or_budgeting
 from colorama import Fore, init
 from orsolver import or_solver
-from classes.utils import OUTPUT_DIR, check_files
+from classes.utils import OUTPUT_DIR, PL_UTILS_DIR, check_files
 from swiplserver import PrologMQI, PrologError, prolog_args
 from tabulate import tabulate
 
-QUERY = "once(stats(App, Placement, Cost, NDistinct, Infs, Time, {budget}))"
+MAIN_QUERY = "once(stats(App, Placement, Cost, NDistinct, Infs, Time, {budget}))"
+ALLOC_QUERY = "allocatedResources({placement}, AllocHW, AllocBW)"
 
 
 def init_parser() -> ap.ArgumentParser:
@@ -46,7 +47,7 @@ def print_result(result, show_placement, save_results):
 
 		if 'ortools' in result.index:
 			opt_cost = float(result.loc[['ortools']]['Cost'])
-			result['Change'] = result['Cost'].apply(lambda x: get_change(x, opt_cost))#.round(2).astype(str) + " %"
+			result['Change'] = result['Cost'].apply(lambda x: get_change(x, opt_cost))
 
 		placements = result.pop('Placement')
 
@@ -57,7 +58,7 @@ def print_result(result, show_placement, save_results):
 			else:
 				result.to_csv(filename, mode='a', header=False)
 
-		result.drop(columns=['App', 'Size'], inplace=True)
+		result.drop(columns=['App', 'Size', 'AllocHW', 'AllocBW'], inplace=True)
 		result.rename(columns={"NDistinct": "Distinct Nodes", "Infs": "Dimension", "Time": "Time(s)"}, inplace=True)
 
 		if show_placement:
@@ -76,10 +77,32 @@ def print_result(result, show_placement, save_results):
 		print(Fore.LIGHTYELLOW_EX + "\nCOMPARISON:")
 		print(Fore.LIGHTYELLOW_EX + tab)
 
-def format_result(q, infr):
-	q['Placement'] = dict(list(map((lambda x: prolog_args(x)), q['Placement'])))
-	q['Size'] = splitext(basename(infr))[0][4:]
-	return q
+
+def prolog_to_dict(p):
+	return dict(list(map((lambda x: prolog_args(x)), p)))
+
+def prolog_to_dict2(p):
+	a = list(map((lambda x: prolog_args(x)), p))
+	return dict(list(map((lambda x: (tuple(prolog_args(x[0])), x[1])), a)))
+
+
+def compute_allocated_resources(result, app, infr):
+	for k, v in result.items():
+		allocs = {}
+		str_pl = "[" + ", ".join(["({}, {})".format(s, n) for s, n in v['Placement'].items()]) + "]"
+		with PrologMQI() as mqi:
+			with mqi.create_thread() as prolog:
+				prolog.query(f"consult('{app}')")
+				prolog.query(f"consult('{infr}')")
+				prolog.query(f"consult('{join(PL_UTILS_DIR, 'allocation.pl')}')")
+				prolog.query_async(ALLOC_QUERY.format(placement=str_pl))
+				q = prolog.query_async_result()[0]
+				allocs['AllocHW'] = prolog_to_dict(q['AllocHW'])
+				allocs['AllocBW'] = prolog_to_dict2(q['AllocBW'])
+				
+		result[k].update(allocs)
+
+	return result
 
 
 def get_change(current, optimal):
@@ -98,9 +121,9 @@ def pl_process(version, app, budget, infr, result):
 			prolog.query(f"consult('{app}')")
 			prolog.query(f"consult('{infr}')")
 			try:
-				prolog.query_async(QUERY.format(budget=budget))
+				prolog.query_async(MAIN_QUERY.format(budget=budget))
 				q = prolog.query_async_result()[0]
-				q = format_result(q, infr)				
+				q['Placement'] = prolog_to_dict(q['Placement'])
 			except PrologError:
 				print(Fore.LIGHTRED_EX + "No PL solution found for {}.".format(basename(version)))
 				q = None	
@@ -121,7 +144,7 @@ def main(app, infr, budget, versions, budgeting=False, show_placement=False, ort
 	# add OR-Tools(pre) process
 	if ortools:
 		if budgeting:
-			p = Process(target=or_budgeting, args=(app, infr, result))
+			p = Process(target=or_budgeting, args=(app, infr, save, result))
 		else:
 			p = Process(target=or_solver, args=(app, infr, None, dummy, show_placement, False, False, result))
 					
@@ -131,6 +154,7 @@ def main(app, infr, budget, versions, budgeting=False, show_placement=False, ort
 	for p in processes:
 		p.join()
 
+	result = compute_allocated_resources(dict(result), app, infr)
 	print_result(result, show_placement, save)
 	return result
 
