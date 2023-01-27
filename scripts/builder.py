@@ -3,9 +3,9 @@ from itertools import product
 from os.path import join
 
 import networkx as nx
+from classes.utils import INFRS_DIR
 from colorama import Fore, init
 from distribution import normal_distribution
-from classes.utils import INFRS_DIR
 from numpy import log2
 from numpy import random as rnd
 from numpy import set_printoptions

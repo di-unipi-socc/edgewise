@@ -1,13 +1,15 @@
-import os
 import argparse as ap
-import numpy as np
+import os
 import sys
 
-from ortools.linear_solver import pywraplp
-from pyswip import Prolog
+import numpy as np
+from classes import Application, Infrastructure
+from classes.components import ThingInstance
+from classes.utils import MODELS_DIR, UTILS_DIR
 from colorama import Fore, init
+from ortools.linear_solver import pywraplp
+from swiplserver import PrologError, PrologMQI, prolog_args
 from tabulate import tabulate
-from classes import *
 
 # todo normalization costs cij - cmin / cmax - cmin
 QUERY = "preprocess({app_name}, Compatibles)"
@@ -27,34 +29,28 @@ def init_parser() -> ap.ArgumentParser:
 
 
 def get_compatibles(app_name, app, infr):
-	prolog = Prolog()
-	prolog.consult(app)
-	prolog.consult(infr)
-	prolog.consult(join(UTILS_DIR, "preprocessing.pl"))
+	with PrologMQI() as mqi:
+		with mqi.create_thread() as prolog:
+			prolog.query(f"consult('{app}')")
+			prolog.query(f"consult('{infr}')")
+			prolog.query(f"consult('{os.path.join(UTILS_DIR, 'preprocessing.pl')}')")
+			try:
+				prolog.query_async(QUERY.format(app_name=app_name), find_all=False)
+				r = prolog.query_async_result()[0]['Compatibles']
+			except PrologError:
+				raise ValueError("Error in preprocessing.pl")
 
-	try:
-		q = prolog.query(QUERY.format(app_name=app_name))
-		r = next(q)['Compatibles']
-		q.close()
-	except StopIteration:
-		raise ValueError("Error in preprocessing.pl")
-
-	return parse_compatibles(r)
+			return parse_compatibles(r)
 
 # bug in pyswip when retrieving lists/tuples with format ",(...)"
 def parse_compatibles(r):
 	compatibles = {}
-	for i in r:
-		i = i[2:-1].replace(",(", "(").split(", ", 1)
-		s = i[0]
-		comps = eval(i[1])
-		comps2 = {}
+	for t in r:
+		name, comps = prolog_args(t)
+		compatibles[name] = {}
 		for c in comps:
-			c = c[1:-1].split(", ", 1)
-			comps2[c[0]] = round(float(c[1]), 4)
-
-		compatibles[s] = comps2
-	
+			n, cost = prolog_args(c)
+			compatibles[name][n] = round(float(cost), 4)
 	return compatibles
 		
 def or_solver(app_name, infr_name, max_bin=None, dummy=False, show_placement=False, show_compatibles=False, model=False, result=""):
@@ -190,7 +186,7 @@ def or_solver(app_name, infr_name, max_bin=None, dummy=False, show_placement=Fal
 	solver.Minimize(solver.Sum(obj_expr))
 
 	if model:
-		with open(join(MODELS_DIR,f'model_{app_name}_{infr_name}{"_dummy" if dummy else ""}_pre.lp'), 'w') as f:
+		with open(os.path.join(MODELS_DIR,f'model_{app_name}_{infr_name}{"_dummy" if dummy else ""}.lp'), 'w') as f:
 			print(solver.ExportModelAsLpFormat(obfuscated=False), file=f)
 
 	print(Fore.LIGHTYELLOW_EX + "Model created. Start solving...")
@@ -226,7 +222,7 @@ def or_solver(app_name, infr_name, max_bin=None, dummy=False, show_placement=Fal
 		if max_bin: # results for budgeting
 			result[max_bin] = res
 		else:
-			result['ortools-pre'] = res
+			result['ortools'] = res
 
 
 if __name__ == '__main__':

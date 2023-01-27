@@ -9,4 +9,5 @@ Pillow
 pyswip @ git+https://github.com/yuce/pyswip@89955611467cec37ab89bf6fbf7f7567cbcb194b
 scipy
 seaborn
+swiplserver
 tabulate

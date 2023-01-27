@@ -8,7 +8,7 @@ from budgeting import or_budgeting
 from colorama import Fore, init
 from orsolver import or_solver
 from classes.utils import OUTPUT_DIR, check_files
-from pyswip import Prolog
+from swiplserver import PrologMQI, PrologError, prolog_args
 from tabulate import tabulate
 
 QUERY = "once(stats(App, Placement, Cost, NDistinct, Infs, Time, {budget}))"
@@ -18,12 +18,13 @@ def init_parser() -> ap.ArgumentParser:
 	description = "Compare several placement strategies."
 	p = ap.ArgumentParser(prog=__file__, description=description)
 
-	p.add_argument("-p", "--placement", action="store_true", help="if set, shows the obtained placement"),
+	p.add_argument("-p", "--placement", action="store_true", help="if set, shows the obtained placement")	
 	p.add_argument("-d", "--dummy", action="store_true",
-	               help="if set, uses an infrastructure with dummy links (low lat, high bw)."),
-	p.add_argument("-b", "--budgeting", action="store_true", help="use budgeting for OR-Tools model."),
-	p.add_argument("-o", "--ortools", action="store_true", help="if set, compares also with Google OR-Tools model."),
-	p.add_argument("-s", "--save", action="store_true", help="if set, saves the results in csv format."),
+	               help="if set, uses an infrastructure with dummy links (low lat, high bw).")
+	p.add_argument("-b", "--budgeting", action="store_true", help="use budgeting for OR-Tools model.")
+	p.add_argument("-o", "--ortools", action="store_true", help="if set, compares also with Google OR-Tools model.")
+	p.add_argument("-s", "--save", action="store_true", help="if set, saves the results in csv format.")
+
 	p.add_argument("app", help="Application name.")
 	p.add_argument("infr", help="Infrastructure name.")
 	p.add_argument("budget", type=int, help="Maximum budget.")
@@ -50,7 +51,6 @@ def print_result(result, show_placement, save_results):
 		placements = result.pop('Placement')
 
 		if save_results:
-			# save results on csv
 			filename = os.path.join(OUTPUT_DIR, 'results.csv')
 			if not os.path.isfile(filename):
 				result.to_csv(filename)
@@ -61,10 +61,10 @@ def print_result(result, show_placement, save_results):
 		result.rename(columns={"NDistinct": "Distinct Nodes", "Infs": "Dimension", "Time": "Time(s)"}, inplace=True)
 
 		if show_placement:
-			n_distinct = result.pop('# Distinct Nodes')
+			n_distinct = result.pop('Distinct Nodes')
 			# transform list of strings into a dict in the form {service: node}
 			placements = pd.DataFrame.from_records(placements.values, index=placements.index)
-			placements.insert(0, '# Distinct nodes', n_distinct)
+			placements.insert(0, 'Distinct Nodes', n_distinct)
 
 			p_tab = tabulate(placements, headers='keys', tablefmt='fancy_grid', numalign='center', stralign='center')
 			print(Fore.LIGHTRED_EX + "\nPLACEMENTS:")
@@ -76,11 +76,9 @@ def print_result(result, show_placement, save_results):
 		print(Fore.LIGHTYELLOW_EX + "\nCOMPARISON:")
 		print(Fore.LIGHTYELLOW_EX + tab)
 
-def format_placement(q):
-	placement = q['Placement']
-	placement = [i[2:-1].split(', ') for i in placement]
-	q['Placement'] = dict(placement)
-
+def format_result(q, infr):
+	q['Placement'] = dict(list(map((lambda x: prolog_args(x)), q['Placement'])))
+	q['Size'] = splitext(basename(infr))[0][4:]
 	return q
 
 
@@ -93,24 +91,19 @@ def get_change(current, optimal):
 		return float('inf')
 
 
-def pl_query(p: Prolog, s: str):
-	q = p.query(s)
-	return next(q)
-
-
 def pl_process(version, app, budget, infr, result):
-	p = Prolog()
-	p.consult(version)
-	p.consult(app)
-	p.consult(infr)
-
-	try:
-		q = pl_query(p, QUERY.format(budget=budget))
-		q = format_placement(q)
-		q['Size'] = splitext(basename(infr))[0][4:]
-	except StopIteration:
-		print(Fore.LIGHTRED_EX + "No PL solution found for {}.".format(basename(version)))
-		q = None
+	with PrologMQI() as mqi:
+		with mqi.create_thread() as prolog:
+			prolog.query(f"consult('{version}')")
+			prolog.query(f"consult('{app}')")
+			prolog.query(f"consult('{infr}')")
+			try:
+				prolog.query_async(QUERY.format(budget=budget))
+				q = prolog.query_async_result()[0]
+				q = format_result(q, infr)				
+			except PrologError:
+				print(Fore.LIGHTRED_EX + "No PL solution found for {}.".format(basename(version)))
+				q = None	
 
 	result[basename(version)] = q
 
@@ -157,6 +150,7 @@ if __name__ == "__main__":
 	info = [['APPLICATION:', basename(app)],
 			['INFRASTRUCTURE:', ("dummy" + os.sep if args.dummy else "") + basename(infr)],
 			['BUDGET:', args.budget],
+			['NODE BUDGETING:', "YES" if args.budgeting else "NO"],
 			['OR-TOOLS:', "YES" if args.ortools else "NO"],
 			['PL VERSIONS:', [basename(v) for v in vs]],
 			['SAVE RESULTS:', "YES" if args.save else "NO"]]

@@ -1,7 +1,9 @@
+from itertools import product
+
 import networkx as nx
 import parse as p
+
 from .utils import check_infr
-from itertools import product
 
 BW_TH = "bwTh({t:g})."
 HW_TH = "hwTh({t:g})."

@@ -4,10 +4,10 @@ import sys
 from multiprocessing import Manager, Process
 
 import pandas as pd
-from colorama import Fore, init
-from orsolver import or_solver
 from classes import Application
 from classes.utils import OUTPUT_DIR
+from colorama import Fore, init
+from orsolver import or_solver
 from tabulate import tabulate
 
 
@@ -15,6 +15,7 @@ def init_parser() -> ap.ArgumentParser:
 	description = "Compare several placement strategies."
 	p = ap.ArgumentParser(prog=__file__, description=description)
 
+	p.add_argument("-s", "--save", action="store_true", help="if set, saves the results in csv format.")
 	p.add_argument("app", help="Application name.")
 	p.add_argument("infr", help="Infrastructure name.")
 
@@ -31,28 +32,28 @@ def find_best(results: pd.DataFrame):
     return best
 
 
-def get_best(results):
+def get_best(results, save_results):
     df = pd.DataFrame.from_dict(results, orient='index')
     df.index.name = 'MaxBins'
     df.sort_index(inplace=True)
-    # df = df[['App', 'Cost', 'Time', 'NDistinct', 'Size']]
+    
     tab = tabulate(df, headers='keys', tablefmt='fancy_grid', numalign="center", stralign="center")
     print(Fore.LIGHTYELLOW_EX + tab)
     
     best = find_best(df).to_dict()
     best_tab = tabulate([best], headers='keys', tablefmt='fancy_grid', numalign="center", stralign="center")
     print(Fore.LIGHTGREEN_EX + best_tab)
-
-    # save results on csv
-    filename = os.path.join(OUTPUT_DIR, 'budgets.csv')
-    if not os.path.isfile(filename):
-        df.to_csv(filename)
-    else:
-        df.to_csv(filename, mode='a', header=False)
+	
+    if save_results:
+        filename = os.path.join(OUTPUT_DIR, 'budgets.csv')
+        if not os.path.isfile(filename):
+            df.to_csv(filename)
+        else:
+            df.to_csv(filename, mode='a', header=False)
 
     return best
 
-def or_budgeting(app_name, infr_name, result=""):
+def or_budgeting(app_name, infr_name, save=False, result=""):
 
     if type(result) != str:  # if result is not a string, redirect output tu /dev/null
         sys.stdout = open(os.devnull, 'w')
@@ -82,4 +83,4 @@ if __name__ == '__main__':
 	parser = init_parser()
 	args = parser.parse_args()
 
-	or_budgeting(app_name=args.app, infr_name=args.infr)
+	or_budgeting(app_name=args.app, infr_name=args.infr, save=args.save)

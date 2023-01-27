@@ -1,4 +1,4 @@
-from os.path import abspath, dirname, join, exists
+from os.path import abspath, dirname, exists, join
 
 # path to the main directories
 ROOT_DIR = dirname(dirname(dirname(abspath(__file__))))
@@ -20,8 +20,8 @@ def check_files(app=None, infr=None, dummy_infr=False, versions=None):
 		result.append(check_app(app))
 	if infr:
 		result.append(check_infr(infr, dummy_infr))
-	if versions:
-		result.append(check_versions(versions))
+	
+	result.append(check_versions(versions) if versions else [])
 
 	return result
 

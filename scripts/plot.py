@@ -1,9 +1,10 @@
-from classes.utils import DATA_DIR, OUTPUT_DIR, PLOTS_DIR
 import os
+
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import seaborn as sns
+from classes.utils import OUTPUT_DIR, PLOTS_DIR
 
 sizes = ["16", "32", "64", "128", "256", "512"]
 x = [i for i in range(len(sizes))]
