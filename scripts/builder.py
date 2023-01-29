@@ -1,4 +1,5 @@
 import argparse as ap
+import sys
 from itertools import product
 from os.path import join
 
@@ -21,8 +22,22 @@ THINGS = ['soil', 'heat', 'water', 'nutrient', 'energy', 'piCamera1', 'piCamera2
 
 NOT_PLACED_THINGS = len(THINGS)
 
+
+def init_parser() -> ap.ArgumentParser:
+	description = "Generate random infrastructure with a given number of nodes."
+	p = ap.ArgumentParser(prog=__file__, description=description)
+
+	p.add_argument("-d", "--dummy", action="store_true", help="set dummy links (low latency, high bandwidth)")
+	p.add_argument("-s", "--seed", type=int, help="seed for random generation ('None' if not set)")
+	p.add_argument("n", type=int, help="number of infrastructure nodes")
+	p.add_argument("-t", "--things", nargs='*', help="list of IoT devices to be randomly placed")
+
+	return p
+
+
 def get_random_sw_caps(size=1):
 	return list(rnd.choice(SW_CAPS, size=size, replace=False))
+
 
 def get_random_things(n=1):
 	global NOT_PLACED_THINGS
@@ -204,20 +219,8 @@ def main(n, seed=None, dummy=False):
 
 	infra.upload()
 
-def init_parser() -> ap.ArgumentParser:
-	description = "Generate random infrastructure with a given number of nodes."
-	p = ap.ArgumentParser(prog=__file__, description=description)
-
-	p.add_argument("-d", "--dummy", action="store_true", help="set dummy links (low latency, high bandwidth)")
-	p.add_argument("-s", "--seed", type=int, help="seed for random generation ('None' if not set)")
-	p.add_argument("n", type=int, help="number of infrastructure nodes")
-	p.add_argument("-t", "--things", nargs='*', help="list of IoT devices to be randomly placed")
-
-	return p
-
 
 if __name__ == "__main__":
-	import sys
 	set_printoptions(threshold=sys.maxsize)
 	init(autoreset=True)
 

@@ -37,7 +37,7 @@ def main(app, infr, budget, versions):
     pl_sol = or_sol = True
     # while pl_sol or or_sol:
     r = cmp(app, infr, budget, versions, ortools=True, budgeting=True)
-
+    
 
 if __name__ == '__main__':
     
