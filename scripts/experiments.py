@@ -3,11 +3,10 @@ import shutil
 import tempfile
 from os.path import basename, join
 from multiprocessing import Manager, Process
-
-from classes import Application, Infrastructure
-from classes.utils import PL_UTILS_DIR, check_files
-from swiplserver import PrologError, PrologMQI, prolog_args
-from compare import main as cmp
+from classes.utils import check_files
+from classes import Infrastructure
+from compare import pl_process, or_budgeting, compute_allocated_resources
+from colorama import Fore, init
 
 def init_parser() -> ap.ArgumentParser:
 	description = "Perform several experiments on a given application and infrastructure"
@@ -25,26 +24,69 @@ def init_parser() -> ap.ArgumentParser:
 	return p
 
 
-def create_tmp_copy(path):
+def create_tmp_copy(path, tmp_dir, tool='or'):
     # create a temporary copy file of the infrastructure
-    tmp_dir = tempfile.gettempdir()
-    tmp_path = join(tmp_dir, basename(path))
+    tmp_path = join(tmp_dir, f'{tool}_{basename(path)}')
     shutil.copyfile(path, tmp_path)
     return tmp_path
 
-def main(app, infr, budget, versions):
+
+def main(app, pl_infr_path, or_infr_path, pl_version, budget):
 
     pl_sol = or_sol = True
-    # while pl_sol or or_sol:
-    r = cmp(app, infr, budget, versions, ortools=True, budgeting=True)
-    
+    manager = Manager()
+    result = manager.dict()
+
+    pl_key = basename(pl_version)
+    or_key = 'ortools'
+
+    infr_pl = Infrastructure(pl_infr_path)
+    infr_or = Infrastructure(or_infr_path)
+    iteration = 1
+    while pl_sol or or_sol:
+        print(Fore.LIGHTCYAN_EX + f"Start iteration {iteration}")
+
+        process_pl = Process(target=pl_process, args=(pl_version, app, budget, pl_infr_path, result))
+        process_pl.start()
+            
+        process_or = Process(target=or_budgeting, args=(app, or_infr_path, False, result))
+        process_or.start()
+
+        process_pl.join()
+        process_or.join()
+
+        result = dict(result)
+        if pl_key in result:
+            print(Fore.LIGHTGREEN_EX + "Found solution with PL")
+            result[pl_key].update(compute_allocated_resources(app, pl_infr_path, result[pl_key]['Placement']))
+            infr_pl.update_allocated_resources(result[pl_key]['AllocHW'], result[pl_key]['AllocBW'])
+            infr_pl.upload()
+        else:
+            pl_sol = False
+
+        if or_key in result:
+            print(Fore.LIGHTGREEN_EX + "Found solution with OR")
+            result[or_key].update(compute_allocated_resources(app, or_infr_path, result[or_key]['Placement']))
+            infr_or.update_allocated_resources(result[or_key]['AllocHW'], result[or_key]['AllocBW'])
+            infr_or.upload()
+        else:
+            or_sol = False
+
+        print(Fore.LIGHTCYAN_EX + f"End iteration {iteration}")
+        iteration += 1
 
 if __name__ == '__main__':
+
+    init(autoreset=True)
     
     parser = init_parser()
     args = parser.parse_args()
 
     app, infr, vs = check_files(app=args.app, infr=args.infr, versions=args.versions, dummy_infr=args.dummy)
-    infr = create_tmp_copy(infr)
 
-    main(app=app, infr=infr, versions=vs, budget=args.budget)
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        print(Fore.LIGHTCYAN_EX + f"Temporary directory: {tmp_dir}", end='\n\n')
+        pl_infr_path = create_tmp_copy(infr, tmp_dir, tool='pl')
+        or_infr_path = create_tmp_copy(infr, tmp_dir, tool='or')
+
+        main(app=app, pl_infr_path=pl_infr_path, or_infr_path=or_infr_path, pl_version=vs[0], budget=args.budget)

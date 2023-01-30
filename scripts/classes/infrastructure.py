@@ -88,6 +88,13 @@ class Infrastructure(nx.DiGraph):
 		self.bwTh = out_bw
 		self.hwTh = out_hw
 
+	def update_allocated_resources(self, alloc_hw, alloc_bw):
+		for n, hw in alloc_hw.items():
+			self.nodes[n]['hwcaps'] -= float(hw)
+
+		for (n1, n2), bw in alloc_bw.items():
+			self.edges[n1, n2]['bw'] -= float(bw)
+
 	def get_thresholds(self):
 		bwTh = "bwTh({}).".format(self.bwTh)
 		hwTh = "hwTh({}).".format(self.hwTh)
@@ -99,7 +106,7 @@ class Infrastructure(nx.DiGraph):
 		nodes = list(self.nodes(data=True))
 
 		for (nid, nattr) in nodes:
-			nodes_str += "node({}, {type}, {swcaps}, {hwcaps}, {seccaps}, {iotcaps}).\n".format(nid, **nattr).replace(
+			nodes_str += "node({}, {type}, {swcaps}, ({arch}, {hwcaps}), {seccaps}, {iotcaps}).\n".format(nid, **nattr).replace(
 				"'", "")
 		return nodes_str
 
@@ -112,6 +119,9 @@ class Infrastructure(nx.DiGraph):
 				links_str += "link({}, {}, {lat}, {bw}).\n".format(n1, n2, **lattr).replace("'", "")
 		return links_str
 	
+	def get_domain(self):
+		return "domain(all, [_])."
+	
 	def get_size(self):
 		return self._size
 	
@@ -119,7 +129,12 @@ class Infrastructure(nx.DiGraph):
 		return self._file
 	
 	def __str__(self):
-		return "{}\n{}\n{}".format(self.get_thresholds(), self.get_nodes(), self.get_links())
+		infra = ""
+		infra += self.get_thresholds() + "\n"
+		infra += self.get_nodes() + "\n"
+		infra += self.get_links() + "\n"
+		infra += self.get_domain() + "\n"
+		return infra
 
 	def upload(self, file=None):
 		if not file:

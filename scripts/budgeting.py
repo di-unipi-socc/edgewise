@@ -26,11 +26,9 @@ def init_parser() -> ap.ArgumentParser:
 
 def find_best(results: pd.DataFrame):
     # get row with min # bins at the min cost
-    best = None
-    if not results.empty:
-        min_cost = results['Cost'].min()
-        best = results.loc[(results['Cost'] == min_cost)]
-        best = best.iloc[0]
+    min_cost = results['Cost'].min()
+    best = results.loc[(results['Cost'] == min_cost)]
+    best = best.iloc[0]
     return best
 
 
@@ -41,18 +39,19 @@ def get_best(results, save_results=False):
     
     tab = tabulate(df, headers='keys', tablefmt='fancy_grid', numalign="center", stralign="center")
     print(Fore.LIGHTYELLOW_EX + tab)
+    
+    best = None
+    if not df.empty:
+        best = find_best(df).to_dict()
+        best_tab = tabulate([best], headers='keys', tablefmt='fancy_grid', numalign="center", stralign="center")
+        print(Fore.LIGHTGREEN_EX + best_tab)
 
-    best = find_best(df).to_dict()
-    best_tab = tabulate([best], headers='keys', tablefmt='fancy_grid', numalign="center", stralign="center")
-    print(Fore.LIGHTGREEN_EX + best_tab)
-	
-    if save_results:
-        filename = os.path.join(OUTPUT_DIR, 'budgets.csv')
-        if not os.path.isfile(filename):
-            df.to_csv(filename)
-        else:
-            df.to_csv(filename, mode='a', header=False)
-
+        if save_results:
+            filename = os.path.join(OUTPUT_DIR, 'budgets.csv')
+            if not os.path.isfile(filename):
+                df.to_csv(filename)
+            else:
+                df.to_csv(filename, mode='a', header=False)
     return best
 
 def or_budgeting(app, infr, save_results=False, result=""):

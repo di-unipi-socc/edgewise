@@ -192,7 +192,6 @@ class Infra(nx.Graph):
 		infra += self.get_nodes() + "\n"
 		infra += self.get_links() + "\n"
 		infra += self.get_domain() + "\n"
-		infra += "\n"
 		return infra
 
 	def get_gnodes(self):
