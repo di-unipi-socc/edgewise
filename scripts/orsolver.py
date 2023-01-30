@@ -11,7 +11,6 @@ from ortools.linear_solver import pywraplp
 from swiplserver import PrologError, PrologMQI, prolog_args
 from tabulate import tabulate
 
-# todo normalization costs cij - cmin / cmax - cmin
 QUERY = "preprocess({app_name}, Compatibles)"
 
 def init_parser() -> ap.ArgumentParser:

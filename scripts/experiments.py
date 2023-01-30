@@ -1,12 +1,16 @@
 import argparse as ap
 import shutil
 import tempfile
-from os.path import basename, join
 from multiprocessing import Manager, Process
-from classes.utils import check_files
+from os.path import basename, join
+
 from classes import Infrastructure
-from compare import pl_process, or_budgeting, compute_allocated_resources
+from classes.utils import check_files
 from colorama import Fore, init
+from compare import compute_allocated_resources, or_budgeting, pl_process
+
+TIMEOUT = 10 # seconds
+
 
 def init_parser() -> ap.ArgumentParser:
 	description = "Perform several experiments on a given application and infrastructure"
@@ -42,6 +46,7 @@ def main(app, pl_infr_path, or_infr_path, pl_version, budget):
 
     infr_pl = Infrastructure(pl_infr_path)
     infr_or = Infrastructure(or_infr_path)
+
     iteration = 1
     while pl_sol or or_sol:
         print(Fore.LIGHTCYAN_EX + f"Start iteration {iteration}")
@@ -52,29 +57,36 @@ def main(app, pl_infr_path, or_infr_path, pl_version, budget):
         process_or = Process(target=or_budgeting, args=(app, or_infr_path, False, result))
         process_or.start()
 
-        process_pl.join()
-        process_or.join()
+        process_pl.join(TIMEOUT)
+        process_or.join(TIMEOUT)
 
-        result = dict(result)
-        if pl_key in result:
-            print(Fore.LIGHTGREEN_EX + "Found solution with PL")
-            result[pl_key].update(compute_allocated_resources(app, pl_infr_path, result[pl_key]['Placement']))
-            infr_pl.update_allocated_resources(result[pl_key]['AllocHW'], result[pl_key]['AllocBW'])
-            infr_pl.upload()
+        process_pl.terminate() if process_pl.is_alive() else None
+        process_or.terminate() if process_or.is_alive() else None
+
+        if result:
+            result = dict(result)
+            if pl_key in result:
+                print(Fore.LIGHTGREEN_EX + "Found solution with PL")
+                result[pl_key].update(compute_allocated_resources(app, pl_infr_path, result[pl_key]['Placement']))
+                infr_pl.update_allocated_resources(result[pl_key]['AllocHW'], result[pl_key]['AllocBW'])
+                infr_pl.upload()
+            else:
+                pl_sol = False
+
+            if or_key in result:
+                print(Fore.LIGHTGREEN_EX + "Found solution with OR")
+                result[or_key].update(compute_allocated_resources(app, or_infr_path, result[or_key]['Placement']))
+                infr_or.update_allocated_resources(result[or_key]['AllocHW'], result[or_key]['AllocBW'])
+                infr_or.upload()
+            else:
+                or_sol = False
+
+            print(Fore.LIGHTCYAN_EX + f"End iteration {iteration}\n")
+            iteration += 1
         else:
-            pl_sol = False
-
-        if or_key in result:
-            print(Fore.LIGHTGREEN_EX + "Found solution with OR")
-            result[or_key].update(compute_allocated_resources(app, or_infr_path, result[or_key]['Placement']))
-            infr_or.update_allocated_resources(result[or_key]['AllocHW'], result[or_key]['AllocBW'])
-            infr_or.upload()
-        else:
-            or_sol = False
-
-        print(Fore.LIGHTCYAN_EX + f"End iteration {iteration}")
-        iteration += 1
-
+            print(Fore.LIGHTRED_EX + "No solution found.")
+            break
+        
 if __name__ == '__main__':
 
     init(autoreset=True)

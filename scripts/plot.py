@@ -1,7 +1,6 @@
 import os
 
 import matplotlib.pyplot as plt
-import numpy as np
 import pandas as pd
 import seaborn as sns
 from classes.utils import OUTPUT_DIR, PLOTS_DIR
@@ -51,11 +50,9 @@ def bins_vs(df):
     plt.close()
     print("Bins vs Size, DONE")
 
-def main(df):
-    time_vs(df)
-    change_vs(df)
-    bins_vs(df)
 
 if __name__ == '__main__':
     df = pd.read_csv(os.path.join(OUTPUT_DIR, 'results.csv'))
-    main(df)
+    time_vs(df)
+    change_vs(df)
+    bins_vs(df)

@@ -5,14 +5,15 @@ from os.path import basename, join
 
 import pandas as pd
 from budgeting import or_budgeting
+from classes.utils import OUTPUT_DIR, PL_UTILS_DIR, check_files
 from colorama import Fore, init
 from orsolver import or_solver
-from classes.utils import OUTPUT_DIR, PL_UTILS_DIR, check_files
 from swiplserver import PrologMQI, prolog_args
 from tabulate import tabulate
 
 MAIN_QUERY = "once(stats(App, Placement, Cost, NDistinct, Infs, Time, {budget}))"
 ALLOC_QUERY = "allocatedResources({placement}, AllocHW, AllocBW)"
+TIMEOUT = 10 # seconds
 
 
 def init_parser() -> ap.ArgumentParser:
@@ -144,17 +145,22 @@ def main(app, infr, budget, versions, budgeting=False, show_placement=False, ort
 		processes.append(p)
 
 	for p in processes:
-		p.join()
+		p.join(TIMEOUT)
 
-	result = dict(result)
-	for k, v in result.items():
-		if v:
-			allocs = compute_allocated_resources(app, infr, v['Placement'])
-			result[k].update(allocs)
-	
-	print_result(result, show_placement, save)
-	return result
+	for p in processes:
+		if p.is_alive():
+			p.terminate()
 
+	if result:
+		result = dict(result)
+		for k, v in result.items():
+			if v:
+				allocs = compute_allocated_resources(app, infr, v['Placement'])
+				result[k].update(allocs)
+		
+		print_result(result, show_placement, save)
+	else:
+		print(Fore.LIGHTRED_EX + "No solution found!")
 
 if __name__ == "__main__":
 	# reset color after every "print"
