@@ -7,7 +7,6 @@ import networkx as nx
 from classes.utils import INFRS_DIR
 from colorama import Fore, init
 from distribution import normal_distribution
-from numpy import log2
 from numpy import random as rnd
 from numpy import set_printoptions
 from tabulate import tabulate
@@ -21,6 +20,9 @@ THINGS = ['soil', 'heat', 'water', 'nutrient', 'energy', 'piCamera1', 'piCamera2
 		  'iphoneXS', 'echoDot']
 
 NOT_PLACED_THINGS = len(THINGS)
+
+DUMMY_LAT = 5
+DUMMY_BW = 1000
 
 
 def init_parser() -> ap.ArgumentParser:
@@ -51,8 +53,8 @@ def get_random_things(n=1):
 	return t
 
 
-class Infra(nx.Graph):
-	def __init__(self, n, seed, dummy=False):
+class Builder(nx.Graph):
+	def __init__(self, n, dummy=False):
 		super().__init__()
 		self._bwTh = 3
 		self._hwTh = 1
@@ -62,7 +64,7 @@ class Infra(nx.Graph):
 		self.gnodes = {}  # nodes grouped by TYPES
 
 		self.set_filepath(dummy)
-		self.set_nodes(n, seed)
+		self.set_nodes(n)
 		self.set_links()
 		nx.relabel_nodes(self, lambda x: f"n{x}", copy=False)
 
@@ -73,8 +75,8 @@ class Infra(nx.Graph):
 
 		self.file = join(path, self.file)
 
-	def set_nodes(self, n, seed):
-		i = int(log2(n))
+	def set_nodes(self, n):
+		# i = int(log2(n))
 		# R = nx.barabasi_albert_graph(n, 3, seed=seed)
 		R = nx.complete_graph(n, nx.DiGraph())
 		self.add_nodes_from(R, things=[])
@@ -97,12 +99,6 @@ class Infra(nx.Graph):
 	def set_grouped_nodes(self):
 		for t in TYPES:
 			self.gnodes[t] = [x for x, y in nx.get_node_attributes(self, 'ntype').items() if y == t]
-
-	""" def add_links(self, type1, type2, lat=1, bw=500):
-		for n1 in self.gnodes[type1]:
-			for n2 in self.gnodes[type2]:
-				if n1 != n2 and self.has_edge(n1, n2):
-					nx.set_edge_attributes(self, {(n1,n2): {'lat':lat, 'bw':bw}}) """
 
 	def set_links(self):
 		sp = nx.floyd_warshall_numpy(self, weight='lat')
@@ -130,7 +126,6 @@ class Infra(nx.Graph):
 		node['ntype'] = 'cabinet'
 		node['software'] = get_random_sw_caps(size=rnd.randint(2, 5))
 		node['security'] = ["enc", "auth"]
-		# randomly assign IoT device(s)
 		node['things'] = get_random_things(n=rnd.randint(1, 3))
 
 	def set_as_accesspoint(self, nid):
@@ -138,7 +133,6 @@ class Infra(nx.Graph):
 		node['ntype'] = 'accesspoint'
 		node['software'] = get_random_sw_caps(size=rnd.randint(2, 5))
 		node['security'] = ["enc", "auth"]
-		# randomly assign IoT device(s)
 		node['things'] = get_random_things(n=rnd.randint(1, 3))
 
 	def set_as_thing(self, nid):
@@ -146,12 +140,11 @@ class Infra(nx.Graph):
 		node['ntype'] = 'thing'
 		node['software'] = get_random_sw_caps(size=rnd.randint(1, 4))
 		node['security'] = ["enc", "auth"]
-		# randomly assign IoT device(s)
 		node['things'] = get_random_things(n=rnd.randint(1, 4))
 
 	def dummy_links(self, lat, bw):
 		for n1, n2 in product(self.nodes(), repeat=2):
-			if n1 != n2: #self.has_edge(n1, n2):
+			if n1 != n2:
 				if self.has_edge(n1, n2):
 					nx.set_edge_attributes(self, {(n1,n2): {'lat':lat, 'bw':bw}})
 				else:
@@ -205,11 +198,11 @@ class Infra(nx.Graph):
 
 
 def main(n, seed=None, dummy=False):
-	infra = Infra(n, seed=seed, dummy=dummy)
+	infra = Builder(n, dummy=dummy)
 	info = [['SEED:', seed if seed else '<not set>'], ['DUMMY:', 'YES' if dummy else 'NO'], ['PATH:', infra.file]]
 
 	if dummy:
-		infra.dummy_links(lat=5, bw=700)
+		infra.dummy_links(lat=DUMMY_LAT, bw=DUMMY_BW)
 
 	print(Fore.LIGHTCYAN_EX + tabulate(info))
 
@@ -226,8 +219,8 @@ if __name__ == "__main__":
 	parser = init_parser()
 	args = parser.parse_args()
 
-	if args.things:
-		THINGS = args.things
+	
+	THINGS = args.things if args.things else THINGS
 	rnd.seed(args.seed)
 	main(args.n, args.seed, dummy=args.dummy)
 
