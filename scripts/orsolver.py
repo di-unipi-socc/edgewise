@@ -213,7 +213,7 @@ def or_solver(app, infr, max_bin=None, dummy=False, show_placement=False, show_c
 
 		tot_cost = solver.Objective().Value() # if only cost in Objective function
 		tot_time = solver.WallTime() / 1000  # in seconds
-		res = {'App': app.name, 'Time': tot_time, 'Cost': round(tot_cost, 4), 'NDistinct': len(n_distinct), 'Infs': solver.NumConstraints()}
+		res = {'App': app.name, 'Time': tot_time, 'Cost': round(tot_cost, 4), 'Bins': len(n_distinct), 'Infs': solver.NumConstraints(), 'Size': N}
 
 		print(Fore.LIGHTGREEN_EX + tabulate(res.items(), numalign='right'))
 	else:

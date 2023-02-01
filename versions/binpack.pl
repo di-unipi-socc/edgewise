@@ -5,11 +5,11 @@
 :- set_prolog_flag(stack_limit, 32 000 000 000).
 :- set_prolog_flag(last_call_optimisation, true).
 
-stats(App, Placement, Cost, NDistinct, Infs, Time, Budget) :-
+stats(App, Placement, Cost, Bins, Infs, Time, Budget) :-
     statistics(inferences, InfA),
         statistics(cputime, TimeA),
             best(App, Placement, Cost, Budget),
-            countDistinct(Placement, NDistinct),
+            countDistinct(Placement, Bins),
         statistics(cputime, TimeB),
     statistics(inferences, InfB),
 

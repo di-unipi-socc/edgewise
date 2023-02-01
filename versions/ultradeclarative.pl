@@ -10,11 +10,11 @@ link(X, X, 0, inf).
 
 tolerance(0.0).
 
-stats(App, Placement, Cost, NDistinct, Infs, Time, Budget) :-
+stats(App, Placement, Cost, Bins, Infs, Time, Budget) :-
     statistics(inferences, InfA),
         statistics(cputime, TimeA),
             best(App, Placement, Cost, Budget),
-            countDistinct(Placement, NDistinct),
+            countDistinct(Placement, Bins),
         statistics(cputime, TimeB),
     statistics(inferences, InfB),
 

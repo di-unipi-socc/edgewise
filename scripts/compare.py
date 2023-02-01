@@ -5,13 +5,14 @@ from os.path import basename, join, splitext
 
 import pandas as pd
 from budgeting import or_budgeting
-from classes.utils import CSV_DIR, PL_UTILS_DIR, check_files, df_to_file
+from classes.utils import COMPARISON_FILE, PL_UTILS_DIR, check_files, df_to_file
+from classes import Infrastructure
 from colorama import Fore, init
 from orsolver import or_solver
 from swiplserver import PrologMQI, prolog_args
 from tabulate import tabulate
 
-MAIN_QUERY = "once(stats(App, Placement, Cost, NDistinct, Infs, Time, {budget}))"
+MAIN_QUERY = "once(stats(App, Placement, Cost, Bins, Infs, Time, {budget}))"
 ALLOC_QUERY = "allocatedResources({placement}, AllocHW, AllocBW)"
 TIMEOUT = 10 # seconds
 FILENAME = 'comparison.csv'
@@ -49,11 +50,10 @@ def print_result(result, show_placement, save_results):
 	placements = result.pop('Placement')
 
 	if save_results:
-		file_path = os.path.join(CSV_DIR, FILENAME)
-		df_to_file(result, file_path)
+		df_to_file(result, COMPARISON_FILE)
 
-	result.drop(columns=['App', 'AllocHW', 'AllocBW'], inplace=True)
-	result.rename(columns={"NDistinct": "Distinct Nodes", "Infs": "Dimension", "Time": "Time(s)"}, inplace=True)
+	result.drop(columns=['App', 'Size', 'AllocHW', 'AllocBW'], inplace=True)
+	result.rename(columns={"Bins": "Distinct Nodes", "Infs": "Dimension", "Time": "Time(s)"}, inplace=True)
 
 	if show_placement:
 		n_distinct = result.pop('Distinct Nodes')
@@ -117,6 +117,7 @@ def pl_process(version, app, budget, infr, result):
 			if q:
 				q = q[0]
 				q['Placement'] = prolog_to_dict(q['Placement'])
+				q['Size'] = Infrastructure(infr).get_size()
 				result[basename(version)] = q
 			else:
 				print(Fore.LIGHTRED_EX + "No PL solution found for {}".format(basename(version)))
