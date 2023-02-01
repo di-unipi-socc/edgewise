@@ -2,14 +2,14 @@ import argparse as ap
 import os
 import sys
 
-from os.path import basename
+from os.path import exists, dirname, join
 import numpy as np
 from classes import Application, Infrastructure
 from classes.components import ThingInstance
 from classes.utils import MODELS_DIR, PL_UTILS_DIR, check_app, check_infr
 from colorama import Fore, init
 from ortools.linear_solver import pywraplp
-from swiplserver import PrologError, PrologMQI, prolog_args
+from swiplserver import PrologMQI, prolog_args
 from tabulate import tabulate
 
 QUERY = "preprocess({app_name}, Compatibles)"
@@ -21,7 +21,7 @@ def init_parser() -> ap.ArgumentParser:
 	p.add_argument("-p", "--placement", action="store_true", help="if set, shows the obtained placement."),
 	p.add_argument("-d", "--dummy", action="store_true", help="if set, uses an infrastructure with dummy links (low lat, high bw)."),
 	p.add_argument("-c", "--compatibles", action="store_true", help="if set, shows the obtained compatibles."),
-	p.add_argument("-m", "--model", action="store_true", help="if set, saves the model in LP format."),
+	p.add_argument("-m", "--model", action="store_true", help="if set, stores the model in LP format."),
 	p.add_argument("app", help="Application name.")
 	p.add_argument("infr", help="Infrastructure name.")
 
@@ -33,7 +33,7 @@ def get_compatibles(app_path, infr_path, app_name):
 		with mqi.create_thread() as prolog:
 			prolog.query(f"consult('{app_path}')")
 			prolog.query(f"consult('{infr_path}')")
-			prolog.query(f"consult('{os.path.join(PL_UTILS_DIR, 'preprocessing.pl')}')")
+			prolog.query(f"consult('{join(PL_UTILS_DIR, 'preprocessing.pl')}')")
 			prolog.query_async(QUERY.format(app_name=app_name), find_all=False)
 			r = prolog.query_async_result()
 			return parse_compatibles(r[0]['Compatibles']) if r else None
@@ -185,10 +185,13 @@ def or_solver(app, infr, max_bin=None, dummy=False, show_placement=False, show_c
 	solver.Minimize(solver.Sum(obj_expr))
 
 	if model:
-		with open(os.path.join(MODELS_DIR,f'model_{app.name}_{infr.get_size()}{"_dummy" if dummy else ""}.lp'), 'w') as f:
+		# create the directory if it doesn't exist
+		os.makedirs(MODELS_DIR) if not exists(MODELS_DIR) else None
+		filename = join(MODELS_DIR, f'model_{app.name}_{infr.get_size()}{"_dummy" if dummy else ""}.lp')
+		with open(filename, 'w') as f:
 			print(solver.ExportModelAsLpFormat(obfuscated=False), file=f)
 
-	print(Fore.LIGHTYELLOW_EX + "Model created. Start solving...")
+	print(Fore.LIGHTYELLOW_EX + "Model created. Start solving...\n")
 	status = solver.Solve()
 	n_distinct = set()
 	placement = {}
@@ -203,7 +206,7 @@ def or_solver(app, infr, max_bin=None, dummy=False, show_placement=False, show_c
 			n_distinct.add(n)
 
 		str_pl = "[" + ", ".join(["({}, {})".format(s, n) for s, n in placement.items()]) + "]"
-		print(Fore.LIGHTGREEN_EX + f"Prolog: {str_pl}")
+		print(Fore.LIGHTWHITE_EX + f"Prolog: {str_pl}\n")
 
 		if show_placement:
 			print(tabulate(placement.items(), tablefmt='fancy_grid', stralign='center'))

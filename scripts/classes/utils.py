@@ -1,8 +1,7 @@
 import os
-from os.path import abspath, dirname, exists, join
+from os.path import abspath, dirname, exists, join, isfile
 
 import numpy
-from pandas import DataFrame
 from scipy.stats import truncnorm
 
 # path to the main directories
@@ -67,16 +66,12 @@ def check_versions(versions):
 	return files
 
 
-def df_to_file(df: DataFrame, file_path: str):
+def df_to_file(df, file_path):
 
 	# create the directory if it doesn't exist
-	if not exists(dirname(file_path)):
-		os.makedirs(dirname(file_path))
-	
-	if not os.path.isfile(file_path):
-		df.to_csv(file_path)
-	else:
-		df.to_csv(file_path, mode='a', header=False)
+	dir = dirname(file_path)
+	os.makedirs(dir) if not exists(dir) else None		
+	df.to_csv(file_path, mode='a', header=(not isfile(file_path)))
 
 
 def normal_distribution(min_value=32, max_value=1024, center=512, size_of_federation=128, stepping=32, deviation=None):

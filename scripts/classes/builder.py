@@ -209,7 +209,10 @@ def main(n, seed=None, dummy=False):
 	print(Fore.GREEN + f"NODES: {n}", end="\n")
 	print(Fore.LIGHTGREEN_EX + tabulate(infra.get_gnodes()))
 
-	infra.upload()
+	if NOT_PLACED_THINGS:
+		raise ValueError(Fore.LIGHTRED_EX + "Not all IoT were placed in the infrastructure, {} left.".format(NOT_PLACED_THINGS))
+	else:
+		infra.upload()
 
 
 if __name__ == "__main__":
