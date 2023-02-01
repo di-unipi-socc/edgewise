@@ -12,6 +12,7 @@ APPS_DIR = join(DATA_DIR, 'apps')
 MODELS_DIR = join(DATA_DIR, 'models')
 
 PLOTS_DIR = join(OUTPUT_DIR, 'plots')
+CSV_DIR = join(OUTPUT_DIR, 'csv')
 
 
 def check_files(app=None, infr=None, versions=None, dummy_infr=False):

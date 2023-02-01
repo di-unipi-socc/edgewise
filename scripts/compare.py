@@ -1,11 +1,11 @@
 import argparse as ap
 import os
 from multiprocessing import Manager, Process
-from os.path import basename, join
+from os.path import basename, join, splitext
 
 import pandas as pd
 from budgeting import or_budgeting
-from classes.utils import OUTPUT_DIR, PL_UTILS_DIR, check_files
+from classes.utils import CSV_DIR, PL_UTILS_DIR, check_files
 from colorama import Fore, init
 from orsolver import or_solver
 from swiplserver import PrologMQI, prolog_args
@@ -14,6 +14,7 @@ from tabulate import tabulate
 MAIN_QUERY = "once(stats(App, Placement, Cost, NDistinct, Infs, Time, {budget}))"
 ALLOC_QUERY = "allocatedResources({placement}, AllocHW, AllocBW)"
 TIMEOUT = 10 # seconds
+FILENAME = 'comparison.csv'
 
 
 def init_parser() -> ap.ArgumentParser:
@@ -30,7 +31,7 @@ def init_parser() -> ap.ArgumentParser:
 	p.add_argument("app", help="Application name.")
 	p.add_argument("infr", help="Infrastructure name.")
 	p.add_argument("budget", type=int, help="Maximum budget.")
-	p.add_argument("versions", nargs='*',
+	p.add_argument("versions", nargs='+',
 	               help="List of the versions to compare. Valid ones can be found in \"versions/\" folder.")
 
 	return p
@@ -48,11 +49,11 @@ def print_result(result, show_placement, save_results):
 	placements = result.pop('Placement')
 
 	if save_results:
-		filename = os.path.join(OUTPUT_DIR, 'results.csv')
-		if not os.path.isfile(filename):
-			result.to_csv(filename)
+		file_path = os.path.join(CSV_DIR, FILENAME)
+		if not os.path.isfile(file_path):
+			result.to_csv(file_path)
 		else:
-			result.to_csv(filename, mode='a', header=False)
+			result.to_csv(file_path, mode='a', header=False)
 
 	result.drop(columns=['App', 'AllocHW', 'AllocBW'], inplace=True)
 	result.rename(columns={"NDistinct": "Distinct Nodes", "Infs": "Dimension", "Time": "Time(s)"}, inplace=True)
@@ -137,7 +138,7 @@ def main(app, infr, budget, versions, budgeting=False, show_placement=False, ort
 	# add OR-Tools(pre) process
 	if ortools:
 		if budgeting:
-			p = Process(target=or_budgeting, args=(app, infr, save, result))
+			p = Process(target=or_budgeting, args=(app, infr, False, result))
 		else:
 			p = Process(target=or_solver, args=(app, infr, None, dummy, show_placement, False, False, result))
 					
@@ -150,7 +151,7 @@ def main(app, infr, budget, versions, budgeting=False, show_placement=False, ort
 	for p in processes:
 		if p.is_alive():
 			p.terminate()
-
+	
 	if result:
 		result = dict(result)
 		for k, v in result.items():
@@ -164,13 +165,14 @@ def main(app, infr, budget, versions, budgeting=False, show_placement=False, ort
 
 if __name__ == "__main__":
 	# reset color after every "print"
+	
 	init(autoreset=True)
 
 	parser = init_parser()
 	args = parser.parse_args()
-
+	
 	app, infr, vs = check_files(app=args.app, infr=args.infr, dummy_infr=args.dummy, versions=args.versions)
-
+	
 	info = [['APPLICATION:', basename(app)],
 			['INFRASTRUCTURE:', ("dummy" + os.sep if args.dummy else "") + basename(infr)],
 			['BUDGET:', args.budget],

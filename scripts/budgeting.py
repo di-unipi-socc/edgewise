@@ -5,10 +5,13 @@ from multiprocessing import Manager, Process
 
 import pandas as pd
 from classes import Application
-from classes.utils import OUTPUT_DIR, check_app, check_infr
+from classes.utils import CSV_DIR, check_app, check_infr
 from colorama import Fore, init
 from orsolver import or_solver
 from tabulate import tabulate
+
+
+FILENAME = 'budgets.csv'
 
 
 def init_parser() -> ap.ArgumentParser:
@@ -47,11 +50,11 @@ def get_best(results, save_results=False):
         print(Fore.LIGHTGREEN_EX + best_tab)
 
         if save_results:
-            filename = os.path.join(OUTPUT_DIR, 'budgets.csv')
-            if not os.path.isfile(filename):
-                df.to_csv(filename)
+            file_path = os.path.join(CSV_DIR, FILENAME)
+            if not os.path.isfile(file_path):
+                df.to_csv(file_path)
             else:
-                df.to_csv(filename, mode='a', header=False)
+                df.to_csv(file_path, mode='a', header=False)
     return best
 
 def or_budgeting(app, infr, save_results=False, result=""):
