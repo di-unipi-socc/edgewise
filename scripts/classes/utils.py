@@ -1,4 +1,9 @@
+import os
 from os.path import abspath, dirname, exists, join
+
+import numpy
+from pandas import DataFrame
+from scipy.stats import truncnorm
 
 # path to the main directories
 ROOT_DIR = dirname(dirname(dirname(abspath(__file__))))
@@ -60,3 +65,52 @@ def check_versions(versions):
 	files = sorted(files)
 
 	return files
+
+
+def df_to_file(df: DataFrame, file_path: str):
+
+	# create the directory if it doesn't exist
+	if not exists(dirname(file_path)):
+		os.makedirs(dirname(file_path))
+	
+	if not os.path.isfile(file_path):
+		df.to_csv(file_path)
+	else:
+		df.to_csv(file_path, mode='a', header=False)
+
+
+def normal_distribution(min_value=32, max_value=1024, center=512, size_of_federation=128, stepping=32, deviation=None):
+
+    def get_truncated_normal(mean=0, sd=1, low=0, upp=10):
+        return truncnorm((low - mean) / sd, (upp - mean) / sd, loc=mean, scale=sd)
+    
+    if min_value > max_value:
+        raise ValueError('min_value should be smaller than max_value')
+    
+    if not max_value/stepping:
+        raise ValueError('max_value should be a multiple of stepping')
+
+    if not min_value/stepping:
+        raise ValueError('min_value should be a multiple of stepping')
+
+    if not min_value < center < max_value:
+        raise ValueError('center should be between min_value and max_value')
+
+    if size_of_federation < 1:
+        raise ValueError('size_of_federation should be greater than 0')
+
+    max_step = int(max_value/stepping)
+    if min_value == 0: 
+        min_step = int(min_value/stepping)
+    else:
+        min_step = max(1, int(min_value/stepping)) # to avoid min_value = 0 when stepping is greater than min_value
+    mean_step = int(center/stepping)
+
+    if deviation is None:
+        m = max(max_step-mean_step, mean_step-min_step)
+        deviation = m/3
+
+    x = get_truncated_normal(mean=mean_step, sd=deviation, low=min_step, upp=max_step)
+
+    result = numpy.rint(x.rvs(size_of_federation)) * stepping
+    return result

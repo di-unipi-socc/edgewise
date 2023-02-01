@@ -22,8 +22,6 @@ def init_parser() -> ap.ArgumentParser:
 	p.add_argument("app", help="Application name.")
 	p.add_argument("infr", help="Infrastructure name.")
 	p.add_argument("budget", type=int, help="Maximum budget.")
-	p.add_argument("versions", nargs='*',
-	               help="List of the versions to compare. Valid ones can be found in \"versions/\" folder.")
 
 	return p
 
@@ -94,7 +92,7 @@ if __name__ == '__main__':
     parser = init_parser()
     args = parser.parse_args()
 
-    app, infr, vs = check_files(app=args.app, infr=args.infr, versions=args.versions, dummy_infr=args.dummy)
+    app, infr, vs = check_files(app=args.app, infr=args.infr, versions=['binpack'], dummy_infr=args.dummy)
 
     with tempfile.TemporaryDirectory() as tmp_dir:
         print(Fore.LIGHTCYAN_EX + f"Temporary directory: {tmp_dir}", end='\n\n')

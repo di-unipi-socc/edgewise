@@ -34,13 +34,10 @@ def get_compatibles(app_path, infr_path, app_name):
 			prolog.query(f"consult('{app_path}')")
 			prolog.query(f"consult('{infr_path}')")
 			prolog.query(f"consult('{os.path.join(PL_UTILS_DIR, 'preprocessing.pl')}')")
-			try:
-				prolog.query_async(QUERY.format(app_name=app_name), find_all=False)
-				r = prolog.query_async_result()[0]['Compatibles']
-			except PrologError:
-				raise ValueError("Error in preprocessing.pl")
-
-			return parse_compatibles(r)
+			prolog.query_async(QUERY.format(app_name=app_name), find_all=False)
+			r = prolog.query_async_result()
+			return parse_compatibles(r[0]['Compatibles']) if r else None
+			
 
 # bug in pyswip when retrieving lists/tuples with format ",(...)"
 def parse_compatibles(r):
@@ -83,11 +80,13 @@ def or_solver(app, infr, max_bin=None, dummy=False, show_placement=False, show_c
 	print(Fore.LIGHTCYAN_EX + tabulate(info))
 
 	compatibles = get_compatibles(app.get_file(), infr.get_file(), app.name)
+	if not compatibles:
+		raise ValueError(Fore.LIGHTRED_EX + "No compatibles found.")
+	
 	if show_compatibles:
 		for k, v in compatibles.items():
 			if not len(v):
-				print(Fore.LIGHTRED_EX + "No compatibles for '{}'.".format(k))
-				return
+				raise ValueError(Fore.LIGHTRED_EX + "No compatibles for '{}'.".format(k))
 			else:
 				print(Fore.LIGHTGREEN_EX + "Compatibles for '{}': {}".format(k, v))
 	

@@ -5,7 +5,7 @@ from os.path import basename, join, splitext
 
 import pandas as pd
 from budgeting import or_budgeting
-from classes.utils import CSV_DIR, PL_UTILS_DIR, check_files
+from classes.utils import CSV_DIR, PL_UTILS_DIR, check_files, df_to_file
 from colorama import Fore, init
 from orsolver import or_solver
 from swiplserver import PrologMQI, prolog_args
@@ -50,10 +50,7 @@ def print_result(result, show_placement, save_results):
 
 	if save_results:
 		file_path = os.path.join(CSV_DIR, FILENAME)
-		if not os.path.isfile(file_path):
-			result.to_csv(file_path)
-		else:
-			result.to_csv(file_path, mode='a', header=False)
+		df_to_file(result, file_path)
 
 	result.drop(columns=['App', 'AllocHW', 'AllocBW'], inplace=True)
 	result.rename(columns={"NDistinct": "Distinct Nodes", "Infs": "Dimension", "Time": "Time(s)"}, inplace=True)
