@@ -33,7 +33,7 @@ checkThings :-
 
 timer(StartTime, Placement) :-
     MaxTime is StartTime+300, statistics(cputime, CurrTime),
-    (CurrTime < MaxTime -> qosOK(Placement); !, false).
+    (CurrTime < MaxTime -> qosOK(Placement); !, fail).
 
 countDistinct(P, L) :-
     findall(N, distinct(member((_,N), P)), S),
