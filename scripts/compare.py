@@ -129,16 +129,16 @@ def main(app, infr, budget, versions, budgeting=False, show_placement=False, ort
 	processes = []
 
 	for v in versions:
-		p = Process(target=pl_process, args=(v, app, budget, infr, result))
+		p = Process(name=v, target=pl_process, args=(v, app, budget, infr, result))
 		p.start()
 		processes.append(p)
 
 	# add OR-Tools(pre) process
 	if ortools:
 		if budgeting:
-			p = Process(target=or_budgeting, args=(app, infr, False, result))
+			p = Process(name='budgeting', target=or_budgeting, args=(app, infr, False, result))
 		else:
-			p = Process(target=or_solver, args=(app, infr, None, dummy, show_placement, False, False, result))
+			p = Process(name='ortools', target=or_solver, args=(app, infr, None, dummy, show_placement, False, False, result))
 					
 		p.start()
 		processes.append(p)
