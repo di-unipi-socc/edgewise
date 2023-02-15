@@ -8,7 +8,6 @@ from colorama import Fore, init
 from numpy import random as rnd
 from numpy import set_printoptions
 from tabulate import tabulate
-
 from utils import INFRS_DIR, normal_distribution
 
 HW_PLATFORMS = ['arm64', 'x86']

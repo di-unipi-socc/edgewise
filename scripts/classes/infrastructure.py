@@ -3,7 +3,6 @@ from itertools import product
 import networkx as nx
 import parse as p
 
-
 BW_TH = "bwTh({t:g})."
 HW_TH = "hwTh({t:g})."
 

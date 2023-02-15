@@ -5,8 +5,9 @@ from os.path import basename, join, splitext
 
 import pandas as pd
 from budgeting import or_budgeting
-from classes.utils import COMPARISON_FILE, PL_UTILS_DIR, check_files, df_to_file
 from classes import Infrastructure
+from classes.utils import (COMPARISON_FILE, PL_UTILS_DIR, check_files,
+                           df_to_file)
 from colorama import Fore, init
 from orsolver import or_solver
 from swiplserver import PrologMQI, prolog_args

@@ -1,8 +1,8 @@
 import argparse as ap
 import os
 import sys
+from os.path import dirname, exists, join
 
-from os.path import exists, dirname, join
 import numpy as np
 from classes import Application, Infrastructure
 from classes.components import ThingInstance

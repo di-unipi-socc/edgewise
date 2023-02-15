@@ -1,5 +1,5 @@
 import os
-from os.path import abspath, dirname, exists, join, isfile
+from os.path import abspath, dirname, exists, isfile, join
 
 import numpy
 from scipy.stats import truncnorm

@@ -10,7 +10,6 @@ from colorama import Fore, init
 from orsolver import or_solver
 from tabulate import tabulate
 
-
 FILENAME = 'budgets.csv'
 
 

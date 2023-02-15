@@ -1,9 +1,9 @@
-from os.path import join, basename
+from os.path import basename, join
 
 import matplotlib.pyplot as plt
 import pandas as pd
 import seaborn as sns
-from classes.utils import PLOTS_DIR, COMPARISON_FILE
+from classes.utils import COMPARISON_FILE, PLOTS_DIR
 from colorama import Fore, init
 
 sizes = ["16", "32", "64", "128", "256", "512"]
