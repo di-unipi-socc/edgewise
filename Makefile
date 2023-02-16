@@ -5,7 +5,7 @@ BASH_SCRIPTS_DIR 	= $(SCRIPTS_DIR)/bash
 
 PYTHON		= $(ROOT_DIR)/.venv/bin/python3
 BASH 		= $(shell which bash)
-TARGETS		= build comp plot
+TARGETS		= cleanall build comp plot
 
 .ONESHELL:
 .PHONY: all clean-plot clean-csv cleanall build comp exp plot
