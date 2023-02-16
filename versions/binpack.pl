@@ -22,9 +22,7 @@ best(App, Placement, Cost, Budget) :-
     ranking(Functions, Services, RankedComps),  % RankedComps:  [(Rank, Comp)|Rest] --> sort "Comp" by increasing HWReqs
     findCompatibles(RankedComps, Components),   % Components:   [(Comp, Compatibles)|Rest]--> sort "Compatibles" nodes by decreasing HWCaps
     placement(Components, Placement, Budget, Cost),
-    statistics(cputime, StartTime),
-    timer(StartTime, Placement).
-    %qosOK(Placement).
+    qosOK(Placement).
 
 checkThings :-
     findall(T, thingInstance(T, _), Things),

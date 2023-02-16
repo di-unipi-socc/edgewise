@@ -9,7 +9,8 @@ from classes.utils import check_files
 from colorama import Fore, init
 from compare import compute_allocated_resources, or_budgeting, pl_process
 
-TIMEOUT = 10 # seconds
+# 1h in seconds
+TIMEOUT = 3600
 
 
 def init_parser() -> ap.ArgumentParser:
@@ -27,7 +28,6 @@ def init_parser() -> ap.ArgumentParser:
 
 
 def create_tmp_copy(path, tmp_dir, tool='or'):
-    # create a temporary copy file of the infrastructure
     tmp_path = join(tmp_dir, f'{tool}_{basename(path)}')
     shutil.copyfile(path, tmp_path)
     return tmp_path
