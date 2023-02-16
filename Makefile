@@ -3,7 +3,7 @@ OUTPUT_DIR			= $(ROOT_DIR)/output
 SCRIPTS_DIR			= $(ROOT_DIR)/scripts
 BASH_SCRIPTS_DIR 	= $(SCRIPTS_DIR)/bash
 
-PYTHON		= $(shell which python3)
+PYTHON		= $(ROOT_DIR)/.venv/bin/python3
 BASH 		= $(shell which bash)
 TARGETS		= build comp plot
 
@@ -19,6 +19,7 @@ clean-csv:
 	rm -rf $(OUTPUT_DIR)/csv/*
 
 cleanall: clean-plot clean-csv
+	rm -rf $(OUTPUT_DIR)/*
 
 build: 
 	$(BASH) $(BASH_SCRIPTS_DIR)/build.sh
@@ -29,5 +30,5 @@ comp:
 exp: 
 	$(BASH) $(BASH_SCRIPTS_DIR)/run.sh exp
 
-plot: 
+plot:
 	$(PYTHON) $(SCRIPTS_DIR)/plot.py

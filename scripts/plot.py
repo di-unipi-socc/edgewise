@@ -1,4 +1,5 @@
-from os.path import basename, join
+from os.path import basename, join, exists
+import os
 
 import matplotlib.pyplot as plt
 import pandas as pd
@@ -26,6 +27,9 @@ def size_vs(field, df):
 
 if __name__ == '__main__':
     init(autoreset=True)
+    
+    # create plots directory, if not exists
+    os.makedirs(PLOTS_DIR) if not exists(PLOTS_DIR) else None
 
     try:
         df = pd.read_csv(COMPARISON_FILE)
