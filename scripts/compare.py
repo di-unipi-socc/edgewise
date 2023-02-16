@@ -15,7 +15,7 @@ from tabulate import tabulate
 
 MAIN_QUERY = "once(stats(App, Placement, Cost, Bins, Infs, Time, {budget}))"
 ALLOC_QUERY = "allocatedResources({placement}, AllocHW, AllocBW)"
-TIMEOUT = 10 # seconds
+TIMEOUT = 3600 # seconds
 FILENAME = 'comparison.csv'
 
 
