@@ -1,3 +1,7 @@
+# My files
+# TODO: remove output/ when ending experiments
+output/ 
+
 # Byte-compiled / optimized / DLL files
 *__pycache__*
 *.py[cod]
