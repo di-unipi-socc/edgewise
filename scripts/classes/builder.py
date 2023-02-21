@@ -1,7 +1,8 @@
 import argparse as ap
 import sys
 from itertools import product
-from os.path import join
+from os.path import join, exists, dirname
+from os import makedirs
 
 import networkx as nx
 from colorama import Fore, init
@@ -192,6 +193,8 @@ class Builder(nx.Graph):
 	def upload(self, file=None):
 		if file is None:
 			file = self.file
+		dir = dirname(file)
+		makedirs(dir) if not exists(dir) else None		
 		with open(file, "w+") as f:
 			f.write(str(self))
 
