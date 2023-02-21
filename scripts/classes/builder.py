@@ -13,8 +13,10 @@ from utils import INFRS_DIR, normal_distribution
 
 HW_PLATFORMS = ['arm64', 'x86']
 SW_CAPS = ['ubuntu', 'mySQL', 'python', 'js', 'gcc']
+SEC_CAPS = ['access_logs', 'authentication', 'monitoring', 'isolation', 'encryption', 'firewall', 'backup', 'obfuscation', 'anti_tampering', 'audit']
 TYPES = ['cloud', 'isp', 'cabinet', 'accesspoint', 'thing']
-PROBS = [0.1, 0.2, 0.3, 0.2, 0.2]
+TYPES_PROBS = [0.1, 0.2, 0.3, 0.2, 0.2]
+LOCATIONS = ['be', 'de', 'es', 'fr', 'it', 'nl', 'pl', 'se']
 THINGS = ['soil', 'heat', 'water', 'nutrient', 'energy', 'piCamera1', 'piCamera2', 'arViewer',
 		  'cam11', 'cam12', 'cam21', 'cam22',
 		  'iphoneXS', 'echoDot']
@@ -37,8 +39,8 @@ def init_parser() -> ap.ArgumentParser:
 	return p
 
 
-def get_random_sw_caps(size=1):
-	return list(rnd.choice(SW_CAPS, size=size, replace=False))
+def get_random(l, size=1):
+	return list(rnd.choice(l, size=size, replace=False))
 
 
 def get_random_things(n=1):
@@ -76,8 +78,6 @@ class Builder(nx.Graph):
 		self.file = join(path, self.file)
 
 	def set_nodes(self, n):
-		# i = int(log2(n))
-		# R = nx.barabasi_albert_graph(n, 3, seed=seed)
 		R = nx.complete_graph(n, nx.DiGraph())
 		self.add_nodes_from(R, things=[])
 
@@ -87,7 +87,7 @@ class Builder(nx.Graph):
 			hw_platform = rnd.choice(HW_PLATFORMS)
 			self.nodes[node]['hardware'] = (hw_platform, dist[node])
 
-			ntype = rnd.choice(TYPES, p=PROBS)
+			ntype = rnd.choice(TYPES, p=TYPES_PROBS)
 			method = 'set_as_{}'.format(ntype)
 			getattr(self, method)(node)
 		self.set_grouped_nodes()
@@ -103,7 +103,7 @@ class Builder(nx.Graph):
 	def set_links(self):
 		sp = nx.floyd_warshall_numpy(self, weight='lat')
 		for i,j in product(range(self.n), repeat=2):
-			bw = rnd.randint(20, 250) if i != j else float('inf')
+			bw = rnd.randint(20, 500) if i != j else float('inf')
 			if self.has_edge(i, j):
 				nx.set_edge_attributes(self, {(i, j): {'bw': bw}}) 
 			else:
@@ -118,27 +118,27 @@ class Builder(nx.Graph):
 	def set_as_isp(self, nid):
 		node = self.nodes[nid]
 		node['ntype'] = 'isp'
-		node['software'] = get_random_sw_caps(size=rnd.randint(2, 5))
+		node['software'] = get_random(SW_CAPS, size=rnd.randint(2, 5))
 		node['security'] = ["enc"]
 
 	def set_as_cabinet(self, nid):
 		node = self.nodes[nid]
 		node['ntype'] = 'cabinet'
-		node['software'] = get_random_sw_caps(size=rnd.randint(2, 5))
+		node['software'] = get_random(SW_CAPS, size=rnd.randint(2, 5))
 		node['security'] = ["enc", "auth"]
 		node['things'] = get_random_things(n=rnd.randint(1, 3))
 
 	def set_as_accesspoint(self, nid):
 		node = self.nodes[nid]
 		node['ntype'] = 'accesspoint'
-		node['software'] = get_random_sw_caps(size=rnd.randint(2, 5))
+		node['software'] = get_random(SW_CAPS, size=rnd.randint(2, 5))
 		node['security'] = ["enc", "auth"]
 		node['things'] = get_random_things(n=rnd.randint(1, 3))
 
 	def set_as_thing(self, nid):
 		node = self.nodes[nid]
 		node['ntype'] = 'thing'
-		node['software'] = get_random_sw_caps(size=rnd.randint(1, 4))
+		node['software'] = get_random(SW_CAPS, size=rnd.randint(1, 4))
 		node['security'] = ["enc", "auth"]
 		node['things'] = get_random_things(n=rnd.randint(1, 4))
 
@@ -191,10 +191,8 @@ class Builder(nx.Graph):
 		return list([[k, len(v)] for k,v in self.gnodes.items()])
 
 	def upload(self, file=None):
-		if file is None:
-			file = self.file
-		dir = dirname(file)
-		makedirs(dir) if not exists(dir) else None		
+		file = self.file if not file else file
+		makedirs(dirname(file)) if not exists(dirname(file)) else None		
 		with open(file, "w+") as f:
 			f.write(str(self))
 

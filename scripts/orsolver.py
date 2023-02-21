@@ -162,20 +162,18 @@ def or_solver(app, infr, max_bin=None, dummy=False, show_placement=False, show_c
 			xij = x[i, j] if i != -1 else 1
 			xi1j1 = x[i1, j1] if i1 != -1 else 1
 
-			# FRANGIO
 			sec_reqs = set(df.sec_reqs) 
 			if (a['lat'] > df.latency) or (not (sec_reqs.issubset(set(infr.nodes[n]['seccaps'])) and sec_reqs.issubset(set(infr.nodes[n1]['seccaps'])))):
 				solver.Add(xij + xi1j1 <= 1, name=f'{name}_no_reqs')
 			else:
 				# linearize the constraint
 				c = solver.BoolVar(name)
-				# solver.Add(c * a['lat'] <= df.latency, name=f'{name}_lat')
 				solver.Add(c >= xij + xi1j1 - 1, name=f'lin_3_{c.name()}')
 
 				coeffs[c] = df.bw
 
 		if len(coeffs):
-			upper_bound = a['bw']-infr.bwTh if a['bw']-infr.bwTh > 0 else 0
+			upper_bound = max(a['bw']-infr.bwTh,0)
 			bw_constraint = solver.RowConstraint(0, upper_bound, f'{n}_{n1}_bw')
 			for c, b in coeffs.items():
 				bw_constraint.SetCoefficient(c, b)
