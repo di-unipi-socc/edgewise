@@ -15,9 +15,9 @@ checkThings :-
     findall(T, (node(_, _, _, _, IoTCaps), member(T, IoTCaps)), IoT),
     subset(Things, IoT).
 
-findCompatibles([C|Cs], [(C,Compatibles)|Rest]):-
+findCompatibles([C|Cs], [(C,[Comp|Atibles])|Rest]):-
     findCompatibles(Cs, Rest),
-    findall((N, Cost), lightNodeOK(C, N, Cost), Compatibles).  
+    findall((N, Cost), lightNodeOK(C, N, Cost), [Comp|Atibles]).  
 findCompatibles([],[]).
 
 lightNodeOK(S, N, SCost) :-

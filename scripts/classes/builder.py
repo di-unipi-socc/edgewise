@@ -34,6 +34,7 @@ NOT_PLACED_THINGS = None
 DUMMY_LAT 	= 5
 DUMMY_BW  	= 1000
 BW_MIN, BW_MAX = 20, 500
+LAT_MIN, LAT_MAX = 1, 20
 
 
 def init_parser() -> ap.ArgumentParser:
@@ -95,7 +96,7 @@ class Builder(nx.Graph):
 
 		self.add_edges_from(R.edges)
 		for e in self.edges():
-			nx.set_edge_attributes(self, {e: {'lat': rnd.randint(1, 20)}}) 
+			nx.set_edge_attributes(self, {e: {'lat': rnd.randint(LAT_MIN, LAT_MAX)}}) 
 
 		self.set_grouped_nodes()
 

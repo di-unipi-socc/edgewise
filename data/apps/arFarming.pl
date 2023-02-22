@@ -44,15 +44,15 @@ thingInstance(piCamera2, cam).
 thingInstance(arViewer, dsp).
 
 % dataFlow(Source, Dest, DataId, SecReqs, Size, Rate, MaxLat).
-dataFlow(soil, snsQueue, snsLevel, [monitoring, auth], 0.04, 100, 700).
-dataFlow(heat, snsQueue, snsLevel, [monitoring], 0.04, 100, 700).
-dataFlow(water, snsQueue, snsLevel, [monitoring], 0.04, 80, 700).
-dataFlow(nutrient, ctrlQueue, ctrlLevel, [monitoring], 0.08, 50, 700).
-dataFlow(energy, ctrlQueue, ctrlLevel, [monitoring], 0.08, 50, 700).
+dataFlow(soil, snsQueue, snsLevel, [encryption], 0.04, 100, 700).
+dataFlow(heat, snsQueue, snsLevel, [encryption], 0.04, 100, 700).
+dataFlow(water, snsQueue, snsLevel, [encryption], 0.04, 80, 700).
+dataFlow(nutrient, ctrlQueue, ctrlLevel, [encryption], 0.08, 50, 700).
+dataFlow(energy, ctrlQueue, ctrlLevel, [encryption], 0.08, 50, 700).
 dataFlow(piCamera1, imgQueue, picture, [encryption], 0.1, 100, 1000).
 dataFlow(piCamera2, imgQueue, picture, [encryption], 0.1, 100, 1000).
 
-dataFlow(snsQueue, mainDB, snsLevel, [authentication], 0.04, 90, 700).
+dataFlow(snsQueue, mainDB, snsLevel, [encryption], 0.04, 90, 700).
 dataFlow(ctrlQueue, mainDB, ctrlLevel, [encryption], 0.08, 50, 700).
 dataFlow(imgQueue, mainDB, picture, [encryption], 0.1, 100, 2000).
 

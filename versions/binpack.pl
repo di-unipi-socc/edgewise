@@ -5,10 +5,10 @@
 :- set_prolog_flag(stack_limit, 32 000 000 000).
 :- set_prolog_flag(last_call_optimisation, true).
 
-stats(App, Placement, Cost, Bins, Infs, Time, Budget) :-
+stats(App, Placement, Cost, Bins, Infs, Time) :-
     statistics(inferences, InfA),
         statistics(cputime, TimeA),
-            best(App, Placement, Cost, Budget),
+            best(App, Placement, Cost),
             countDistinct(Placement, Bins),
         statistics(cputime, TimeB),
     statistics(inferences, InfB),
@@ -16,13 +16,22 @@ stats(App, Placement, Cost, Bins, Infs, Time, Budget) :-
     Infs is InfB - InfA,
     Time is TimeB - TimeA.
 
-best(App, Placement, Cost, Budget) :-
+best(App, Placement, Cost) :-
     application(App, Functions, Services),
     checkThings, 
     ranking(Functions, Services, RankedComps),  % RankedComps:  [(Rank, Comp)|Rest] --> sort "Comp" by increasing HWReqs
     findCompatibles(RankedComps, Components),   % Components:   [(Comp, Compatibles)|Rest]--> sort "Compatibles" nodes by decreasing HWCaps
+    findBudget(Components, Budget),
     placement(Components, Placement, Budget, Cost),
     qosOK(Placement).
+
+findBudget(C, B) :- findBudget(C, 0, B).
+findBudget([(_, Comps)|Cs], OldB, NewB) :-
+    maxCost(Comps, CB), TmpB is OldB + CB,
+    findBudget(Cs, TmpB, NewB).
+findBudget([], B, B).
+
+maxCost(Comps, MaxCost) :- member((MaxCost,_,N), Comps), \+ (member((CostM,_,M), Comps), dif(N,M), CostM > MaxCost).
 
 checkThings :-
     findall(T, thingInstance(T, _), Things),
@@ -33,11 +42,12 @@ countDistinct(P, L) :-
     findall(N, distinct(member((_,N), P)), S),
     sort(S, Ss), length(Ss, L).
 
-findCompatibles([(_,C)|Cs], [(C,SCompatibles)|Rest]):-
-    findCompatibles(Cs, Rest),
-    findall((Cost, H, M), lightNodeOK(C, M, H, Cost), Compatibles),  
-    sort(Compatibles, SCompatibles).
-findCompatibles([],[]).
+findCompatibles(Compatibles, Components) :- findCompatibles(Compatibles, [], Components).
+findCompatibles([(_,C)|Cs], OldC, NewC):-
+    findall((Cost, H, M), lightNodeOK(C, M, H, Cost), [Comp|Atibles]), 
+    sort([Comp|Atibles], SCompatibles), % cannot be empty
+    findCompatibles(Cs, [(C,SCompatibles)|OldC], NewC).
+findCompatibles([], C, C).
 
 lightNodeOK(S,N,H,SCost) :-
     serviceInstance(S, SId), service(SId, SWReqs, (Arch, HWReqs)),
