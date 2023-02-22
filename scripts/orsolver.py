@@ -1,7 +1,7 @@
 import argparse as ap
 import os
 import sys
-from os.path import dirname, exists, join
+from os.path import exists, join
 
 import numpy as np
 from classes import Application, Infrastructure
@@ -203,17 +203,18 @@ def or_solver(app, infr, max_bin=None, dummy=False, show_placement=False, show_c
 			placement[s] = n
 			n_distinct.add(n)
 
-		str_pl = "[" + ", ".join(["({}, {})".format(s, n) for s, n in placement.items()]) + "]"
-		print(Fore.LIGHTWHITE_EX + f"Prolog: {str_pl}\n")
-
 		if show_placement:
 			print(tabulate(placement.items(), tablefmt='fancy_grid', stralign='center'))
 
 		tot_cost = solver.Objective().Value() # if only cost in Objective function
 		tot_time = solver.WallTime() / 1000  # in seconds
 		res = {'App': app.name, 'Time': tot_time, 'Cost': round(tot_cost, 4), 'Bins': len(n_distinct), 'Infs': solver.NumConstraints(), 'Size': N}
-
+		
+		print(Fore.LIGHTYELLOW_EX + 'Found solution:')
 		print(Fore.LIGHTGREEN_EX + tabulate(res.items(), numalign='right'))
+		
+		str_pl = "[" + ", ".join(["({}, {})".format(s, n) for s, n in placement.items()]) + "]"
+		print(Fore.LIGHTWHITE_EX + f"Prolog: {str_pl}\n")
 	else:
 		print(Fore.LIGHTRED_EX + 'The problem does not have a solution.')
 	

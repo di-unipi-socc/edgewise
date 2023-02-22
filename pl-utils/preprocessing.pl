@@ -12,7 +12,7 @@ preprocess(App, Compatibles) :-
 
 checkThings :-
     findall(T, thingInstance(T, _), Things),
-    findall(T, (node(_, _, _, _, _, IoTCaps), member(T, IoTCaps)), IoT),
+    findall(T, (node(_, _, _, _, IoTCaps), member(T, IoTCaps)), IoT),
     subset(Things, IoT).
 
 findCompatibles([C|Cs], [(C,Compatibles)|Rest]):-
@@ -22,14 +22,14 @@ findCompatibles([],[]).
 
 lightNodeOK(S, N, SCost) :-
     serviceInstance(S, SId), service(SId, SWReqs, (Arch, HWReqs)),
-    node(N, NType, SWCaps, (Arch, HWCaps), _, _),
+    node(N, SWCaps, (Arch, HWCaps), _, _),
     requirements(SId, N),
     subset(SWReqs, SWCaps), HWCaps >= HWReqs,
-    cost(NType, S, SCost).
+    nodeType(N, Type), cost(Type, S, SCost).
 
 lightNodeOK(F, N, FCost) :-
     functionInstance(F, FId, _), function(FId, SWPlatform, (Arch, HWReqs)),
-    node(N, NType, SWCaps, (Arch, HWCaps), _, _),
+    node(N, SWCaps, (Arch, HWCaps), _, _),
     requirements(FId, N),
     member(SWPlatform, SWCaps), HWCaps >= HWReqs,
-    cost(NType, F, FCost).
+    nodeType(N, Type), cost(Type, F, FCost).

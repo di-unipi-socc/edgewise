@@ -21,6 +21,6 @@ relevantNode(N, Ps, HW) :- functionInstance(F, FId,_), function(FId,_,(_,HW)), m
 
 relevantLink((N1,N2), Ps, BW) :- 
     dataFlow(T1, T2, _, _, Size, Rate, _),
-    (member((T1,N1), Ps); node(N1, _, _, _, _, IoTCaps), member(T1, IoTCaps)),
-    (member((T2,N2), Ps); node(N2, _, _, _, _, IoTCaps), member(T2, IoTCaps)),
+    (member((T1,N1), Ps); node(N1, _, _, _, IoTCaps), member(T1, IoTCaps)),
+    (member((T2,N2), Ps); node(N2, _, _, _, IoTCaps), member(T2, IoTCaps)),
     dif(N1,N2), link(N1,N2,_,_), BW is Size*Rate.

@@ -8,10 +8,13 @@ SERVICE_INSTANCE = "serviceInstance({id}, {comp})."
 FUNCTION_INSTANCE = "functionInstance({id}, {comp}, ({req_x_month:g}, {req_duration:g}))."
 THING_INSTANCE = "thingInstance({id}, {thing})."
 
-DATA_FLOW = "dataFlow({source}, {target}, {data_type}, [{sec_reqs:to_list}], {size:g}, {rate:g}, {latency:g})."
+DATA_FLOW = "dataFlow({source}, {target}, {data_type}, {sec_reqs:to_list}, {size:g}, {rate:g}, {latency:g})."
 
 
-def to_list(s):
+""" def to_list(s):
+	return [x.strip() for x in s.split(',')] if s else [] """
+def to_list(s):  # due to a bug of 'parse' module
+	s = s[1:-1]
 	return [x.strip() for x in s.split(',')] if s else []
 
 

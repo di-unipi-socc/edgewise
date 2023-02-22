@@ -11,20 +11,29 @@ from numpy import set_printoptions
 from tabulate import tabulate
 from utils import INFRS_DIR, normal_distribution
 
-HW_PLATFORMS = ['arm64', 'x86']
-SW_CAPS = ['ubuntu', 'mySQL', 'python', 'js', 'gcc']
-SEC_CAPS = ['access_logs', 'authentication', 'monitoring', 'isolation', 'encryption', 'firewall', 'backup', 'obfuscation', 'anti_tampering', 'audit']
-TYPES = ['cloud', 'isp', 'cabinet', 'accesspoint', 'thing']
-TYPES_PROBS = [0.1, 0.2, 0.3, 0.2, 0.2]
-LOCATIONS = ['be', 'de', 'es', 'fr', 'it', 'nl', 'pl', 'se']
-THINGS = ['soil', 'heat', 'water', 'nutrient', 'energy', 'piCamera1', 'piCamera2', 'arViewer',
-		  'cam11', 'cam12', 'cam21', 'cam22',
-		  'iphoneXS', 'echoDot']
+HW_PLATFORMS 	= ['arm64', 'x86']
+SW_CAPS 		= ['ubuntu', 'mySQL', 'python', 'js', 'gcc']
+SEC_CAPS 		= ['access_logs', 'authentication', 'monitoring', 'isolation', 'encryption', 'firewall', 'backup', 'obfuscation', 'anti_tampering', 'audit']
+LOCATIONS 		= ['be', 'de', 'es', 'fr', 'it', 'nl', 'pl', 'se']
+PROVIDERS 		= ['aws', 'azure', 'gcp', 'ibm', 'yandex']
+THINGS 			= ['soil', 'heat', 'water', 'nutrient', 'energy', 'piCamera1', 'piCamera2', 'arViewer',
+		  		   'cam11', 'cam12', 'cam21', 'cam22',
+		  		   'iphoneXS', 'echoDot']
 
-NOT_PLACED_THINGS = len(THINGS)
+LEN_SW  = len(SW_CAPS)
+LEN_SEC = len(SEC_CAPS)
 
-DUMMY_LAT = 5
-DUMMY_BW = 1000
+TYPES_PROBS 	= [0.1, 0.2, 0.3, 0.2, 0.2]
+TYPES 			= {'cloud': {'sw': LEN_SW, 'sec': LEN_SEC, 'iot': None}, 
+	    		   'isp': {'sw': (2, LEN_SW), 'sec': (7, LEN_SEC), 'iot': None},  
+				   'cabinet': {'sw': (2, LEN_SW), 'sec': (6, LEN_SEC), 'iot': (1,3)},
+				   'accesspoint': {'sw': (2, LEN_SW), 'sec': (5, LEN_SEC-1), 'iot': (1,3)}, 
+				   'thing': {'sw': (1, LEN_SW-1), 'sec': (4, LEN_SEC-1), 'iot': (1,4)}}
+
+NOT_PLACED_THINGS = None
+DUMMY_LAT 	= 5
+DUMMY_BW  	= 1000
+BW_MIN, BW_MAX = 20, 500
 
 
 def init_parser() -> ap.ArgumentParser:
@@ -43,15 +52,14 @@ def get_random(l, size=1):
 	return list(rnd.choice(l, size=size, replace=False))
 
 
-def get_random_things(n=1):
+def get_random_things(size=1):
 	global NOT_PLACED_THINGS
 	t = []
-	for _ in range(n):
+	for _ in range(size):
 		if THINGS:
 			t.append(THINGS.pop(rnd.randint(len(THINGS))))
 			NOT_PLACED_THINGS -= 1
-		else:
-			break
+		else: break
 	return t
 
 
@@ -72,9 +80,7 @@ class Builder(nx.Graph):
 
 	def set_filepath(self, dummy):
 		path = INFRS_DIR
-		if dummy:
-			path = join(path, "dummy")
-
+		path = join(path, "dummy") if dummy else path
 		self.file = join(path, self.file)
 
 	def set_nodes(self, n):
@@ -84,63 +90,40 @@ class Builder(nx.Graph):
 		dist = normal_distribution(size_of_federation=n)
 
 		for node in self.nodes:
-			hw_platform = rnd.choice(HW_PLATFORMS)
-			self.nodes[node]['hardware'] = (hw_platform, dist[node])
+			ntype = rnd.choice(list(TYPES.keys()), p=TYPES_PROBS)
+			self.set_node(node, ntype, hw=int(dist[node]), sw_size=TYPES[ntype]['sw'], sec_size=TYPES[ntype]['sec'], iot_size=TYPES[ntype]['iot'])
 
-			ntype = rnd.choice(TYPES, p=TYPES_PROBS)
-			method = 'set_as_{}'.format(ntype)
-			getattr(self, method)(node)
-		self.set_grouped_nodes()
-
-		self.add_edges_from(R.edges)#, bw=rnd.randint(1, 500), lat=5)
+		self.add_edges_from(R.edges)
 		for e in self.edges():
 			nx.set_edge_attributes(self, {e: {'lat': rnd.randint(1, 20)}}) 
 
+		self.set_grouped_nodes()
+
 	def set_grouped_nodes(self):
-		for t in TYPES:
-			self.gnodes[t] = [x for x, y in nx.get_node_attributes(self, 'ntype').items() if y == t]
+		self.gnodes = {t: [x for x, y in nx.get_node_attributes(self, 'nodeType').items() if y == t] for t in TYPES}
 
 	def set_links(self):
 		sp = nx.floyd_warshall_numpy(self, weight='lat')
 		for i,j in product(range(self.n), repeat=2):
-			bw = rnd.randint(20, 500) if i != j else float('inf')
+			bw = rnd.randint(BW_MIN, BW_MAX) if i != j else float('inf')
 			if self.has_edge(i, j):
 				nx.set_edge_attributes(self, {(i, j): {'bw': bw}}) 
 			else:
 				self.add_edge(i, j, lat=int(sp[i,j]), bw=bw)
 
-	def set_as_cloud(self, nid):
+	def set_node(self, nid, ntype, hw, sw_size=None, sec_size=None, iot_size=None):
 		node = self.nodes[nid]
-		node['ntype'] = 'cloud'
-		node['software'] = SW_CAPS
-		node['security'] = ["enc", "auth"]
+		sw_min, sw_max = sw_size if isinstance(sw_size, tuple) else (0,0)
+		sec_min, sec_max = sec_size if isinstance(sec_size, tuple) else (0,0)
+		iot_min, iot_max = iot_size if isinstance(iot_size, tuple) else (0,0)
 
-	def set_as_isp(self, nid):
-		node = self.nodes[nid]
-		node['ntype'] = 'isp'
-		node['software'] = get_random(SW_CAPS, size=rnd.randint(2, 5))
-		node['security'] = ["enc"]
-
-	def set_as_cabinet(self, nid):
-		node = self.nodes[nid]
-		node['ntype'] = 'cabinet'
-		node['software'] = get_random(SW_CAPS, size=rnd.randint(2, 5))
-		node['security'] = ["enc", "auth"]
-		node['things'] = get_random_things(n=rnd.randint(1, 3))
-
-	def set_as_accesspoint(self, nid):
-		node = self.nodes[nid]
-		node['ntype'] = 'accesspoint'
-		node['software'] = get_random(SW_CAPS, size=rnd.randint(2, 5))
-		node['security'] = ["enc", "auth"]
-		node['things'] = get_random_things(n=rnd.randint(1, 3))
-
-	def set_as_thing(self, nid):
-		node = self.nodes[nid]
-		node['ntype'] = 'thing'
-		node['software'] = get_random(SW_CAPS, size=rnd.randint(1, 4))
-		node['security'] = ["enc", "auth"]
-		node['things'] = get_random_things(n=rnd.randint(1, 4))
+		node['nodeType'] = ntype
+		node['hardware'] = (rnd.choice(HW_PLATFORMS), hw)
+		node['location'] = rnd.choice(LOCATIONS)
+		node['provider'] = rnd.choice(PROVIDERS)
+		node['software'] = SW_CAPS if sw_size == LEN_SW else get_random(SW_CAPS, size=rnd.randint(sw_min, sw_max)) if sw_size else []
+		node['security'] = SEC_CAPS if sec_size == LEN_SEC else get_random(SEC_CAPS, size=rnd.randint(sec_min, sec_max)) if sec_size else []
+		node['things'] = get_random_things(size=rnd.randint(iot_min, iot_max)) if iot_size else []
 
 	def dummy_links(self, lat, bw):
 		for n1, n2 in product(self.nodes(), repeat=2):
@@ -156,16 +139,11 @@ class Builder(nx.Graph):
 
 		return "{}\n{}\n".format(bwTh, hwTh)
 
-	def get_domain(self):
-		return "domain(all, [_])."
-
 	def get_nodes(self):
-		nodes_str = ""
 		nodes = list(self.nodes(data=True))
 		rnd.shuffle(nodes)
 
-		for (nid, nattr) in nodes:
-			nodes_str += "node({}, {ntype}, {software}, {hardware}, {security}, {things}).\n".format(nid,**nattr).replace("'", "")
+		nodes_str = "".join(["node({}, {software}, {hardware}, {security}, {things}).\n".format(nid,**nattr).replace("'", "") for (nid,nattr) in nodes])
 		return nodes_str
 
 	def get_links(self):
@@ -175,16 +153,24 @@ class Builder(nx.Graph):
 
 		for n1, n2, lattr in links:
 			links_str += "link({}, {}, {lat}, {bw}).\n".format(n1, n2, **lattr).replace("'", "")
-			if n1 != n2:
-				links_str += "link({}, {}, {lat}, {bw}).\n".format(n2, n1, **lattr).replace("'", "")
+			links_str += "link({}, {}, {lat}, {bw}).\n".format(n2, n1, **lattr).replace("'", "") if n1 != n2 else ""
 		return links_str
+	
+	def get_property(self, prop_name):
+		return "".join(["{}({}, {}).\n".format(prop_name, nid, prop) for nid, prop in self.nodes(data=prop_name)])
+
+	""" def get_security(self):
+		s = {k: [nid for nid, sec in self.nodes(data='security') if k in sec] for k in SEC_CAPS}
+		return "".join(["{}({}).\n".format(k, n) for k,v in s.items() for n in v]) """
 
 	def __str__(self):
 		infra = ""
 		infra += self.get_thresholds() + "\n"
 		infra += self.get_nodes() + "\n"
 		infra += self.get_links() + "\n"
-		infra += self.get_domain() + "\n"
+		infra += self.get_property('nodeType') + "\n"
+		infra += self.get_property('location') + "\n"
+		infra += self.get_property('provider')
 		return infra
 
 	def get_gnodes(self):
@@ -222,8 +208,7 @@ if __name__ == "__main__":
 	parser = init_parser()
 	args = parser.parse_args()
 
-	
 	THINGS = args.things if args.things else THINGS
+	NOT_PLACED_THINGS = len(THINGS)
 	rnd.seed(args.seed)
 	main(args.n, args.seed, dummy=args.dummy)
-

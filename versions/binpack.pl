@@ -1,4 +1,4 @@
-% :-['../data/infrs/infr64.pl', '../data/apps/arFarming.pl'].
+:-['../data/infrs/infr16.pl', '../data/apps/arFarming.pl'].
 :-['../pl-utils/requirements.pl', '../pl-utils/costs.pl'].
 
 :- set_prolog_flag(answer_write_options,[max_depth(0)]). % write answers' text entirely
@@ -26,12 +26,8 @@ best(App, Placement, Cost, Budget) :-
 
 checkThings :-
     findall(T, thingInstance(T, _), Things),
-    findall(T, (node(_, _, _, _, _, IoTCaps), member(T, IoTCaps)), IoT),
+    findall(T, (node(_, _, _, _, IoTCaps), member(T, IoTCaps)), IoT),
     subset(Things, IoT).
-
-timer(StartTime, Placement) :-
-    MaxTime is StartTime+300, statistics(cputime, CurrTime),
-    (CurrTime < MaxTime -> qosOK(Placement); !, fail).
 
 countDistinct(P, L) :-
     findall(N, distinct(member((_,N), P)), S),
@@ -45,22 +41,21 @@ findCompatibles([],[]).
 
 lightNodeOK(S,N,H,SCost) :-
     serviceInstance(S, SId), service(SId, SWReqs, (Arch, HWReqs)),
-    node(N, NType, SWCaps, (Arch, HWCaps), _, _),
+    node(N, SWCaps, (Arch, HWCaps), _, _),
     requirements(SId, N),
     subset(SWReqs, SWCaps), 
     HWCaps >= HWReqs, H is 1/HWCaps, % H used to sort Compatibles (ascending H --> descending HWCaps)) 
-    cost(NType, S, SCost).
+    nodeType(N, Type), cost(Type, S, SCost).
 
 lightNodeOK(F,N,H,FCost) :-
     functionInstance(F, FId, _), function(FId, SWPlatform, (Arch, HWReqs)),
-    node(N, NType, SWCaps, (Arch, HWCaps), _, _),
+    node(N, SWCaps, (Arch, HWCaps), _, _),
     requirements(FId, N),
     member(SWPlatform, SWCaps), 
     HWCaps >= HWReqs, H is 1/HWCaps,
-    cost(NType, F, FCost).
+    nodeType(N, Type), cost(Type, F, FCost).
 
-placement(Cs, Placement, Budget, NewCost) :-
-    placement(Cs, [], Placement, Budget, 0, NewCost).
+placement(Cs, Placement, Budget, NewCost) :- placement(Cs, [], Placement, Budget, 0, NewCost).
 
 placement([(C, Comps)|Cs], OldP, NewP, Budget, OldCost, NewCost) :-
     componentPlacement(C, Comps, N, OldP, CCost),
@@ -87,7 +82,7 @@ componentPlacement(S, Comps, N, Ps, SCost) :-
     compatible(N, HWReqs, Ps).
 
 compatible(N, (Arch,HWReqs), Ps) :-
-    node(N, _, _, (Arch, HWCaps), _, _), 
+    node(N, _, (Arch, HWCaps), _, _), 
     hwOK(N, HWCaps, HWReqs, Ps).
 
 hwOK(N,HWCaps,HWReqs,Ps) :-
@@ -102,10 +97,10 @@ qosOK(Ps) :-
     checkDF(DataFlows, Ps).
 
 checkDF([((N1,N2),ReqLat,SecReqs)|DFs], Ps) :-
-    checkDF(DFs, Ps),
     (link(N1, N2, FeatLat, FeatBW); link(N2, N1, FeatLat, FeatBW)),
     secOK(N1, N2, SecReqs),
-    FeatLat =< ReqLat, bwOK((N1,N2), FeatBW, Ps).
+    FeatLat =< ReqLat, bwOK((N1,N2), FeatBW, Ps),
+    checkDF(DFs, Ps).
 checkDF([], _).
 
 bwOK(N1N2, FeatBW, Ps):-
@@ -113,11 +108,11 @@ bwOK(N1N2, FeatBW, Ps):-
     bwTh(T), FeatBW >= OkAllocBW + T.
 
 secOK(N1, N2, SecReqs) :-
-    node(N1, _, _, _, SecCaps1, _), subset(SecReqs, SecCaps1),
-    node(N2, _, _, _, SecCaps2, _), subset(SecReqs, SecCaps2).
+    node(N1, _, _, SecCaps1, _), subset(SecReqs, SecCaps1),
+    node(N2, _, _, SecCaps2, _), subset(SecReqs, SecCaps2).
 
 relevant((N1,N2), Ps, Lat, BW, Sec):-
     dataFlow(T1, T2, _, Sec, Size, Rate, Lat),
-    (member((T1,N1), Ps); node(N1, _, _, _, _, IoTCaps), member(T1, IoTCaps)),
-    (member((T2,N2), Ps); node(N2, _, _, _, _, IoTCaps), member(T2, IoTCaps)),
+    (member((T1,N1), Ps); node(N1, _, _, _, IoTCaps), member(T1, IoTCaps)),
+    (member((T2,N2), Ps); node(N2, _, _, _, IoTCaps), member(T2, IoTCaps)),
     BW is Size*Rate.

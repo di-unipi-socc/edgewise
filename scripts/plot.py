@@ -1,5 +1,5 @@
-from os.path import basename, join, exists
 import os
+from os.path import basename, exists, join
 
 import matplotlib.pyplot as plt
 import pandas as pd

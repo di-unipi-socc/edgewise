@@ -15,11 +15,16 @@ dataFlow(Source, Dest, DataId, SecReqs, Size, Rate, MaxLat).
 
 % --- INFRASTRUCTURE ---
 % IoTCaps = [TIIds]
-node(NodeId, NType, SWCaps, (Arch, HWCaps), SecCaps, IoTCaps).
+node(NodeId, SWCaps, (Arch, HWCaps), SecCaps, IoTCaps).
 
 link(N1, N2, Lat, BW).
 
-domain(Area, [SubDomains]).
+% --- NODE PROPERTIES ---
+nodeType(NodeId, Type).
+
+location(NodeId, Location).
+
+provider(NodeId, Provider).
 
 % --- REQS/COSTS SPECS ---
 cost(NType, ServiceId, Cost).

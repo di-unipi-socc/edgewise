@@ -35,7 +35,7 @@ countDistinct(P, L) :-
 
 checkThings :-
     findall(T, thingInstance(T, _), Things),
-    findall(T, (node(_, _, _, _, _, IoTCaps), member(T, IoTCaps)), IoT),
+    findall(T, (node(_, _, _, _, IoTCaps), member(T, IoTCaps)), IoT),
     subset(Things, IoT).
 
 placement(Functions, Services, Placement) :-
@@ -48,12 +48,12 @@ placement([], []).
     
 componentPlacement(F, N) :-
     functionInstance(F, FId, _), function(FId, SWPlat, (Arch,_)),
-    node(N, _, SWCaps, (Arch,_), _, _), 
+    node(N, SWCaps, (Arch,_), _, _), 
     requirements(FId, N), 
     member(SWPlat, SWCaps).
 componentPlacement(S, N) :-
     serviceInstance(S, SId), service(SId, SWReqs, (Arch,_)),
-    node(N, _, SWCaps, (Arch,_), _, _), 
+    node(N, SWCaps, (Arch,_), _, _), 
     requirements(SId, N), 
     subset(SWReqs, SWCaps).
 
@@ -62,7 +62,7 @@ costOK(Placement, Budget, Cost) :-
     tolerance(T), Tol is T * Budget,
     Cost < Budget + Tol.
 
-componentCost(S,N,C) :- node(N, NType, _, _, _, _), cost(NType,S,C).
+componentCost(S,N,C) :- nodeType(N, Type), cost(Type, S, C).
 
 hwOK(Placement) :-
     findall(N, distinct(member((_,N),Placement)), Nodes),
@@ -70,7 +70,7 @@ hwOK(Placement) :-
 
 nodeHwOK([N|Nodes], Placement) :-
     findall(HW, hwOnN(N, Placement, HW), HWs), sum_list(HWs,TotHW),
-    node(N, _, _, (_, HWCaps), _, _),
+    node(N, _, (_, HWCaps), _, _),
     hwTh(T), HWCaps >= TotHW + T,
     nodeHwOK(Nodes, Placement).
 nodeHwOK([], _).
@@ -95,11 +95,11 @@ bwOK(N1N2, FeatBW, Ps):-
     bwTh(T), FeatBW >= OkAllocBW + T.
 
 secOK(N1, N2, SecReqs) :-
-    node(N1, _, _, _, SecCaps1, _), subset(SecReqs, SecCaps1),
-    node(N2, _, _, _, SecCaps2, _),  subset(SecReqs, SecCaps2).
+    node(N1, _, _, SecCaps1, _), subset(SecReqs, SecCaps1),
+    node(N2, _, _, SecCaps2, _),  subset(SecReqs, SecCaps2).
 
 relevant((N1,N2), Ps, Lat, BW, Sec):-
     dataFlow(T1, T2, _, Sec, Size, Rate, Lat),
-    (member((T1,N1), Ps); node(N1, _, _, _, _, IoTCaps), member(T1, IoTCaps)),
-    (member((T2,N2), Ps); node(N2, _, _, _, _, IoTCaps), member(T2, IoTCaps)),
+    (member((T1,N1), Ps); node(N1, _, _, _, IoTCaps), member(T1, IoTCaps)),
+    (member((T2,N2), Ps); node(N2, _, _, _, IoTCaps), member(T2, IoTCaps)),
     BW is Size*Rate.
