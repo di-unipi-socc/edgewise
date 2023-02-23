@@ -16,20 +16,35 @@ HW_PLATFORMS 	= ['arm64', 'x86']
 SW_CAPS 		= ['ubuntu', 'mySQL', 'python', 'js', 'gcc']
 LOCATIONS 		= ['de', 'es', 'fr', 'it']
 PROVIDERS 		= ['aws', 'azure', 'gcp', 'ibm', 'yandex']
-THINGS 			= ['soil', 'heat', 'water', 'nutrient', 'energy', 'piCamera1', 'piCamera2', 'arViewer',
-		  		   'cam11', 'cam12', 'cam21', 'cam22',
-		  		   'iphoneXS', 'echoDot']
+THINGS 			= ['soil', 'heat', 'water', 'nutrient', 'energy', 'piCamera1', 'piCamera2', 'arViewer', # arFarming
+		  		'cam11', 'cam12', 'cam21', 'cam22', #distSecurity
+		  		'iphoneXS', 'echoDot'] # speakToMe
 
-LEN_SW  = len(SW_CAPS)
-LEN_SEC = len(SEC_CAPS)
+SEC_CAPS_CLOUD 	= ['access_logs', 'authentication', 'host_ids', 'process_isolation', 'permission_model', 'resource_monitoring', 'restore_point', 'user_data_isolation', # virtualisation
+                'certificates', 'firewall', 'enc_iot', 'node_isolation', 'network_ids', 'public_key_crypto', # communications
+                'backup', 'enc_storage', # data
+                'access_control', 'anti-tampering', # physical
+                'audit'] # others
+
+SEC_CAPS_EDGE 	= ['access_logs', 'authentication', 'host_ids', 'process_isolation', 'permission_model', 'resource_monitoring', 'user_data_isolation', # virtualisation
+                'certificates', 'firewall', 'enc_iot', 'node_isolation', 'network_ids', 'public_key_crypto', # communications
+                'backup', 'enc_storage', # data,
+                'access_control', 'anti-tampering', # physical
+                'audit'] # others
+
+SEC_CAPS_IOT 	= ['authentication', 'resource_monitoring', # virtualisation
+                'firewall', 'enc_iot', 'node_isolation', 'public_key_crypto', 'wireless_security' # communications
+                'enc_storage', 'obfuscated_storage', # data,
+                'anti-tampering'] # physical
+                # others
 
 TYPES_PROBS 	= [0.1, 0.2, 0.3, 0.2, 0.2]
-TYPES 			= {'cloud': {'sw': LEN_SW, 'iot': None, 'sec': SEC_CAPS_CLOUD}, 
-	    		   """ 'isp': {'sw': (2, LEN_SW), 'iot': None, 'sec': 0},  
-				   'cabinet': {'sw': (2, LEN_SW), 'iot': (1,3), 'sec': 0},
-				   'accesspoint': {'sw': (2, LEN_SW), 'iot': (1,3), 'sec': 0},  """
-				   'edge': {'sw': (2, LEN_SW), 'iot': (1,3), 'sec': SEC_CAPS_EDGE},
-				   'thing': {'sw': (1, LEN_SW-1), 'iot': (1,4), 'sec': SEC_CAPS_IOT}}
+TYPES 			= {'cloud': {'sw': len(SW_CAPS), 'iot': None, 'sec': SEC_CAPS_CLOUD}, 
+	    		   """ 'isp': {'sw': (2, len(SW_CAPS)), 'iot': None, 'sec': 0},  
+				   'cabinet': {'sw': (2, len(SW_CAPS)), 'iot': (1,3), 'sec': 0},
+				   'accesspoint': {'sw': (2, len(SW_CAPS)), 'iot': (1,3), 'sec': 0},  """
+				   'edge': {'sw': (2, len(SW_CAPS)), 'iot': (1,3), 'sec': SEC_CAPS_EDGE},
+				   'thing': {'sw': (1, len(SW_CAPS)-1), 'iot': (1,4), 'sec': SEC_CAPS_IOT}}
 
 NOT_PLACED_THINGS = None
 DUMMY_LAT 	= 5
@@ -122,7 +137,7 @@ class Builder(nx.Graph):
 		node['hardware'] = (rnd.choice(HW_PLATFORMS), hw)
 		node['location'] = rnd.choice(LOCATIONS)
 		node['provider'] = rnd.choice(PROVIDERS)
-		node['software'] = SW_CAPS if sw_size == LEN_SW else get_random(SW_CAPS, size=rnd.randint(sw_min, sw_max)) if sw_size else []
+		node['software'] = SW_CAPS if sw_size == len(SW_CAPS) else get_random(SW_CAPS, size=rnd.randint(sw_min, sw_max)) if sw_size else []
 		#node['security'] = SEC_CAPS if sec_size == LEN_SEC else get_random(SEC_CAPS, size=rnd.randint(sec_min, sec_max)) if sec_size else []
 		node['security'] = sec_caps if sec_caps else []
 		node['things'] = get_random_things(size=rnd.randint(iot_min, iot_max)) if iot_size else []
