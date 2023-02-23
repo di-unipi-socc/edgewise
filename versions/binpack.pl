@@ -91,9 +91,7 @@ componentPlacement(S, Comps, N, Ps, SCost) :-
     member((SCost,_,N), Comps), \+ member((_,N),Ps),
     compatible(N, HWReqs, Ps).
 
-compatible(N, (Arch,HWReqs), Ps) :-
-    node(N, _, (Arch, HWCaps), _, _), 
-    hwOK(N, HWCaps, HWReqs, Ps).
+compatible(N, (Arch,HWReqs), Ps) :- node(N, _, (Arch, HWCaps), _, _), hwOK(N, HWCaps, HWReqs, Ps).
 
 hwOK(N,HWCaps,HWReqs,Ps) :-
     findall(HW, hwOnN(N, Ps, HW), HWs), sum_list(HWs,TotHW),
@@ -102,9 +100,7 @@ hwOK(N,HWCaps,HWReqs,Ps) :-
 hwOnN(N, Ps, HW) :- serviceInstance(S, SId), service(SId,_,(_,HW)), member((S,N), Ps).
 hwOnN(N, Ps, HW) :- functionInstance(F, FId,_), function(FId,_,(_,HW)), member((F,N), Ps).
 
-qosOK(Ps) :-
-    findall((N1N2, Lat, Sec), relevant(N1N2, Ps, Lat, _, Sec), DataFlows),
-    checkDF(DataFlows, Ps).
+qosOK(Ps) :- findall((N1N2, Lat, Sec), relevant(N1N2, Ps, Lat, _, Sec), DataFlows), checkDF(DataFlows, Ps).
 
 checkDF([((N1,N2),ReqLat,SecReqs)|DFs], Ps) :-
     (link(N1, N2, FeatLat, FeatBW); link(N2, N1, FeatLat, FeatBW)),
