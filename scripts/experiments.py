@@ -22,7 +22,6 @@ def init_parser() -> ap.ArgumentParser:
 
 	p.add_argument("app", help="Application name.")
 	p.add_argument("infr", help="Infrastructure name.")
-	p.add_argument("budget", type=int, help="Maximum budget.")
 
 	return p
 
@@ -33,7 +32,7 @@ def create_tmp_copy(path, tmp_dir, tool='or'):
     return tmp_path
 
 
-def exp_replace_same_app(app, pl_infr_path, or_infr_path, pl_version, budget):
+def exp_replace_same_app(app, pl_infr_path, or_infr_path, pl_version):
 
     pl_sol = or_sol = True
     manager = Manager()
@@ -49,7 +48,7 @@ def exp_replace_same_app(app, pl_infr_path, or_infr_path, pl_version, budget):
     while pl_sol or or_sol:
         print(Fore.LIGHTCYAN_EX + f"Start iteration {iteration}")
 
-        process_pl = Process(target=pl_process, args=(pl_version, app, budget, pl_infr_path, result))
+        process_pl = Process(target=pl_process, args=(pl_version, app, pl_infr_path, result))
         process_pl.start()
             
         process_or = Process(target=or_budgeting, args=(app, or_infr_path, False, result))
@@ -99,4 +98,4 @@ if __name__ == '__main__':
         pl_infr_path = create_tmp_copy(infr, tmp_dir, tool='pl')
         or_infr_path = create_tmp_copy(infr, tmp_dir, tool='or')
 
-        exp_replace_same_app(app=app, pl_infr_path=pl_infr_path, or_infr_path=or_infr_path, pl_version=vs[0], budget=args.budget)
+        exp_replace_same_app(app=app, pl_infr_path=pl_infr_path, or_infr_path=or_infr_path, pl_version=vs[0])

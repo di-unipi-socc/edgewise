@@ -37,7 +37,7 @@ SEC_CAPS_IOT 	= ['authentication', 'resource_monitoring', # virtualisation
                 'anti-tampering'] # physical
                 # others
 
-TYPES_PROBS 	= [0.2, 0.5, 0.3]
+TYPES_PROBS 	= [0.15, 0.45, 0.4]
 TYPES 			= {'cloud': {'sw': len(SW_CAPS), 'iot': None, 'sec': SEC_CAPS_CLOUD}, 
 				   'edge': {'sw': (2, len(SW_CAPS)), 'iot': (1,3), 'sec': SEC_CAPS_EDGE},
 				   'thing': {'sw': (1, len(SW_CAPS)-1), 'iot': (1,4), 'sec': SEC_CAPS_IOT}}

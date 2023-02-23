@@ -6,14 +6,13 @@ PYTHON_SCRIPTS_DIR=$ROOT_DIR/scripts
 
 INFRS=(16 32 64 128 256 512)
 APPS=(distSecurity arFarming speakToMe)
-BUDGET=(100 250 400)
 
 for j in {0..2}; do
     for i in {0..5}; do
         if [ "$1" = "comp" ]; then
-            ${PYTHON} ${PYTHON_SCRIPTS_DIR}/compare.py -b -o -s ${APPS[$j]} ${INFRS[$i]} ${BUDGET[$j]} binpack
+            ${PYTHON} ${PYTHON_SCRIPTS_DIR}/compare.py -b -o -s ${APPS[$j]} ${INFRS[$i]} binpack
         elif [ "$1" = "exp" ]; then
-            ${PYTHON} ${PYTHON_SCRIPTS_DIR}/experiments.py ${APPS[$j]} ${INFRS[$i]} ${BUDGET[$j]}
+            ${PYTHON} ${PYTHON_SCRIPTS_DIR}/experiments.py ${APPS[$j]} ${INFRS[$i]}
         else
             echo "Invalid argument $1."
             exit 1

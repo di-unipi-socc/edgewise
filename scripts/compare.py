@@ -13,7 +13,7 @@ from orsolver import or_solver
 from swiplserver import PrologMQI, prolog_args
 from tabulate import tabulate
 
-MAIN_QUERY = "once(stats(App, Placement, Cost, Bins, Infs, Time, {budget}))"
+MAIN_QUERY = "once(stats(App, Placement, Cost, Bins, Infs, Time))"
 ALLOC_QUERY = "allocatedResources({placement}, AllocHW, AllocBW)"
 TIMEOUT = 3600 # seconds
 FILENAME = 'comparison.csv'
@@ -32,7 +32,6 @@ def init_parser() -> ap.ArgumentParser:
 
 	p.add_argument("app", help="Application name.")
 	p.add_argument("infr", help="Infrastructure name.")
-	p.add_argument("budget", type=int, help="Maximum budget.")
 	p.add_argument("versions", nargs='+',
 	               help="List of the versions to compare. Valid ones can be found in \"versions/\" folder.")
 
@@ -106,14 +105,14 @@ def get_change(current, optimal):
 		return float('inf')
 
 
-def pl_process(version, app, budget, infr, result):
+def pl_process(version, app, infr, result):
 	with PrologMQI() as mqi:
 		with mqi.create_thread() as prolog:
 			prolog.query(f"consult('{version}')")
 			prolog.query(f"consult('{app}')")
 			prolog.query(f"consult('{infr}')")
 
-			prolog.query_async(MAIN_QUERY.format(budget=budget))
+			prolog.query_async(MAIN_QUERY)
 			q = prolog.query_async_result()
 			if q:
 				q = q[0]
@@ -124,13 +123,13 @@ def pl_process(version, app, budget, infr, result):
 				print(Fore.LIGHTRED_EX + "No PL solution found for {}".format(basename(version)))
 
 
-def main(app, infr, budget, versions, budgeting=False, show_placement=False, ortools=False, dummy=False, save=False):
+def main(app, infr, versions, budgeting=False, show_placement=False, ortools=False, dummy=False, save=False):
 	manager = Manager()
 	result = manager.dict()
 	processes = []
 
 	for v in versions:
-		p = Process(name=v, target=pl_process, args=(v, app, budget, infr, result))
+		p = Process(name=v, target=pl_process, args=(v, app, infr, result))
 		p.start()
 		processes.append(p)
 
@@ -174,12 +173,11 @@ if __name__ == "__main__":
 	
 	info = [['APPLICATION:', basename(app)],
 			['INFRASTRUCTURE:', ("dummy" + os.sep if args.dummy else "") + basename(infr)],
-			['BUDGET:', args.budget],
 			['NODE BUDGETING:', "YES" if args.budgeting else "NO"],
 			['OR-TOOLS:', "YES" if args.ortools else "NO"],
 			['PL VERSIONS:', [basename(v) for v in vs]],
 			['SAVE RESULTS:', "YES" if args.save else "NO"]]
 	print(Fore.LIGHTCYAN_EX + tabulate(info))
 
-	main(app=app, infr=infr, versions=vs, budget=args.budget, show_placement=args.placement, 
+	main(app=app, infr=infr, versions=vs, show_placement=args.placement, 
     	budgeting=args.budgeting, ortools=args.ortools, dummy=args.dummy, save=args.save)
