@@ -1,8 +1,8 @@
 import argparse as ap
 import sys
 from itertools import product
-from os.path import join, exists, dirname
 from os import makedirs
+from os.path import dirname, exists, join
 
 import networkx as nx
 from colorama import Fore, init
@@ -10,7 +10,6 @@ from numpy import random as rnd
 from numpy import set_printoptions
 from tabulate import tabulate
 from utils import INFRS_DIR, normal_distribution
-from sec_caps import *
 
 HW_PLATFORMS 	= ['arm64', 'x86']
 SW_CAPS 		= ['ubuntu', 'mySQL', 'python', 'js', 'gcc']

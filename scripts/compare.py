@@ -1,7 +1,7 @@
 import argparse as ap
 import os
 from multiprocessing import Manager, Process
-from os.path import basename, join, splitext
+from os.path import basename, join
 
 import pandas as pd
 from budgeting import or_budgeting

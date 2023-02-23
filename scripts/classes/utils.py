@@ -1,4 +1,4 @@
-import os
+from os import makedirs
 from os.path import abspath, dirname, exists, isfile, join
 
 import numpy
@@ -72,7 +72,7 @@ def df_to_file(df, file_path):
 
 	# create the directory if it doesn't exist
 	dir = dirname(file_path)
-	os.makedirs(dir) if not exists(dir) else None		
+	makedirs(dir) if not exists(dir) else None		
 	df.to_csv(file_path, mode='a', header=(not isfile(file_path)))
 
 
