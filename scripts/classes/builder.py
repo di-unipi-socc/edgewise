@@ -37,18 +37,14 @@ SEC_CAPS_IOT 	= ['authentication', 'resource_monitoring', # virtualisation
                 'anti-tampering'] # physical
                 # others
 
-TYPES_PROBS 	= [0.1, 0.2, 0.3, 0.2, 0.2]
+TYPES_PROBS 	= [0.2, 0.5, 0.3]
 TYPES 			= {'cloud': {'sw': len(SW_CAPS), 'iot': None, 'sec': SEC_CAPS_CLOUD}, 
-	    		   """ 'isp': {'sw': (2, len(SW_CAPS)), 'iot': None, 'sec': 0},  
-				   'cabinet': {'sw': (2, len(SW_CAPS)), 'iot': (1,3), 'sec': 0},
-				   'accesspoint': {'sw': (2, len(SW_CAPS)), 'iot': (1,3), 'sec': 0},  """
 				   'edge': {'sw': (2, len(SW_CAPS)), 'iot': (1,3), 'sec': SEC_CAPS_EDGE},
 				   'thing': {'sw': (1, len(SW_CAPS)-1), 'iot': (1,4), 'sec': SEC_CAPS_IOT}}
 
 NOT_PLACED_THINGS = None
-DUMMY_LAT 	= 5
-DUMMY_BW  	= 1000
-BW_MIN, BW_MAX = 20, 500
+DUMMY_LAT, DUMMY_BW	= 5, 1000
+BW_MIN, BW_MAX 	 = 20, 500
 LAT_MIN, LAT_MAX = 1, 20
 
 
@@ -107,7 +103,7 @@ class Builder(nx.Graph):
 
 		for node in self.nodes:
 			ntype = rnd.choice(list(TYPES.keys()), p=TYPES_PROBS)
-			self.set_node(node, ntype, hw=int(dist[node]), sw_size=TYPES[ntype]['sw'], sec_size=TYPES[ntype]['sec'], iot_size=TYPES[ntype]['iot'])
+			self.set_node(node, ntype, hw=int(dist[node]), sw_size=TYPES[ntype]['sw'], iot_size=TYPES[ntype]['iot'], sec_caps=TYPES[ntype]['sec'])
 
 		self.add_edges_from(R.edges)
 		for e in self.edges():
