@@ -11,9 +11,7 @@ THING_INSTANCE = "thingInstance({id}, {thing})."
 DATA_FLOW = "dataFlow({source}, {target}, {data_type}, {sec_reqs:to_list}, {size:g}, {rate:g}, {latency:g})."
 
 
-""" def to_list(s):
-	return [x.strip() for x in s.split(',')] if s else [] """
-def to_list(s):  # due to a bug of 'parse' module
+def to_list(s):
 	s = s[1:-1]
 	return [x.strip() for x in s.split(',')] if s else []
 

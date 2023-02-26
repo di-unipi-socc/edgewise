@@ -17,7 +17,6 @@ def to_list_maybe_empty(s):  # due to a bug of 'parse' module
 
 
 def to_list(s):
-	if s == "": print("AAAAA")
 	return [x.strip() for x in s.split(',')] if s else []
 
 
