@@ -17,30 +17,12 @@ cost(cloud, FIId, C) :-
 
     C is CompCost + ReqCost. % total cost
 
-cost(isp, FIId, C) :-
-    functionInstance(FIId, FId, (ReqXMonth, ReqDuration)),
-    function(FId, _, (_, HWReqs)),
-    Mbps is HWReqs * ReqXMonth * ReqDuration / 1000,  % total processing (Mb/s)
-    CompCost is Mbps * 0.005, % monthly processing costs
-    ReqCost is ReqXMonth * 0.000017, % monthly costs for requests
-
-    C is CompCost + ReqCost. % total cost
-
-cost(cabinet, FIId, C) :-
+cost(edge, FIId, C) :-
     functionInstance(FIId, FId, (ReqXMonth, ReqDuration)),
     function(FId, _, (_, HWReqs)),
     Mbps is HWReqs * ReqXMonth * ReqDuration / 1000,  % total processing (Mb/s)
     CompCost is Mbps * 0.0006, % monthly processing costs
     ReqCost is ReqXMonth * 0.0000018, % monthly costs for requests
-
-    C is CompCost + ReqCost. % total cost
-
-cost(accesspoint, FIId, C) :-
-    functionInstance(FIId, FId, (ReqXMonth, ReqDuration)),
-    function(FId, _, (_, HWReqs)),
-    Mbps is HWReqs * ReqXMonth * ReqDuration / 1000,  % total processing (Mb/s)
-    CompCost is Mbps * 0.0007, % monthly processing costs
-    ReqCost is ReqXMonth * 0.0000019, % monthly costs for requests
 
     C is CompCost + ReqCost. % total cost
 
