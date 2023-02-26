@@ -45,7 +45,7 @@ TYPES 			= {'cloud': {'sw': len(SW_CAPS), 'iot': None, 'sec': SEC_CAPS_CLOUD},
 NOT_PLACED_THINGS = None
 DUMMY_LAT, DUMMY_BW	= 5, 1000
 BW_MIN, BW_MAX 	 = 20, 500
-LAT_MIN, LAT_MAX = 1, 20
+LAT_MIN, LAT_MAX = 2, 20
 
 
 def init_parser() -> ap.ArgumentParser:
