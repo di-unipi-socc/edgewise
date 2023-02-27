@@ -7,18 +7,19 @@ from scipy.stats import truncnorm
 # path to the main directories
 ROOT_DIR = dirname(dirname(dirname(abspath(__file__))))
 DATA_DIR = join(ROOT_DIR, 'data')
-VERSIONS_DIR = join(ROOT_DIR, 'versions')
 PL_UTILS_DIR = join(ROOT_DIR, 'pl-utils')
-OUTPUT_DIR = join(ROOT_DIR, 'output')
+VERSIONS_DIR = join(ROOT_DIR, 'versions')
 
-INFRS_DIR = join(DATA_DIR, 'infrs')
 APPS_DIR = join(DATA_DIR, 'apps')
+INFRS_DIR = join(DATA_DIR, 'infrs')
 MODELS_DIR = join(DATA_DIR, 'models')
+OUTPUT_DIR = join(DATA_DIR, 'output')
 
-PLOTS_DIR = join(OUTPUT_DIR, 'plots')
 CSV_DIR = join(OUTPUT_DIR, 'csv')
+PLOTS_DIR = join(OUTPUT_DIR, 'plots')
 
 COMPARISON_FILE = join(CSV_DIR, 'comparison.csv')
+BUDGETS_FILE = join(CSV_DIR, 'budgets.csv')
 
 
 def check_files(app=None, infr=None, versions=None, dummy_infr=False):
