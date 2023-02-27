@@ -2,7 +2,6 @@ from os.path import basename
 
 from .components import *
 from .infrastructure import Infrastructure
-from .utils import check_app
 
 
 class Application:
