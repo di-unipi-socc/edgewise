@@ -6,17 +6,12 @@ from os.path import basename, join
 import pandas as pd
 from budgeting import or_budgeting
 from classes import Infrastructure
-from classes.utils import (COMPARISON_FILE, PL_UTILS_DIR, check_files,
-                           df_to_file)
+from classes.utils import (ALLOC_QUERY, COMPARISON_FILE, MAIN_QUERY,
+                           PL_UTILS_DIR, check_files, df_to_file)
 from colorama import Fore, init
 from orsolver import or_solver
 from swiplserver import PrologMQI, prolog_args
 from tabulate import tabulate
-
-MAIN_QUERY = "once(stats(App, Placement, Cost, Bins, Infs, Time))"
-ALLOC_QUERY = "allocatedResources({placement}, AllocHW, AllocBW)"
-TIMEOUT = 3600 # seconds
-FILENAME = 'comparison.csv'
 
 
 def init_parser() -> ap.ArgumentParser:
@@ -29,6 +24,7 @@ def init_parser() -> ap.ArgumentParser:
 	p.add_argument("-b", "--budgeting", action="store_true", help="use budgeting for OR-Tools model.")
 	p.add_argument("-o", "--ortools", action="store_true", help="if set, compares also with Google OR-Tools model.")
 	p.add_argument("-s", "--save", action="store_true", help="if set, saves the results in csv format.")
+	p.add_argument("-t", "--timeout", type=int, default=TIMEOUT, help="Timeout for both OR-Tools and Prolog processes.")
 
 	p.add_argument("app", help="Application name.")
 	p.add_argument("infr", help="Infrastructure name.")
@@ -169,6 +165,7 @@ if __name__ == "__main__":
 	parser = init_parser()
 	args = parser.parse_args()
 	
+	TIMEOUT = args.timeout
 	app, infr, vs = check_files(app=args.app, infr=args.infr, dummy_infr=args.dummy, versions=args.versions)
 	
 	info = [['APPLICATION:', basename(app)],

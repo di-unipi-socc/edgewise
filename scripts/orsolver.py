@@ -6,13 +6,13 @@ from os.path import exists, join
 import numpy as np
 from classes import Application, Infrastructure
 from classes.components import ThingInstance
-from classes.utils import MODELS_DIR, PL_UTILS_DIR, check_app, check_infr
+from classes.utils import (MODELS_DIR, PL_UTILS_DIR, PREPROCESS_QUERY,
+                           check_app, check_infr)
 from colorama import Fore, init
 from ortools.linear_solver import pywraplp
 from swiplserver import PrologMQI, prolog_args
 from tabulate import tabulate
 
-QUERY = "preprocess({app_name}, Compatibles)"
 
 def init_parser() -> ap.ArgumentParser:
 	description = "Compare several placement strategies."
@@ -34,7 +34,7 @@ def get_compatibles(app_path, infr_path, app_name):
 			prolog.query(f"consult('{app_path}')")
 			prolog.query(f"consult('{infr_path}')")
 			prolog.query(f"consult('{join(PL_UTILS_DIR, 'preprocessing.pl')}')")
-			prolog.query_async(QUERY.format(app_name=app_name), find_all=False)
+			prolog.query_async(PREPROCESS_QUERY.format(app_name=app_name), find_all=False)
 			r = prolog.query_async_result()
 			return parse_compatibles(r[0]['Compatibles']) if r else None
 			
@@ -49,6 +49,7 @@ def parse_compatibles(r):
 			n, cost = prolog_args(c)
 			compatibles[name][n] = round(float(cost), 4)
 	return compatibles
+
 		
 def or_solver(app, infr, max_bin=None, dummy=False, show_placement=False, show_compatibles=False, model=False, result=""):
 	

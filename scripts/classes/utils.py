@@ -4,32 +4,37 @@ from os.path import abspath, dirname, exists, isfile, join
 import numpy
 from scipy.stats import truncnorm
 
-# path to the main directories
-ROOT_DIR = dirname(dirname(dirname(abspath(__file__))))
-DATA_DIR = join(ROOT_DIR, 'data')
+# Paths to the main directories
+ROOT_DIR 	 = dirname(dirname(dirname(abspath(__file__))))
+DATA_DIR 	 = join(ROOT_DIR, 'data')
 PL_UTILS_DIR = join(ROOT_DIR, 'pl-utils')
 VERSIONS_DIR = join(ROOT_DIR, 'versions')
 
-APPS_DIR = join(DATA_DIR, 'apps')
-INFRS_DIR = join(DATA_DIR, 'infrs')
-MODELS_DIR = join(DATA_DIR, 'models')
-OUTPUT_DIR = join(DATA_DIR, 'output')
+APPS_DIR 	= join(DATA_DIR, 'apps')
+INFRS_DIR 	= join(DATA_DIR, 'infrs')
+MODELS_DIR 	= join(DATA_DIR, 'models')
+OUTPUT_DIR 	= join(DATA_DIR, 'output')
 
-CSV_DIR = join(OUTPUT_DIR, 'csv')
+CSV_DIR   = join(OUTPUT_DIR, 'csv')
 PLOTS_DIR = join(OUTPUT_DIR, 'plots')
 
 COMPARISON_FILE = join(CSV_DIR, 'comparison.csv')
-BUDGETS_FILE = join(CSV_DIR, 'budgets.csv')
+BUDGETS_FILE 	= join(CSV_DIR, 'budgets.csv')
+
+# Prolog queries
+MAIN_QUERY 		 = "once(stats(App, Placement, Cost, Bins, Infs, Time))"
+ALLOC_QUERY 	 = "allocatedResources({placement}, AllocHW, AllocBW)"
+PREPROCESS_QUERY = "preprocess({app_name}, Compatibles)"
+
+# Timeout for Prolog and OR-Tools processes: default 1h
+TIMEOUT = 3600 # seconds
 
 
 def check_files(app=None, infr=None, versions=None, dummy_infr=False):
 	result = []
-	if app:
-		result.append(check_app(app))
-	if infr:
-		result.append(check_infr(infr, dummy_infr))
-	
-	result.append(check_versions(versions) if versions else [])
+	result.append(check_app(app)) if app else None
+	result.append(check_infr(infr, dummy_infr)) if infr else None
+	result.append(check_versions(versions)) if versions else None
 
 	return result
 
@@ -39,19 +44,17 @@ def check_app(app):
 	app = join(APPS_DIR, "{}.pl".format(app))
 	if not exists(app):
 		raise FileNotFoundError("Application file not found at {}".format(app))
-
+        
 	return app
 
 
 def check_infr(name, dummy):
 	# newDAP/data/infrs/<dummy>/infr<name>.pl
-	infr = INFRS_DIR
-	if dummy:
-		infr = join(infr, "dummy")
+	infr = join(INFRS_DIR, "dummy" if dummy else "")
 	infr = join(infr, "infr{}.pl".format(name))
 
 	if not exists(infr):
-		raise FileNotFoundError("No infrastructure file found at {}".format(infr))
+		raise FileNotFoundError("Infrastructure file not found at {}".format(infr))
 
 	return infr
 
@@ -62,11 +65,10 @@ def check_versions(versions):
 		# newDAP/versions/<v>.pl
 		f = join(VERSIONS_DIR, "{}.pl".format(v))
 		if not exists(f):
-			raise FileNotFoundError("No version file found at {}".format(f))
+			raise FileNotFoundError("Version file not found at {}".format(f))
 		files.append(f)
-	files = sorted(files)
 
-	return files
+	return sorted(files)
 
 
 def df_to_file(df, file_path):
@@ -98,10 +100,8 @@ def normal_distribution(min_value=32, max_value=1024, center=512, size_of_federa
         raise ValueError('size_of_federation should be greater than 0')
 
     max_step = int(max_value/stepping)
-    if min_value == 0: 
-        min_step = int(min_value/stepping)
-    else:
-        min_step = max(1, int(min_value/stepping)) # to avoid min_value = 0 when stepping is greater than min_value
+    # to avoid min_value = 0 when stepping is greater than min_value
+    min_step = int(min_value/stepping) if min_value == 0 else max(1, int(min_value/stepping))
     mean_step = int(center/stepping)
 
     if deviation is None:
