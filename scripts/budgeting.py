@@ -8,6 +8,7 @@ from classes import Application
 from classes.utils import BUDGETS_FILE, check_app, check_infr, df_to_file
 from colorama import Fore, init
 from orsolver import or_solver
+from orsolver_num import or_solver_num
 from tabulate import tabulate
 
 
@@ -50,7 +51,7 @@ def get_best(results, save_results=False):
 
     return best
 
-def or_budgeting(app, infr, save_results=False, result=""):
+def or_budgeting(app, infr, version='pre', save_results=False, result=""):
 	
 	if type(result) != str:  # if result is not a string, redirect output tu /dev/null
 		sys.stdout = open(os.devnull, 'w')
@@ -62,7 +63,10 @@ def or_budgeting(app, infr, save_results=False, result=""):
 	bdg_result = manager.dict()
 	processes = []
 	for i in range(S):
-		p = Process(target=or_solver, args=(app.get_file(), infr, i+1, False, False, False, False, bdg_result))
+		if version == 'pre':
+			p = Process(target=or_solver, args=(app.get_file(), infr, i+1, False, False, False, False, bdg_result))
+		else:
+			p = Process(target=or_solver_num, args=(app.get_file(), infr, i+1, False, False, False, bdg_result))
 		p.start()
 		processes.append(p)
 
@@ -71,7 +75,8 @@ def or_budgeting(app, infr, save_results=False, result=""):
 
 	res = get_best(bdg_result, save_results=save_results)
 	if type(result) != str and res:
-		result['ortools'] = res
+		name = 'ortools' if version == 'pre' else 'ortools-num'
+		result[name] = res
 
 
 if __name__ == '__main__':

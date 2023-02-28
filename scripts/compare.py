@@ -10,6 +10,7 @@ from classes.utils import (ALLOC_QUERY, COMPARISON_FILE, MAIN_QUERY, TIMEOUT,
                            PL_UTILS_DIR, check_files, df_to_file)
 from colorama import Fore, init
 from orsolver import or_solver
+from orsolver_num import or_solver_num
 from swiplserver import PrologMQI, prolog_args
 from tabulate import tabulate
 
@@ -21,14 +22,15 @@ def init_parser() -> ap.ArgumentParser:
 	p.add_argument("-p", "--placement", action="store_true", help="if set, shows the obtained placement")	
 	p.add_argument("-d", "--dummy", action="store_true",
 	               help="if set, uses an infrastructure with dummy links (low lat, high bw).")
-	p.add_argument("-b", "--budgeting", action="store_true", help="use budgeting for OR-Tools model.")
-	p.add_argument("-o", "--ortools", action="store_true", help="if set, compares also with Google OR-Tools model.")
+	p.add_argument("-b", "--budgeting", action="store_true", help="use budgeting for OR-Tools models.")
+	p.add_argument("-o", "--ortools", action="store_true", help="if set, compares also with Google OR-Tools model (with PL pre-processing).")
+	p.add_argument("-on", "--ortools-num", action="store_true", help="if set, compares also with Google OR-Tools model (only numeric constraints).")
 	p.add_argument("-s", "--save", action="store_true", help="if set, saves the results in csv format.")
 	p.add_argument("-t", "--timeout", type=int, default=TIMEOUT, help="Timeout for both OR-Tools and Prolog processes.")
 
 	p.add_argument("app", help="Application name.")
 	p.add_argument("infr", help="Infrastructure name.")
-	p.add_argument("versions", nargs='+',
+	p.add_argument("versions", nargs='*',
 	               help="List of the versions to compare. Valid ones can be found in \"versions/\" folder.")
 
 	return p
@@ -119,7 +121,7 @@ def pl_process(version, app, infr, result):
 				print(Fore.LIGHTRED_EX + "No PL solution found for {}".format(basename(version)))
 
 
-def main(app, infr, versions, budgeting=False, show_placement=False, ortools=False, dummy=False, save=False):
+def main(app, infr, versions, budgeting=False, show_placement=False, ortools=False, ortools_num=False, dummy=False, save=False):
 	manager = Manager()
 	result = manager.dict()
 	processes = []
@@ -132,9 +134,19 @@ def main(app, infr, versions, budgeting=False, show_placement=False, ortools=Fal
 	# add OR-Tools(pre) process
 	if ortools:
 		if budgeting:
-			p = Process(name='budgeting', target=or_budgeting, args=(app, infr, False, result))
+			p = Process(name='budgeting', target=or_budgeting, args=(app, infr, 'pre', False, result))
 		else:
 			p = Process(name='ortools', target=or_solver, args=(app, infr, None, dummy, show_placement, False, False, result))
+					
+		p.start()
+		processes.append(p)
+
+	# add OR-Tools(num) process
+	if ortools_num:
+		if budgeting:
+			p = Process(name='budgeting_num', target=or_budgeting, args=(app, infr, 'num', False, result))
+		else:
+			p = Process(name='ortools_num', target=or_solver_num, args=(app, infr, None, dummy, show_placement, False, result))
 					
 		p.start()
 		processes.append(p)
@@ -171,10 +183,11 @@ if __name__ == "__main__":
 	info = [['APPLICATION:', basename(app)],
 			['INFRASTRUCTURE:', ("dummy" + os.sep if args.dummy else "") + basename(infr)],
 			['NODE BUDGETING:', "YES" if args.budgeting else "NO"],
+			['OR-TOOLS-NUM:', "YES" if args.ortools_num else "NO"],
 			['OR-TOOLS:', "YES" if args.ortools else "NO"],
 			['PL VERSIONS:', [basename(v) for v in vs]],
 			['SAVE RESULTS:', "YES" if args.save else "NO"]]
 	print(Fore.LIGHTCYAN_EX + tabulate(info))
 
 	main(app=app, infr=infr, versions=vs, show_placement=args.placement, 
-    	budgeting=args.budgeting, ortools=args.ortools, dummy=args.dummy, save=args.save)
+    	budgeting=args.budgeting, ortools=args.ortools, ortools_num=args.ortools_num, dummy=args.dummy, save=args.save)

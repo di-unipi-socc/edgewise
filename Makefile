@@ -18,8 +18,7 @@ clean-plot:
 clean-csv:
 	rm -rf $(OUTPUT_DIR)/csv/*
 
-cleanall: clean-plot clean-csv
-	rm -rf $(OUTPUT_DIR)/*
+clean: clean-plot clean-csv
 
 build: 
 	$(BASH) $(BASH_SCRIPTS_DIR)/build.sh

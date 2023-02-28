@@ -35,7 +35,7 @@ def check_files(app=None, infr=None, versions=None, dummy_infr=False):
 	result = []
 	result.append(check_app(app)) if app else None
 	result.append(check_infr(infr, dummy_infr)) if infr else None
-	result.append(check_versions(versions)) if versions else None
+	result.append(check_versions(versions) if versions else [])
 
 	return result
 

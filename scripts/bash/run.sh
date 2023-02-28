@@ -10,7 +10,7 @@ APPS=(distSecurity arFarming speakToMe)
 for j in {0..2}; do
     for i in {0..5}; do
         if [ "$1" = "comp" ]; then
-            ${PYTHON} ${PYTHON_SCRIPTS_DIR}/compare.py -b -o -s ${APPS[$j]} ${INFRS[$i]} binpack
+            ${PYTHON} ${PYTHON_SCRIPTS_DIR}/compare.py -s -b -on -o ${APPS[$j]} ${INFRS[$i]} binpack binpack_num
         elif [ "$1" = "exp" ]; then
             ${PYTHON} ${PYTHON_SCRIPTS_DIR}/experiments.py ${APPS[$j]} ${INFRS[$i]}
         else

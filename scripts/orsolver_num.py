@@ -4,6 +4,7 @@ import sys
 from os.path import exists, join
 
 import numpy as np
+from classes import Application, Infrastructure
 from classes.components import ThingInstance
 from classes.utils import (COST_QUERY, MODELS_DIR, PL_UTILS_DIR, check_app,
                            check_infr)
@@ -201,7 +202,6 @@ def or_solver_num(app, infr, max_bin=None, dummy=False, show_placement=False, mo
 
 
 if __name__ == '__main__':
-	
 	# relative import
 	from classes import *
 
@@ -215,7 +215,3 @@ if __name__ == '__main__':
 	infr = check_infr(args.infr, dummy=args.dummy)
 
 	or_solver_num(app=app, infr=infr, dummy=args.dummy, show_placement=args.placement, model=args.model)
-
-	# absolute import
-else:
-	from .classes import *
