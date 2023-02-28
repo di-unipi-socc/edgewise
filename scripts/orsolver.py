@@ -108,21 +108,17 @@ def or_solver(app, infr, max_bin=None, dummy=False, show_placement=False, show_c
 				costs[i, j] = compatibles[s.id][n]
 	
 	# Constraint: one instance at most in one node.
-	for i in range(S):
-		solver.Add(solver.Sum([x[i, j] for j in range(N)]) == 1, name=f'one_node_{instances[i].id}')
+	[solver.Add(solver.Sum([x[i, j] for j in range(N)]) == 1, name=f'one_node_{instances[i].id}') for i in range(S)]
 
 	# Constraint: cannot exceed the hw capacity of a node.
 	coeffs = [s.comp.hwreqs for s in instances]
 	bounds = [a['hwcaps'] for _, a in nodes]
 
-	for j in range(N):
-		solver.Add(solver.Sum([coeffs[i] * x[i, j] for i in range(S)]) <= (bounds[j] - infr.hwTh), name=f'hw_{nids[j]}')
+	[solver.Add(solver.Sum([coeffs[i] * x[i, j] for i in range(S)]) <= (bounds[j] - infr.hwTh), name=f'hw_{nids[j]}') for j in range(N)]
 
 
 	# Budgeting: no more than MAX_BIN nodes are used.
-	for i in range(S):
-		for j in range(N):
-			solver.Add(x[i, j] <= b[j], name=f'bin_{instances[i].id}_{nids[j]}')
+	[solver.Add(x[i, j] <= b[j], name=f'bin_{instances[i].id}_{nids[j]}') for j in range(N) for i in range(S)]
 	
 	solver.Add(solver.Sum([b[j] for j in range(N)]) <= MAX_BIN, name='budget')
 
@@ -220,10 +216,8 @@ def or_solver(app, infr, max_bin=None, dummy=False, show_placement=False, show_c
 	
 	if type(result) != str and res:
 		res['Placement'] = placement
-		if max_bin: # results for budgeting
-			result[f'ortools-{max_bin}'] = res
-		else:
-			result['ortools'] = res
+		name = f'ortools-{max_bin}' if max_bin else 'ortools'
+		result[name] = res
 
 
 if __name__ == '__main__':

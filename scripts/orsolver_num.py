@@ -87,22 +87,17 @@ def or_solver_num(app, infr, max_bin=None, dummy=False, show_placement=False, mo
 	b = {j: solver.BoolVar(f'b_{nids[j]}') for j in range(N)}
 
 	# Budgeting: no more than MAX_BIN nodes can be used
-	for i in range(S):
-		for j in range(N):
-			solver.Add(x[i, j] <= b[j], name=f'bin_{instances[i].id}_{nids[j]}')
-
+	[solver.Add(x[i, j] <= b[j], name=f'bin_{instances[i].id}_{nids[j]}') for i in range(S) for j in range(N)]
 	solver.Add(solver.Sum(b[j] for j in range(N)) <= MAX_BIN)
 
-	# Constraint: one instance at most in one node.
-	for i in range(S):
-		solver.Add(solver.Sum([x[i, j] for j in range(N)]) == 1)
+	# Constraint: one instance at most in one node
+	[solver.Add(solver.Sum([x[i, j] for j in range(N)]) == 1) for i in range(S)]
 
 	# Constraint: cannot exceed the hw capacity of a node.
 	coeffs = [s.comp.hwreqs for s in instances]
 	bounds = [a['hwcaps'] for _, a in nodes]
 
-	for j in range(N):
-		solver.Add(solver.Sum([coeffs[i] * x[i, j] for i in range(S)]) <= (bounds[j] - infr.hwTh))
+	[solver.Add(solver.Sum([coeffs[i] * x[i, j] for i in range(S)]) <= (bounds[j] - infr.hwTh)) for j in range(N)]
 
 	# Constraints:
 	# - cannot exceed the bandwidth of a link. (FeatBW >= sum(ReqBW))
@@ -157,7 +152,6 @@ def or_solver_num(app, infr, max_bin=None, dummy=False, show_placement=False, mo
 	solver.Minimize(solver.Sum(obj_expr))
 
 	if model:
-		# create the directory if it doesn't exist
 		os.makedirs(MODELS_DIR) if not exists(MODELS_DIR) else None
 		filename = join(MODELS_DIR, f'model_num_{app.name}_{infr.get_size()}{"_dummy" if dummy else ""}.lp')
 		with open(filename, 'w') as f:
@@ -195,10 +189,8 @@ def or_solver_num(app, infr, max_bin=None, dummy=False, show_placement=False, mo
 	
 	if type(result) != str and res:
 		res['Placement'] = placement
-		if max_bin: # results for budgeting
-			result[f'ortools-num-{max_bin}'] = res
-		else:
-			result['ortools-num'] = res
+		name = f'ortools-num-{max_bin}' if max_bin else 'ortools-num'
+		result[name] = res
 
 
 if __name__ == '__main__':
