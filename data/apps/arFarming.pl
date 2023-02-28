@@ -52,20 +52,20 @@ dataFlow(energy, ctrlQueue, ctrlLevel, [enc_iot, access_logs], 0.08, 50, 700).
 dataFlow(piCamera1, imgQueue, picture, [enc_iot, obfuscated_storage], 0.1, 100, 1000).
 dataFlow(piCamera2, imgQueue, picture, [enc_iot, obfuscated_storage], 0.1, 100, 1000).
 
-dataFlow(snsQueue, mainDB, snsLevel, [anti_tampering, process_isolation], 0.04, 90, 700).
-dataFlow(ctrlQueue, mainDB, ctrlLevel, [anti_tampering, process_isolation], 0.08, 50, 700).
+dataFlow(snsQueue, mainDB, snsLevel, [anti_tampering, obfuscated_storage, process_isolation], 0.04, 90, 700).
+dataFlow(ctrlQueue, mainDB, ctrlLevel, [anti_tampering, obfuscated_storage, process_isolation], 0.08, 50, 700).
 dataFlow(imgQueue, mainDB, picture, [anti_tampering, process_isolation], 0.1, 100, 2000).
 
-dataFlow(imgQueue, calibre, picture, [], 0.1, 100, 300).
-dataFlow(calibre, piCamera1, calibrationData, [], 0.01, 50, 300).
-dataFlow(calibre, piCamera2, calibrationData, [], 0.01, 50, 300).
+dataFlow(imgQueue, calibre, picture, [firewall, public_key_crypto], 0.1, 100, 300).
+dataFlow(calibre, piCamera1, calibrationData, [enc_iot, resource_monitoring], 0.01, 50, 300).
+dataFlow(calibre, piCamera2, calibrationData, [enc_iot, resource_monitoring], 0.01, 50, 300).
 
-dataFlow(imgQueue, rectify, picture, [], 0.1, 150, 300).
-dataFlow(rectify, roiSel, rectPicture, [], 0.2, 100, 400).
-dataFlow(rectify, recognizer, rectPicture, [], 0.2, 100, 400).
-dataFlow(calibre, recognizer, calibrationData, [], 0.01, 50, 300).
-dataFlow(roiSel, recognizer, regionData, [], 0.02, 50, 400).
+dataFlow(imgQueue, rectify, picture, [anti_tampering, access_logs], 0.1, 150, 300).
+dataFlow(rectify, roiSel, rectPicture, [anti_tampering, access_logs], 0.2, 100, 400).
+dataFlow(rectify, recognizer, rectPicture, [node_isolation], 0.2, 100, 400).
+dataFlow(calibre, recognizer, calibrationData, [resource_monitoring, certificates], 0.01, 50, 300).
+dataFlow(roiSel, recognizer, regionData, [obfuscated_storage], 0.02, 50, 400).
 
-dataFlow(recognizer, visualizer, projectionData, [], 0.02, 100, 50).
-dataFlow(imgQueue, visualizer, picture, [], 0.1, 100, 50).
-dataFlow(visualizer, arViewer, info, [], 0.2, 90, 60).
+dataFlow(recognizer, visualizer, projectionData, [anti_tampering], 0.02, 100, 50).
+dataFlow(imgQueue, visualizer, picture, [anti_tampering], 0.1, 100, 50).
+dataFlow(visualizer, arViewer, info, [enc_iot], 0.2, 90, 60).
