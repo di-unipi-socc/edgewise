@@ -25,6 +25,7 @@ BUDGETS_FILE 	= join(CSV_DIR, 'budgets.csv')
 MAIN_QUERY 		 = "once(stats(App, Placement, Cost, Bins, Infs, Time))"
 ALLOC_QUERY 	 = "allocatedResources({placement}, AllocHW, AllocBW)"
 PREPROCESS_QUERY = "preprocess({app_name}, Compatibles)"
+COST_QUERY 		 = "cost({ntype}, {compid}, Cost)"
 
 # Timeout for Prolog and OR-Tools processes: default 1h
 TIMEOUT = 3600 # seconds

@@ -93,7 +93,6 @@ def or_solver(app, infr, max_bin=None, dummy=False, show_placement=False, show_c
 	
 	# Create the solver.
 	solver = pywraplp.Solver.CreateSolver('SCIP')
-	# solver.SetNumThreads(32)
 
 	# Create the variables for binpack B.
 	b = {j: solver.BoolVar(f'b_{nids[j]}') for j in range(N)}
