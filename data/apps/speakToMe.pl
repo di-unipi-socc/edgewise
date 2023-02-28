@@ -39,17 +39,17 @@ thingInstance(iphoneXS, smph).
 thingInstance(echoDot, spk).
 
 % dataFlow(Source, Dest, DataId, SecReqs, Size, Rate, MaxLat).
-dataFlow(iphoneXS, uploadPost, post, [enc], 0.4, 5, 60).
-dataFlow(uploadPost, textBucket, post, [enc], 0.4, 5, 80).
-dataFlow(textBucket, metaPost, post, [enc], 0.4, 6, 40).
-dataFlow(metaPost, mainDB, meta, [enc], 0.1, 6, 30).
-dataFlow(textBucket, publishPost, post, [enc], 0.4, 5, 60).
-dataFlow(publishPost, postQueue, post, [enc], 0.2, 5, 50).
-dataFlow(postQueue, convertTxt, post, [enc], 0.2, 8, 40).
-dataFlow(convertTxt, converter, post, [enc], 0.2, 8, 40).
-dataFlow(converter, convertTxt, speech, [enc], 0.2, 8, 30).
-dataFlow(convertTxt, echoDot, speech, [enc], 0.5, 8, 30).
-dataFlow(convertTxt, metaAudio, speech, [enc], 0.5, 8, 70).
-dataFlow(metaAudio, mainDB, meta, [enc], 0.1, 10, 20).
-dataFlow(convertTxt, uploadAudio, speech, [enc], 0.8, 8, 30).
-dataFlow(uploadAudio, audioBucket, speech, [enc], 0.8, 8, 40).
+dataFlow(iphoneXS, uploadPost, post, [authentication, obfuscated_storage], 0.4, 5, 60).
+dataFlow(uploadPost, textBucket, post, [authentication, anti_tampering, enc_storage], 0.4, 5, 80).
+dataFlow(textBucket, metaPost, post, [authentication, enc_storage], 0.4, 6, 40).
+dataFlow(metaPost, mainDB, meta, [authentication, enc_storage], 0.1, 6, 30).
+dataFlow(textBucket, publishPost, post, [access_logs, enc_storage, certificates], 0.4, 5, 60).
+dataFlow(publishPost, postQueue, post, [access_logs, enc_storage, certificates], 0.2, 5, 50).
+dataFlow(postQueue, convertTxt, post, [access_logs, enc_storage, certificates], 0.2, 8, 40).
+dataFlow(convertTxt, converter, post, [anti_tampering, access_logs, access_control], 0.2, 8, 40).
+dataFlow(converter, convertTxt, speech, [anti_tampering, access_logs, access_control], 0.2, 8, 30).
+dataFlow(convertTxt, echoDot, speech, [authentication, anti_tampering, public_key_crypto], 0.5, 8, 30).
+dataFlow(convertTxt, metaAudio, speech, [authentication, enc_storage], 0.5, 8, 70).
+dataFlow(metaAudio, mainDB, meta, [authentication, enc_storage], 0.1, 10, 20).
+dataFlow(convertTxt, uploadAudio, speech, [anti_tampering, access_logs, access_control], 0.8, 8, 30).
+dataFlow(uploadAudio, audioBucket, speech, [authentication, anti_tampering, enc_storage], 0.8, 8, 40).

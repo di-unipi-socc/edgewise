@@ -6,7 +6,7 @@ from os.path import basename, join
 import pandas as pd
 from budgeting import or_budgeting
 from classes import Infrastructure
-from classes.utils import (ALLOC_QUERY, COMPARISON_FILE, MAIN_QUERY,
+from classes.utils import (ALLOC_QUERY, COMPARISON_FILE, MAIN_QUERY, TIMEOUT,
                            PL_UTILS_DIR, check_files, df_to_file)
 from colorama import Fore, init
 from orsolver import or_solver
