@@ -23,7 +23,7 @@ requirements(dashboard, N) :-
 
 requirements(database, N) :-
     node(N, _, _, SecCaps, _),
-    provider(N, 'aws'),
+    (provider(N, 'aws'); provider(N, 'azure')),
     secure_storage(SecCaps),
     member(access_logs, SecCaps),
     member(network_ids, SecCaps),
