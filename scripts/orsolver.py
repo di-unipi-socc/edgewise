@@ -213,7 +213,7 @@ def or_solver(app, infr, max_bin=None, dummy=False, show_placement=False, model=
 	
 	if type(result) != str and res:
 		res['Placement'] = placement
-		name = f'ortools-{max_bin}' if max_bin else 'ortools'
+		name = f'ortools_{max_bin}' if max_bin else 'ortools'
 		result[name] = res
 
 

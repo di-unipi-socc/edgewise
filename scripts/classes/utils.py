@@ -1,5 +1,7 @@
+import time
+from glob import iglob
 from os import makedirs
-from os.path import abspath, dirname, exists, isfile, join
+from os.path import abspath, dirname, exists, getctime, isfile, join
 
 import numpy
 from scipy.stats import truncnorm
@@ -18,8 +20,12 @@ OUTPUT_DIR 	= join(DATA_DIR, 'output')
 CSV_DIR   = join(OUTPUT_DIR, 'csv')
 PLOTS_DIR = join(OUTPUT_DIR, 'plots')
 
-COMPARISON_FILE = join(CSV_DIR, 'comparison.csv')
-BUDGETS_FILE 	= join(CSV_DIR, 'budgets.csv')
+COMPARE_FILE 	= "compare_{}.csv".format(time.strftime("%Y%m%d-%H%M%S"))
+COMPARE_PATTERN = join(CSV_DIR, "compare_*.csv")
+COMPARE_PATH 	= join(CSV_DIR, COMPARE_FILE)
+BUDGETS_FILE 	= "budgets_{}.csv".format(time.strftime("%Y%m%d-%H%M%S"))
+BUDGETS_PATTERN = join(CSV_DIR, "budgets_*.csv")
+BUDGETS_PATH 	= join(CSV_DIR, BUDGETS_FILE)
 
 # Prolog queries
 MAIN_QUERY 		 = "once(stats(App, Placement, Cost, Bins, Infs, Time))"
@@ -78,6 +84,11 @@ def df_to_file(df, file_path):
 	dir = dirname(file_path)
 	makedirs(dir) if not exists(dir) else None		
 	df.to_csv(file_path, mode='a', header=(not isfile(file_path)))
+
+
+def get_latest_file(pattern):
+	# get the latest file in the directory respecting the pattern
+	return max(iglob(pattern), key=getctime)
 
 
 def normal_distribution(min_value=32, max_value=1024, center=512, size_of_federation=128, stepping=32, deviation=None):

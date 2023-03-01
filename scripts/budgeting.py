@@ -5,7 +5,7 @@ from multiprocessing import Manager, Process
 
 import pandas as pd
 from classes import Application
-from classes.utils import BUDGETS_FILE, check_app, check_infr, df_to_file
+from classes.utils import BUDGETS_PATH, check_app, check_infr, df_to_file
 from colorama import Fore, init
 from orsolver import or_solver
 from orsolver_num import or_solver_num
@@ -47,7 +47,7 @@ def get_best(results, save_results=False):
 		best = find_best(df).to_dict()
 		best_tab = tabulate([best], headers='keys', tablefmt='fancy_grid', numalign="center", stralign="center")
 		print(Fore.LIGHTGREEN_EX + best_tab)
-		df_to_file(df, BUDGETS_FILE) if save_results else None
+		df_to_file(df, BUDGETS_PATH) if save_results else None
 	
 
 	return best
@@ -76,7 +76,7 @@ def or_budgeting(app, infr, version='pre', save_results=False, result=""):
 
 	res = get_best(bdg_result, save_results=save_results)
 	if type(result) != str and res:
-		name = 'ortools' if version == 'pre' else 'ortools-num'
+		name = 'ortools' if version == 'pre' else 'ortools_num'
 		result[name] = res
 
 

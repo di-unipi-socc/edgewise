@@ -6,7 +6,7 @@ from os.path import basename, join
 import pandas as pd
 from budgeting import or_budgeting
 from classes import Infrastructure
-from classes.utils import (ALLOC_QUERY, COMPARISON_FILE, MAIN_QUERY, TIMEOUT,
+from classes.utils import (ALLOC_QUERY, COMPARE_PATH, MAIN_QUERY, TIMEOUT,
                            PL_UTILS_DIR, check_files, df_to_file)
 from colorama import Fore, init
 from orsolver import or_solver
@@ -48,7 +48,7 @@ def print_result(result, show_placement, save_results):
 	placements = result.pop('Placement')
 
 	if save_results:
-		df_to_file(result, COMPARISON_FILE)
+		df_to_file(result, COMPARE_PATH)
 
 	result.drop(columns=['App', 'Size', 'AllocHW', 'AllocBW'], inplace=True)
 	result.rename(columns={"Bins": "Distinct Nodes", "Infs": "Dimension", "Time": "Time(s)"}, inplace=True)

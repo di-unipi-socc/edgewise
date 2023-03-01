@@ -1,6 +1,4 @@
-# My files
-# TODO: remove output/ when ending experiments
-output/ 
+# My files 
 data/infrs/*.pl
 
 # Byte-compiled / optimized / DLL files

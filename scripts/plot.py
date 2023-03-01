@@ -1,10 +1,10 @@
-import os
+from os import makedirs
 from os.path import basename, exists, join
 
 import matplotlib.pyplot as plt
 import pandas as pd
 import seaborn as sns
-from classes.utils import COMPARISON_FILE, PLOTS_DIR
+from classes.utils import COMPARE_PATTERN, PLOTS_DIR, get_latest_file
 from colorama import Fore, init
 
 sizes = ["16", "32", "64", "128", "256", "512"]
@@ -33,19 +33,22 @@ def size_vs(field, df, legend=True, lineplot=True, logy=False):
     # save plot
     plt.savefig(join(PLOTS_DIR, "{}_vs_size.png".format(field.lower())), dpi=600)
     plt.close()
-    print("{} vs Size, DONE".format(field))
+    print(Fore.LIGHTCYAN_EX + "✅ {} vs Size".format(field))
 
 
 if __name__ == '__main__':
     init(autoreset=True)
     
     # create plots directory, if not exists
-    os.makedirs(PLOTS_DIR) if not exists(PLOTS_DIR) else None
+    makedirs(PLOTS_DIR) if not exists(PLOTS_DIR) else None
 
     try:
-        df = pd.read_csv(COMPARISON_FILE)
+        filename = get_latest_file(COMPARE_PATTERN)
+        df = pd.read_csv(filename)
+        print(Fore.LIGHTGREEN_EX + "Plotting from file:", end=" ")
+        print(Fore.LIGHTYELLOW_EX + basename(filename), end="\n")
         size_vs("Time", df, logy= True)
         size_vs("Change", df)
         size_vs("Bins", df, lineplot=False)
-    except FileNotFoundError as e:
+    except (ValueError, FileNotFoundError) as e:
         print(Fore.LIGHTRED_EX + "File not found: {}.".format(basename(e.filename)))
