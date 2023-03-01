@@ -51,7 +51,7 @@ def parse_compatibles(r):
 	return compatibles
 
 		
-def or_solver(app, infr, max_bin=None, dummy=False, show_placement=False, show_compatibles=False, model=False, result=""):
+def or_solver(app, infr, max_bin=None, dummy=False, show_placement=False, model=False, result=""):
 	
 	if type(result) != str:  # if result is not a string, redirect output tu /dev/null
 		sys.stdout = open(os.devnull, 'w')
@@ -83,13 +83,7 @@ def or_solver(app, infr, max_bin=None, dummy=False, show_placement=False, show_c
 	compatibles = get_compatibles(app.get_file(), infr.get_file(), app.name)
 	if not compatibles:
 		print(Fore.LIGHTRED_EX + "No compatibles found.")
-	
-	if show_compatibles:
-		for k, v in compatibles.items():
-			if not len(v):
-				raise ValueError(Fore.LIGHTRED_EX + "No compatibles for '{}'.".format(k))
-			else:
-				print(Fore.LIGHTGREEN_EX + "Compatibles for '{}': {}".format(k, v))
+		return None
 	
 	# Create the solver.
 	solver = pywraplp.Solver.CreateSolver('SCIP')

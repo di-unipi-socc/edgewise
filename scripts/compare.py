@@ -136,7 +136,7 @@ def main(app, infr, versions, budgeting=False, show_placement=False, ortools=Fal
 		if budgeting:
 			p = Process(name='budgeting', target=or_budgeting, args=(app, infr, 'pre', False, result))
 		else:
-			p = Process(name='ortools', target=or_solver, args=(app, infr, None, dummy, show_placement, False, False, result))
+			p = Process(name='ortools', target=or_solver, args=(app, infr, None, dummy, show_placement, False, result))
 					
 		p.start()
 		processes.append(p)

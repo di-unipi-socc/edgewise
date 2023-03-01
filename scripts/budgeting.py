@@ -64,7 +64,7 @@ def or_budgeting(app, infr, version='pre', save_results=False, result=""):
 	processes = []
 	for i in range(S):
 		if version == 'pre':
-			p = Process(target=or_solver, args=(app.get_file(), infr, i+1, False, False, False, False, bdg_result))
+			p = Process(target=or_solver, args=(app.get_file(), infr, i+1, False, False, False, bdg_result))
 		else:
 			p = Process(target=or_solver_num, args=(app.get_file(), infr, i+1, False, False, False, bdg_result))
 		p.start()
