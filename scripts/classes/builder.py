@@ -13,8 +13,8 @@ from utils import INFRS_DIR, normal_distribution
 
 HW_PLATFORMS 	= ['arm64', 'x86']
 SW_CAPS 		= ['ubuntu', 'mySQL', 'python', 'js', 'gcc']
-LOCATIONS 		= ['de', 'es', 'fr', 'it']
-PROVIDERS 		= ['aws', 'azure', 'gcp', 'ibm', 'yandex']
+LOCATIONS 		= ['de', 'es', 'it']
+PROVIDERS 		= ['aws', 'azure', 'ibm',]
 THINGS 			= ['soil', 'heat', 'water', 'nutrient', 'energy', 'piCamera1', 'piCamera2', 'arViewer', # arFarming
 		  		'cam11', 'cam12', 'cam21', 'cam22', #distSecurity
 		  		'iphoneXS', 'echoDot'] # speakToMe
