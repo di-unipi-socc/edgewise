@@ -3,6 +3,8 @@
 ROOT_DIR=$(dirname $(dirname $(dirname $(realpath $0))))
 PYTHON=$ROOT_DIR/.venv/bin/python3
 PYTHON_SCRIPTS_DIR=$ROOT_DIR/scripts
+CSV_DIR=$ROOT_DIR/data/output/csv
+CSV_FILE=$CSV_DIR/compare_now.csv
 
 INFRS=(16 32 64 128 256 512)
 APPS=(distSecurity arFarming speakToMe)
@@ -19,3 +21,6 @@ for j in {0..2}; do
         fi
     done
 done
+
+# Rename csv file with timestamp
+mv ${CSV_FILE} ${CSV_DIR}/compare_$(date +%Y%m%d_%H%M%S).csv

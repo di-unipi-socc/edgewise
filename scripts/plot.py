@@ -32,7 +32,7 @@ def size_vs(field, df, legend=True, lineplot=True, logy=False):
     plt.legend(loc='upper left') if legend else plt.legend([],[], frameon=False)
 
     # save plot
-    plt.savefig(PLOT_PATH.format("{}_vs_size.png".format(field.lower())), dpi=600)
+    plt.savefig(PLOT_PATH.format(name="{}_vs_size.png".format(field.lower())), dpi=600)
     plt.close()
     print(Fore.LIGHTCYAN_EX + "✅ {} vs Size".format(field))
 
@@ -51,5 +51,7 @@ if __name__ == '__main__':
         size_vs("Time", df, logy= True)
         size_vs("Change", df)
         size_vs("Bins", df, lineplot=False)
-    except (ValueError, FileNotFoundError) as e:
+    except FileNotFoundError as e:
         print(Fore.LIGHTRED_EX + "File not found: {}.".format(basename(e.filename)))
+    except ValueError:
+        print(Fore.LIGHTRED_EX + "No file with pattern: {}".format(COMPARE_PATTERN))

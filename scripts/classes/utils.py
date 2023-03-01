@@ -6,6 +6,8 @@ from os.path import abspath, dirname, exists, getctime, isfile, join
 import numpy
 from scipy.stats import truncnorm
 
+TIME_FORMAT = "%Y%m%d-%H%M%S"
+
 # Paths to the main directories
 ROOT_DIR 	 = dirname(dirname(dirname(abspath(__file__))))
 DATA_DIR 	 = join(ROOT_DIR, 'data')
@@ -20,16 +22,16 @@ OUTPUT_DIR 	= join(DATA_DIR, 'output')
 CSV_DIR   = join(OUTPUT_DIR, 'csv')
 PLOTS_DIR = join(OUTPUT_DIR, 'plots')
 
-PLOTS_SUBDIR = join(PLOTS_DIR, time.strftime("%Y%m%d-%H%M%S"))
+PLOTS_SUBDIR = join(PLOTS_DIR, time.strftime(TIME_FORMAT))
 PLOT_PATH 	= join(PLOTS_SUBDIR, "{name}.png")
 
-COMPARE_FILE 	= "compare_{}.csv".format(time.strftime("%Y%m%d-%H%M%S"))
-COMPARE_PATTERN = join(CSV_DIR, "compare_*.csv")
-COMPARE_PATH 	= join(CSV_DIR, COMPARE_FILE)
+COMPARE_FILE 	= "compare_{}.csv"
+COMPARE_PATTERN = join(CSV_DIR, COMPARE_FILE.format("*"))
+COMPARE_PATH 	= join(CSV_DIR, COMPARE_FILE.format("now"))
 
-BUDGETS_FILE 	= "budgets_{}.csv".format(time.strftime("%Y%m%d-%H%M%S"))
-BUDGETS_PATTERN = join(CSV_DIR, "budgets_*.csv")
-BUDGETS_PATH 	= join(CSV_DIR, BUDGETS_FILE)
+BUDGETS_FILE 	= "budgets_{}.csv"
+BUDGETS_PATTERN = join(CSV_DIR, BUDGETS_FILE.format("*"))
+BUDGETS_PATH 	= join(CSV_DIR, BUDGETS_FILE.format("now"))
 
 # Prolog queries
 MAIN_QUERY 		 = "once(stats(App, Placement, Cost, Bins, Infs, Time))"
