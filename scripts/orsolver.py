@@ -20,7 +20,6 @@ def init_parser() -> ap.ArgumentParser:
 
 	p.add_argument("-p", "--placement", action="store_true", help="if set, shows the obtained placement."),
 	p.add_argument("-d", "--dummy", action="store_true", help="if set, uses an infrastructure with dummy links (low lat, high bw)."),
-	p.add_argument("-c", "--compatibles", action="store_true", help="if set, shows the obtained compatibles."),
 	p.add_argument("-m", "--model", action="store_true", help="if set, stores the model in LP format."),
 	p.add_argument("app", help="Application name.")
 	p.add_argument("infr", help="Infrastructure name.")
@@ -228,4 +227,4 @@ if __name__ == '__main__':
 	app = check_app(args.app)
 	infr = check_infr(args.infr, dummy=args.dummy)
 
-	or_solver(app=app, infr=infr, dummy=args.dummy, show_placement=args.placement, show_compatibles=args.compatibles, model=args.model)
+	or_solver(app=app, infr=infr, dummy=args.dummy, show_placement=args.placement, model=args.model)
