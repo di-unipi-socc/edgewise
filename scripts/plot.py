@@ -32,7 +32,7 @@ def size_vs(field, df, legend=True, lineplot=True, logy=False):
     plt.legend(loc='upper left') if legend else plt.legend([],[], frameon=False)
 
     # save plot
-    plt.savefig(PLOT_PATH.format(name="{}_vs_size.png".format(field.lower())), dpi=600)
+    plt.savefig(PLOT_PATH.format(name="{}_vs_size".format(field.lower())), dpi=600)
     plt.close()
     print(Fore.LIGHTCYAN_EX + "✅ {} vs Size".format(field))
 
