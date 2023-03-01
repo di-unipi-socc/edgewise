@@ -8,11 +8,12 @@ from classes.utils import (COMPARE_PATTERN, PLOT_PATH, PLOTS_SUBDIR,
                            get_latest_file)
 from colorama import Fore, init
 
-sizes = ["16", "32", "64", "128", "256", "512"]
+sizes = [2**i for i in range(4, 10)]
 x = [i for i in range(len(sizes))]
+PALETTE = "colorblind" # "Set2"
 
 
-def size_vs(field, df, legend=True, lineplot=True, logy=False):
+def size_vs(field, df, legend="best", lineplot=True, logy=False):
     # set seaborn context
     sns.set(style="whitegrid")
     sns.set_context("notebook", font_scale=1.5, rc={"lines.linewidth": 2.5})
@@ -20,16 +21,17 @@ def size_vs(field, df, legend=True, lineplot=True, logy=False):
     # choose plot
     plt.figure(figsize=(10, 6))
     if lineplot:
-        sns.lineplot(x="Size", y=field, data=df, hue="Version", palette="Set2")
+        sns.lineplot(x="Size", y=field, data=df, markers=True, style='Version', hue="Version", palette=PALETTE)
     else:
-        sns.barplot(x="Size", y=field, data=df, hue="Version", palette="Set2")
+        sns.barplot(x="Size", y=field, data=df, hue="Version", palette=PALETTE)
+        plt.xticks(x, sizes)
     
     # set labels and y-scale
     plt.xlabel("Infrastructure Size")
     plt.ylabel(field)
     plt.yscale('log') if logy else None
     plt.title("{} vs Size".format(field))
-    plt.legend(loc='upper left') if legend else plt.legend([],[], frameon=False)
+    plt.legend(loc=legend) if legend else plt.legend([],[], frameon=False)
 
     # save plot
     plt.savefig(PLOT_PATH.format(name="{}_vs_size".format(field.lower())), dpi=600)
@@ -49,7 +51,7 @@ if __name__ == '__main__':
         print(Fore.LIGHTGREEN_EX + "Plotting from file:", end=" ")
         print(Fore.LIGHTYELLOW_EX + basename(filename), end="\n")
         size_vs("Time", df, logy= True)
-        size_vs("Change", df)
+        size_vs("Change", df, legend="lower right")
         size_vs("Bins", df, lineplot=False)
     except FileNotFoundError as e:
         print(Fore.LIGHTRED_EX + "File not found: {}.".format(basename(e.filename)))

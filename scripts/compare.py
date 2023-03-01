@@ -124,7 +124,7 @@ def pl_process(version, app, infr, result):
 				q = q[0]
 				q['Placement'] = prolog_to_dict(q['Placement'])
 				q['Size'] = Infrastructure(infr).get_size()
-				result[basename(version)] = q
+				result[basename(version)[:-3]] = q
 			else:
 				print(Fore.LIGHTRED_EX + "No PL solution found for {}".format(basename(version)))
 
