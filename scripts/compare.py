@@ -6,8 +6,8 @@ from os.path import basename, join
 import pandas as pd
 from budgeting import or_budgeting
 from classes import Infrastructure
-from classes.utils import (ALLOC_QUERY, COMPARE_PATH, MAIN_QUERY, TIMEOUT,
-                           PL_UTILS_DIR, check_files, df_to_file)
+from classes.utils import (ALLOC_QUERY, COMPARE_PATH, MAIN_QUERY, PL_UTILS_DIR,
+                           TIMEOUT, check_files, df_to_file)
 from colorama import Fore, init
 from orsolver import or_solver
 from orsolver_num import or_solver_num

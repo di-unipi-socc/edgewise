@@ -20,9 +20,13 @@ OUTPUT_DIR 	= join(DATA_DIR, 'output')
 CSV_DIR   = join(OUTPUT_DIR, 'csv')
 PLOTS_DIR = join(OUTPUT_DIR, 'plots')
 
+PLOTS_SUBDIR = join(PLOTS_DIR, time.strftime("%Y%m%d-%H%M%S"))
+PLOT_PATH 	= join(PLOTS_SUBDIR, "{name}.png")
+
 COMPARE_FILE 	= "compare_{}.csv".format(time.strftime("%Y%m%d-%H%M%S"))
 COMPARE_PATTERN = join(CSV_DIR, "compare_*.csv")
 COMPARE_PATH 	= join(CSV_DIR, COMPARE_FILE)
+
 BUDGETS_FILE 	= "budgets_{}.csv".format(time.strftime("%Y%m%d-%H%M%S"))
 BUDGETS_PATTERN = join(CSV_DIR, "budgets_*.csv")
 BUDGETS_PATH 	= join(CSV_DIR, BUDGETS_FILE)

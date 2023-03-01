@@ -4,7 +4,8 @@ from os.path import basename, exists, join
 import matplotlib.pyplot as plt
 import pandas as pd
 import seaborn as sns
-from classes.utils import COMPARE_PATTERN, PLOTS_DIR, get_latest_file
+from classes.utils import (COMPARE_PATTERN, PLOT_PATH, PLOTS_SUBDIR,
+                           get_latest_file)
 from colorama import Fore, init
 
 sizes = ["16", "32", "64", "128", "256", "512"]
@@ -31,7 +32,7 @@ def size_vs(field, df, legend=True, lineplot=True, logy=False):
     plt.legend(loc='upper left') if legend else plt.legend([],[], frameon=False)
 
     # save plot
-    plt.savefig(join(PLOTS_DIR, "{}_vs_size.png".format(field.lower())), dpi=600)
+    plt.savefig(PLOT_PATH.format("{}_vs_size.png".format(field.lower())), dpi=600)
     plt.close()
     print(Fore.LIGHTCYAN_EX + "✅ {} vs Size".format(field))
 
@@ -40,7 +41,7 @@ if __name__ == '__main__':
     init(autoreset=True)
     
     # create plots directory, if not exists
-    makedirs(PLOTS_DIR) if not exists(PLOTS_DIR) else None
+    makedirs(PLOTS_SUBDIR) if not exists(PLOTS_SUBDIR) else None
 
     try:
         filename = get_latest_file(COMPARE_PATTERN)
