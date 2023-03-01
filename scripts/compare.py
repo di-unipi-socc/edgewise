@@ -44,6 +44,10 @@ def print_result(result, show_placement, save_results):
 	if 'ortools' in result.index:
 		opt_cost = float(result.loc[['ortools']]['Cost'])
 		result['Change'] = result['Cost'].apply(lambda x: get_change(x, opt_cost))
+	
+	if 'ortools_num' in result.index:
+		opt_cost = float(result.loc[['ortools_num']]['Cost'])
+		result['Change_num'] = result['Cost'].apply(lambda x: get_change(x, opt_cost))
 
 	placements = result.pop('Placement')
 
