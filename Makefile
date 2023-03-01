@@ -1,11 +1,16 @@
-ROOT_DIR			= $(shell dirname $(realpath $(lastword $(MAKEFILE_LIST))))
+#!make
+include .env
+
+ROOT_DIR 			= $(shell pwd)
 OUTPUT_DIR			= $(ROOT_DIR)/output
 SCRIPTS_DIR			= $(ROOT_DIR)/scripts
 BASH_SCRIPTS_DIR 	= $(SCRIPTS_DIR)/bash
 
+URL = "https://api.telegram.org/bot$(BOT_ID)/sendMessage"
+
 PYTHON		= $(ROOT_DIR)/.venv/bin/python3
 BASH 		= $(shell which bash)
-TARGETS		= cleanall build comp plot
+TARGETS		= cleanall build comp plot notify
 
 .ONESHELL:
 .PHONY: all clean-plot clean-csv cleanall build comp exp plot
@@ -31,3 +36,6 @@ exp:
 
 plot:
 	$(PYTHON) $(SCRIPTS_DIR)/plot.py
+
+notify:
+	curl -s -X POST $(URL) -d chat_id=$(CHAT_ID) -d text="Experiment finished"
