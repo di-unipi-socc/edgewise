@@ -87,7 +87,7 @@ def or_solver_num(app, infr, max_bin=None, dummy=False, show_placement=False, mo
 	b = {j: solver.BoolVar(f'b_{nids[j]}') for j in range(N)}
 
 	# Budgeting: no more than MAX_BIN nodes can be used
-	[solver.Add(x[i, j] <= b[j], name=f'bin_{instances[i].id}_{nids[j]}') for i in range(S) for j in range(N)]
+	[solver.Add(x[i, j] <= b[j], name=f'bin_{instances[i].id}_{nids[j]}') for j in range(N) for i in range(S)]
 	solver.Add(solver.Sum(b[j] for j in range(N)) <= MAX_BIN)
 
 	# Constraint: one instance at most in one node
