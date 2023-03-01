@@ -1,7 +1,7 @@
 # My files
 # TODO: remove output/ when ending experiments
 output/ 
-data/infrs/*
+data/infrs/*.pl
 
 # Byte-compiled / optimized / DLL files
 *__pycache__*
