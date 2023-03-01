@@ -82,7 +82,9 @@ def or_solver(app, infr, max_bin=None, dummy=False, show_placement=False, model=
 	compatibles = get_compatibles(app.get_file(), infr.get_file(), app.name)
 	if not compatibles:
 		print(Fore.LIGHTRED_EX + "No compatibles found.")
-		return None
+		name = f'ortools-{max_bin}' if max_bin else 'ortools'
+		result[name] = res
+		return
 	
 	# Create the solver.
 	solver = pywraplp.Solver.CreateSolver('SCIP')
