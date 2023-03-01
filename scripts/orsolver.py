@@ -82,7 +82,7 @@ def or_solver(app, infr, max_bin=None, dummy=False, show_placement=False, show_c
 
 	compatibles = get_compatibles(app.get_file(), infr.get_file(), app.name)
 	if not compatibles:
-		raise ValueError(Fore.LIGHTRED_EX + "No compatibles found.")
+		print(Fore.LIGHTRED_EX + "No compatibles found.")
 	
 	if show_compatibles:
 		for k, v in compatibles.items():

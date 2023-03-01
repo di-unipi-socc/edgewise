@@ -17,7 +17,6 @@ requirements(storage, N) :-
 requirements(dashboard, N) :-
     node(N, _, _, SecCaps, _),
     location(N, 'it'),
-    member(host_ids, SecCaps),
     member(resource_monitoring, SecCaps),
     member(public_key_crypto, SecCaps),
     member(authentication, SecCaps).
