@@ -58,6 +58,15 @@ def or_solver(app, infr, max_bin=None, dummy=False, show_placement=False, model=
 	app = Application(app)
 	infr = Infrastructure(infr)
 
+	# look for compatibles nodes (Prolog pre-processing)
+	# if this phase fails, return empty result
+	compatibles = get_compatibles(app.get_file(), infr.get_file(), app.name)
+	if not compatibles:
+		print(Fore.LIGHTRED_EX + "No compatibles found.")
+		# name = f'ortools-{max_bin}' if max_bin else 'ortools'
+		# result[name] = None
+		return None
+
 	# Set ThingInstance nodes, knowing the infrastructure
 	app.set_things_from_infr(infr)
 
@@ -78,13 +87,6 @@ def or_solver(app, infr, max_bin=None, dummy=False, show_placement=False, model=
 
 	info = [['Instances', S], ['Nodes', N], ['Links', L], ['Data Flows', DF]]
 	print(Fore.LIGHTCYAN_EX + tabulate(info))
-
-	compatibles = get_compatibles(app.get_file(), infr.get_file(), app.name)
-	if not compatibles:
-		print(Fore.LIGHTRED_EX + "No compatibles found.")
-		name = f'ortools-{max_bin}' if max_bin else 'ortools'
-		result[name] = res
-		return
 	
 	# Create the solver.
 	solver = pywraplp.Solver.CreateSolver('SCIP')

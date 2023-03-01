@@ -18,7 +18,7 @@ def init_parser() -> ap.ArgumentParser:
 
 	p.add_argument("-s", "--save", action="store_true", help="if set, saves the results in csv format.")
 	p.add_argument("-d", "--dummy", action="store_true",
-	               help="if set, uses an infrastructure with dummy links (low lat, high bw).")
+				   help="if set, uses an infrastructure with dummy links (low lat, high bw).")
 	p.add_argument("app", help="Application name.")
 	p.add_argument("infr", help="Infrastructure name.")
 
@@ -26,30 +26,31 @@ def init_parser() -> ap.ArgumentParser:
 
 
 def find_best(results: pd.DataFrame):
-    # get row with min # bins at the min cost
-    min_cost = results['Cost'].min()
-    best = results.loc[(results['Cost'] == min_cost)]
-    best = best.iloc[0]
-    return best
+	# get row with min # bins at the min cost
+	min_cost = results['Cost'].min()
+	best = results.loc[(results['Cost'] == min_cost)]
+	best = best.iloc[0]
+	return best
 
 
 def get_best(results, save_results=False):
-    df = pd.DataFrame.from_dict(results, orient='index')
-    df.index.name = 'MaxBins'
-    df.sort_index(inplace=True)
-    
-    tab = tabulate(df, headers='keys', tablefmt='fancy_grid', numalign="center", stralign="center")
-    print(Fore.LIGHTYELLOW_EX + tab)
-    
-    best = None
-    if not df.empty:
-        best = find_best(df).to_dict()
-        best_tab = tabulate([best], headers='keys', tablefmt='fancy_grid', numalign="center", stralign="center")
-        print(Fore.LIGHTGREEN_EX + best_tab)
+	df = pd.DataFrame.from_dict(results, orient='index')
+	df.index.name = 'MaxBins'
+	df.sort_index(inplace=True)
+	
+	tab = tabulate(df, headers='keys', tablefmt='fancy_grid', numalign="center", stralign="center")
+	print(Fore.LIGHTYELLOW_EX + tab)
+	
+	best = None
+	if not df.empty:
+		print("AAAA:", df)
+		best = find_best(df).to_dict()
+		best_tab = tabulate([best], headers='keys', tablefmt='fancy_grid', numalign="center", stralign="center")
+		print(Fore.LIGHTGREEN_EX + best_tab)
+		df_to_file(df, BUDGETS_FILE) if save_results else None
+	
 
-        df_to_file(df, BUDGETS_FILE) if save_results else None
-
-    return best
+	return best
 
 def or_budgeting(app, infr, version='pre', save_results=False, result=""):
 	
@@ -86,7 +87,7 @@ if __name__ == '__main__':
 
 	parser = init_parser()
 	args = parser.parse_args()
-    
+	
 	app = check_app(args.app)
 	infr = check_infr(args.infr, args.dummy)
 
