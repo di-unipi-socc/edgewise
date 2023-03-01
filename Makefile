@@ -2,8 +2,9 @@
 include .env
 
 ROOT_DIR 			= $(shell pwd)
-OUTPUT_DIR			= $(ROOT_DIR)/output
+DATA_DIR			= $(ROOT_DIR)/data
 SCRIPTS_DIR			= $(ROOT_DIR)/scripts
+OUTPUT_DIR			= $(DATA_DIR)/output
 BASH_SCRIPTS_DIR 	= $(SCRIPTS_DIR)/bash
 
 URL = "https://api.telegram.org/bot$(BOT_ID)/sendMessage"
