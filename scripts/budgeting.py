@@ -43,7 +43,6 @@ def get_best(results, save_results=False):
 	
 	best = None
 	if not df.empty:
-		print("AAAA:", df)
 		best = find_best(df).to_dict()
 		best_tab = tabulate([best], headers='keys', tablefmt='fancy_grid', numalign="center", stralign="center")
 		print(Fore.LIGHTGREEN_EX + best_tab)
