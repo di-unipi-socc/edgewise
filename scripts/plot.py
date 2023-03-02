@@ -13,7 +13,7 @@ x = [i for i in range(len(sizes))]
 PALETTE = "colorblind" # "Set2"
 
 
-def size_vs(field, df, legend="best", lineplot=True, logy=False, palette=PALETTE):
+def size_vs(field, df, name=None, legend="best", lineplot=True, logy=False, palette=PALETTE):
     # set seaborn context
     sns.set(style="whitegrid")
     sns.set_context("notebook", font_scale=1.5, rc={"lines.linewidth": 2.5})
@@ -34,9 +34,9 @@ def size_vs(field, df, legend="best", lineplot=True, logy=False, palette=PALETTE
     plt.legend(loc=legend) if legend else plt.legend([],[], frameon=False)
 
     # save plot
-    plt.savefig(PLOT_PATH.format(name="{}_vs_size".format(field.lower())), dpi=600)
+    plt.savefig(PLOT_PATH.format(name="{}_vs_size".format((name if name else field).lower())), dpi=600)
     plt.close()
-    print(Fore.LIGHTCYAN_EX + "✅ {} vs Size".format(field))
+    print(Fore.LIGHTCYAN_EX + "✅ {} vs Size".format(name if name else field))
 
 
 if __name__ == '__main__':
@@ -56,11 +56,9 @@ if __name__ == '__main__':
 
     # remove 'ortools' Version from df
     df_num = df[df.Version != 'ortools']
-    size_vs("Time", df_num, logy= True)
-    size_vs("Change", df_num, legend="lower right")
+    size_vs("Time", df_num, name="time_num", logy= True)
+    size_vs("Change_num", df_num, legend="lower right")
     size_vs("Bins", df_num, lineplot=False)
 
-    # get only 'ortools' Version from df
-    # df_ortools = df[df.Version == 'ortools']
-    palette = {c: "red" if c == "ortools" else "blue" for c in df.Version.unique()}
+    palette = {c: "red" if c == "ortools" else "gray" for c in df.Version.unique()}
     size_vs("Time", df, logy= True, palette=palette)
