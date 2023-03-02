@@ -1,4 +1,4 @@
-# newDAPlacer
+# EdgeWise
 
 [daplacer](https://github.com/di-unipi-socc/daplacer) 2.0.
 It compares a Prolog reasoner with [Google OR-Tools](https://github.com/google/or-tools), on the placement of (micro)service-based applications on a cloud infrastructure.
