@@ -4,6 +4,7 @@ from os import makedirs
 from os.path import abspath, dirname, exists, getctime, isfile, join
 
 import numpy
+from pandas import concat, read_csv
 from scipy.stats import truncnorm
 
 TIME_FORMAT = "%Y%m%d-%H%M%S"
@@ -95,6 +96,12 @@ def df_to_file(df, file_path):
 def get_latest_file(pattern):
 	# get the latest file in the directory respecting the pattern
 	return max(iglob(pattern), key=getctime)
+
+
+def merge_results():
+	files = iglob(COMPARE_PATTERN)
+	df = concat(map(read_csv, files), ignore_index=True)
+	return df
 
 
 def normal_distribution(min_value=32, max_value=1024, center=512, size_of_federation=128, stepping=32, deviation=None):

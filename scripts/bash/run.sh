@@ -7,7 +7,8 @@ DATETIME=$2
 CSV_FILE=compare_$DATETIME.csv
 
 INFRS=(16 32 64 128 256 512)
-APPS=(distSecurity arFarming speakToMe)
+APPS=(speakToMe)
+# APPS=(distSecurity arFarming speakToMe)
 
 for j in {0..2}; do
     for i in {0..5}; do
