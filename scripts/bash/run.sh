@@ -11,7 +11,7 @@ INFRS=(16 32 64 128 256 512)
 
 for i in {0..5}; do
     if [ "$1" = "comp" ]; then
-        ${PYTHON} ${PYTHON_SCRIPTS_DIR}/compare.py -b -on -o -s -f ${CSV_FILE} speakToMe ${INFRS[$i]}_${DATETIME} binpack_num
+        ${PYTHON} ${PYTHON_SCRIPTS_DIR}/compare.py -b -on -o -s -f ${CSV_FILE} speakToMe ${INFRS[$i]}_${DATETIME} binpack binpack_num
     elif [ "$1" = "exp" ]; then
         ${PYTHON} ${PYTHON_SCRIPTS_DIR}/experiments.py speakToMe ${INFRS[$i]}_${DATETIME}
     else
