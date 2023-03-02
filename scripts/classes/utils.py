@@ -1,7 +1,7 @@
 import time
 from glob import iglob
 from os import makedirs
-from os.path import abspath, dirname, exists, getctime, isfile, join
+from os.path import abspath, dirname, exists, getmtime, isfile, join
 
 import numpy
 from scipy.stats import truncnorm
@@ -94,7 +94,7 @@ def df_to_file(df, file_path):
 
 def get_latest_file(pattern):
 	# get the latest file in the directory respecting the pattern
-	return max(iglob(pattern), key=getctime)
+	return max(iglob(pattern), key=getmtime)
 
 
 def normal_distribution(min_value=32, max_value=1024, center=512, size_of_federation=128, stepping=32, deviation=None):
