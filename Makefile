@@ -11,7 +11,7 @@ URL = "https://api.telegram.org/bot$(BOT_ID)/sendMessage"
 
 PYTHON		= $(ROOT_DIR)/.venv/bin/python3
 BASH 		= $(shell which bash)
-TARGETS		= build comp plot notify
+TARGETS		= notify_start build comp plot notify_end
 
 .ONESHELL:
 .PHONY: all clean-plot clean-csv cleanall build comp exp plot
