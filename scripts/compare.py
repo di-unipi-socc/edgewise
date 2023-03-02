@@ -6,8 +6,8 @@ from os.path import basename, join
 import pandas as pd
 from budgeting import or_budgeting
 from classes import Infrastructure
-from classes.utils import (ALLOC_QUERY, COMPARE_PATH, MAIN_QUERY, PL_UTILS_DIR,
-                           TIMEOUT, check_files, df_to_file)
+from classes.utils import (ALLOC_QUERY, COMPARE_PATH, CSV_DIR, MAIN_QUERY,
+                           PL_UTILS_DIR, TIMEOUT, check_files, df_to_file)
 from colorama import Fore, init
 from orsolver import or_solver
 from orsolver_num import or_solver_num
@@ -27,6 +27,7 @@ def init_parser() -> ap.ArgumentParser:
 	p.add_argument("-on", "--ortools-num", action="store_true", help="if set, compares also with Google OR-Tools model (only numeric constraints).")
 	p.add_argument("-s", "--save", action="store_true", help="if set, saves the results in csv format.")
 	p.add_argument("-t", "--timeout", type=int, default=TIMEOUT, help="Timeout for both OR-Tools and Prolog processes.")
+	p.add_argument("-f", "--file", type=str, default=COMPARE_PATH, help="Name of the file where to save the results.")
 
 	p.add_argument("app", help="Application name.")
 	p.add_argument("infr", help="Infrastructure name.")
@@ -186,6 +187,8 @@ if __name__ == "__main__":
 	args = parser.parse_args()
 	
 	TIMEOUT = args.timeout
+	COMPARE_PATH = join(CSV_DIR, args.file) if args.file else COMPARE_PATH
+
 	app, infr, vs = check_files(app=args.app, infr=args.infr, dummy_infr=args.dummy, versions=args.versions)
 	
 	info = [['APPLICATION:', basename(app)],
@@ -195,6 +198,8 @@ if __name__ == "__main__":
 			['OR-TOOLS:', "YES" if args.ortools else "NO"],
 			['PL VERSIONS:', [basename(v) for v in vs]],
 			['SAVE RESULTS:', "YES" if args.save else "NO"]]
+	info.append(['FILE:', COMPARE_PATH]) if args.save else None
+
 	print(Fore.LIGHTCYAN_EX + tabulate(info))
 
 	main(app=app, infr=infr, versions=vs, show_placement=args.placement, 

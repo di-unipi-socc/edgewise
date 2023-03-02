@@ -6,6 +6,8 @@ DATA_DIR			= $(ROOT_DIR)/data
 SCRIPTS_DIR			= $(ROOT_DIR)/scripts
 OUTPUT_DIR			= $(DATA_DIR)/output
 BASH_SCRIPTS_DIR 	= $(SCRIPTS_DIR)/bash
+DATETIME 			= $(shell date +%Y%m%d_%H%M%S)
+DATETIME 			:= $(DATETIME)
 
 URL = "https://api.telegram.org/bot$(BOT_ID)/sendMessage"
 
@@ -27,10 +29,10 @@ clean-csv:
 clean: clean-plot clean-csv
 
 build: 
-	$(BASH) $(BASH_SCRIPTS_DIR)/build.sh
+	$(BASH) $(BASH_SCRIPTS_DIR)/build.sh $(DATETIME)
 
 comp: 
-	$(BASH) $(BASH_SCRIPTS_DIR)/run.sh comp
+	$(BASH) $(BASH_SCRIPTS_DIR)/run.sh comp $(DATETIME)
 
 exp: 
 	$(BASH) $(BASH_SCRIPTS_DIR)/run.sh exp

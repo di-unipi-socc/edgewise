@@ -129,9 +129,8 @@ def or_solver_num(app, infr, max_bin=None, dummy=False, show_placement=False, mo
 			xij = x[i, j] if i != -1 else 1
 			xi1j1 = x[i1, j1] if i1 != -1 else 1
 
-			# FRANGIO
-			sec_reqs = set(df.sec_reqs) 
-			if (a['lat'] > df.latency) or (not (sec_reqs.issubset(set(infr.nodes[n]['seccaps'])) and sec_reqs.issubset(set(infr.nodes[n1]['seccaps'])))):
+			# FRANGIO 
+			if (a['lat'] > df.latency):
 				solver.Add(xij + xi1j1 <= 1, name=f'{name}_no_reqs')
 			else:
 				# linearize the constraint
