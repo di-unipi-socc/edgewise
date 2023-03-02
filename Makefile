@@ -38,5 +38,8 @@ exp:
 plot:
 	$(PYTHON) $(SCRIPTS_DIR)/plot.py
 
-notify:
-	curl -s -X POST $(URL) -d chat_id=$(CHAT_ID) -d text="Experiment finished"
+notify_start:
+	curl -s -X POST $(URL) -d parse_mode=$(PARSE_MODE) -d chat_id=$(CHAT_ID) -d text="Exp START: *$(shell date +%H:%M:%S\ \\-\ %d/%m/%Y)*"
+
+notify_end:
+	curl -s -X POST $(URL) -d chat_id=$(CHAT_ID) -d text="Exp END: *$(shell date +%H:%M:%S\ \\-\ %d/%m/%Y)*"
