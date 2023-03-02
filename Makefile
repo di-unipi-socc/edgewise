@@ -20,6 +20,9 @@ TARGETS		= notify_start build comp notify_end
 
 all: $(TARGETS)
 
+clean-infr:
+	rm -rf $(DATA_DIR)/infrs/*
+
 clean-plot:
 	rm -rf $(OUTPUT_DIR)/plots/*
 
