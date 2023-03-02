@@ -29,7 +29,7 @@ clean-plot:
 clean-csv:
 	rm -rf $(OUTPUT_DIR)/csv/*
 
-clean: clean-plot clean-csv
+clean: clean-infr clean-plot clean-csv
 
 build: 
 	$(BASH) $(BASH_SCRIPTS_DIR)/build.sh $(DATETIME)

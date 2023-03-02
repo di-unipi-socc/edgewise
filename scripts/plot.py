@@ -55,10 +55,11 @@ if __name__ == '__main__':
         exit(0)
 
     # remove 'ortools' Version from df
-    df_num = df[df.Version != 'ortools']
+    """ df_num = df[df.Version != 'ortools']
     size_vs("Time", df_num, name="time_num", logy= True)
     size_vs("Change_num", df_num, legend="lower right")
-    size_vs("Bins", df_num, lineplot=False)
+    size_vs("Bins", df_num, lineplot=False) """
 
-    palette = {c: "red" if c == "ortools" else "gray" for c in df.Version.unique()}
+    p = sns.color_palette(PALETTE, 2)
+    palette = {c: p[0] if c == "ortools" else p[1] for c in df.Version.unique()}
     size_vs("Time", df, logy= True, palette=palette)
