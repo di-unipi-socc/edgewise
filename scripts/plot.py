@@ -2,10 +2,11 @@ from os import makedirs
 from os.path import basename, exists
 
 import matplotlib.pyplot as plt
-import seaborn as sns
 import pandas as pd
+import seaborn as sns
 from classes.utils import (COMPARE_PATTERN, PLOT_FORMAT, PLOT_PATH,
-                           PLOTS_SUBDIR, merge_results)
+                           PLOTS_SUBDIR, RESULTS_PATH, df_to_file,
+                           merge_results)
 from colorama import Fore, init
 from tabulate import tabulate
 
@@ -94,6 +95,8 @@ if __name__ == '__main__':
 
     df_agg = pd.concat([df_time, df_bins, df_change, df_change_num], axis=1)
     print(Fore.LIGHTCYAN_EX + tabulate(df_agg, headers='keys', numalign='center', stralign='center'))
+    
+    df_to_file(df_agg, RESULTS_PATH)
     
 
     print("\n")

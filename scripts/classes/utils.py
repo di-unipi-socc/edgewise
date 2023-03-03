@@ -35,6 +35,10 @@ BUDGETS_FILE 	= "budgets_{}.csv"
 BUDGETS_PATTERN = join(CSV_DIR, BUDGETS_FILE.format("*"))
 BUDGETS_PATH 	= join(CSV_DIR, BUDGETS_FILE.format("now"))
 
+RESULTS_FILE 	= "results_{}.csv"
+RESULTS_PATTERN = join(OUTPUT_DIR, RESULTS_FILE.format("*"))
+RESULTS_PATH 	= join(OUTPUT_DIR, RESULTS_FILE.format(time.strftime(TIME_FORMAT)))
+
 # Prolog queries
 MAIN_QUERY 		 = "once(stats(App, Placement, Cost, Bins, Infs, Time))"
 ALLOC_QUERY 	 = "allocatedResources({placement}, AllocHW, AllocBW)"
