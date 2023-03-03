@@ -40,7 +40,7 @@ comp:
 exp: 
 	$(BASH) $(BASH_SCRIPTS_DIR)/run.sh exp
 
-plot:
+plot: clean-plot
 	$(PYTHON) $(SCRIPTS_DIR)/plot.py
 
 notify_start:
