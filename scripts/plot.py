@@ -3,9 +3,11 @@ from os.path import basename, exists
 
 import matplotlib.pyplot as plt
 import seaborn as sns
+import pandas as pd
 from classes.utils import (COMPARE_PATTERN, PLOT_FORMAT, PLOT_PATH,
                            PLOTS_SUBDIR, merge_results)
 from colorama import Fore, init
+from tabulate import tabulate
 
 sizes = [2**i for i in range(4, 10)]
 x = [i for i in range(len(sizes))]
@@ -79,14 +81,39 @@ if __name__ == '__main__':
     size_vs("Change", df_no_num, legend="lower right")
     size_vs("Bins", df_no_num, lineplot=False, ylim=BINS_YLIM)
 
-    mean_times = df.groupby('Version')['Time'].mean()
-    mean_changes = df_no_num.groupby('Version')['Change'].mean()
-    mean_changes_num = df_num.groupby('Version')['Change_num'].mean()
+    mean_times = df.groupby('Version')['Time'].mean() #.to_dict()
+    mean_bins = df.groupby('Version')['Bins'].mean() #.to_dict()
+    mean_changes = df_no_num.groupby('Version')['Change'].mean() #.to_dict()
+    mean_changes_num = df_num.groupby('Version')['Change_num'].mean() #.to_dict()
+
+    min_times = df.groupby('Version')['Time'].min() #.to_dict()
+    min_bins = df.groupby('Version')['Bins'].min() #.to_dict()
+    min_changes = df_no_num.groupby('Version')['Change'].min() #.to_dict()
+    min_changes_num = df_num.groupby('Version')['Change_num'].min() #.to_dict()
+
+    max_times = df.groupby('Version')['Time'].max() #.to_dict()
+    max_bins = df.groupby('Version')['Bins'].max() #.to_dict()
+    max_changes = df_no_num.groupby('Version')['Change'].max() #.to_dict()
+    max_changes_num = df_num.groupby('Version')['Change_num'].max() #.to_dict()
 
     print("\n")
-    print(Fore.LIGHTRED_EX + "Mean of TIME:\n{}\n".format(mean_times))
+    df_time = df.groupby('Version')['Time'].agg(['mean', 'min', 'max'])
+    df_time.columns = ['Time_mean', 'Time_min', 'Time_max']
+    df_bins = df.groupby('Version')['Bins'].agg(['mean', 'min', 'max'])
+    df_bins.columns = ['Bins_mean', 'Bins_min', 'Bins_max']
+    df_change = df_no_num.groupby('Version')['Change'].agg(['mean', 'min', 'max'])
+    df_change.columns = ['Change_mean', 'Change_min', 'Change_max']
+    df_change_num = df_num.groupby('Version')['Change_num'].agg(['mean', 'min', 'max'])
+    df_change_num.columns = ['Change_num_mean', 'Change_num_min', 'Change_num_max']
+
+    df_agg = pd.concat([df_time, df_bins, df_change, df_change_num], axis=1)
+    # print all dfs with tabulate
+    print(Fore.LIGHTCYAN_EX + tabulate(df_agg, headers='keys', numalign='center', stralign='center'))
+    """ print(Fore.LIGHTRED_EX + "Mean of TIME:\n{}\n".format(mean_times))
+    print(Fore.LIGHTBLUE_EX + "Mean of BINS:\n{}\n".format(mean_bins))
     print(Fore.LIGHTYELLOW_EX + "Mean of CHANGE:\n{}\n".format(mean_changes))
-    print(Fore.LIGHTGREEN_EX + "Mean of CHANGE_NUM:\n{}".format(mean_changes_num))
+    print(Fore.LIGHTGREEN_EX + "Mean of CHANGE_NUM:\n{}".format(mean_changes_num)) """
+    
 
     print("\n")
-    print(Fore.LIGHTRED_EX + "Speedup of TIME (MILP/EdgeWise):{}\n".format(mean_times[MILP] / mean_times[EDGEWISE]))
+    print(Fore.LIGHTWHITE_EX + "Speedup of TIME (MILP/EdgeWise): {}\n".format(mean_times[MILP] / mean_times[EDGEWISE]))

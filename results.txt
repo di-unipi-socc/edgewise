@@ -1,0 +1,41 @@
+rm -rf /home/j.massa/GitHub/edgewise/data/output/plots/*
+/home/j.massa/GitHub/edgewise/.venv/bin/python3 /home/j.massa/GitHub/edgewise/scripts/plot.py
+✅ time_num vs Size
+✅ change_num vs Size
+✅ bins_num vs Size
+✅ Time vs Size
+✅ Change vs Size
+✅ Bins vs Size
+
+
+Mean of TIME:
+Version
+EdgeWise              13.093761
+MILP                 134.010234
+declarative            0.192099
+declarative (num)      0.100199
+Name: Time, dtype: float64
+
+Mean of BINS:
+Version
+EdgeWise             5.956522
+MILP                 8.063830
+declarative          3.977273
+declarative (num)    2.000000
+Name: Bins, dtype: float64
+
+Mean of CHANGE:
+Version
+EdgeWise       0.000000
+declarative    6.295416
+Name: Change, dtype: float64
+
+Mean of CHANGE_NUM:
+Version
+MILP                  0.000000
+declarative (num)    26.576489
+Name: Change_num, dtype: float64
+
+
+Speedup of TIME (MILP/EdgeWise):10.234663316178542
+
