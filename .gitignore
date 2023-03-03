@@ -1,5 +1,4 @@
 # My files 
-data/output/*
 data/infrs/*.pl
 
 # Byte-compiled / optimized / DLL files
