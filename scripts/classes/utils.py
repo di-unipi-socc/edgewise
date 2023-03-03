@@ -8,6 +8,7 @@ from pandas import concat, read_csv
 from scipy.stats import truncnorm
 
 TIME_FORMAT = "%Y%m%d-%H%M%S"
+PLOT_FORMAT = "pdf"
 
 # Paths to the main directories
 ROOT_DIR 	 = dirname(dirname(dirname(abspath(__file__))))
@@ -24,7 +25,7 @@ CSV_DIR   = join(OUTPUT_DIR, 'csv')
 PLOTS_DIR = join(OUTPUT_DIR, 'plots')
 
 PLOTS_SUBDIR = join(PLOTS_DIR, time.strftime(TIME_FORMAT))
-PLOT_PATH 	= join(PLOTS_SUBDIR, "{name}.png")
+PLOT_PATH 	= join(PLOTS_SUBDIR, "{name}."+PLOT_FORMAT)
 
 COMPARE_FILE 	= "compare_{}.csv"
 COMPARE_PATTERN = join(CSV_DIR, COMPARE_FILE.format("*"))
