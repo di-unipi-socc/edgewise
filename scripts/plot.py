@@ -2,10 +2,9 @@ from os import makedirs
 from os.path import basename, exists
 
 import matplotlib.pyplot as plt
-import pandas as pd
 import seaborn as sns
-from classes.utils import (COMPARE_PATTERN, PLOT_PATH, PLOTS_SUBDIR, PLOT_FORMAT,
-                           merge_results)
+from classes.utils import (COMPARE_PATTERN, PLOT_FORMAT, PLOT_PATH,
+                           PLOTS_SUBDIR, merge_results)
 from colorama import Fore, init
 
 sizes = [2**i for i in range(4, 10)]
@@ -15,8 +14,8 @@ PALETTE = "colorblind"
 TIME_YLIM = (10**-2, 10**3)
 BINS_YLIM = (0, 12)
 
-PL_NAME = "declarative"
-PL_NUM_NAME = f"{PL_NAME} (num)"
+PL = "declarative"
+PL_NUM = f"{PL} (num)"
 MILP = "MILP"
 EDGEWISE = "EdgeWise"
 
@@ -62,47 +61,32 @@ if __name__ == '__main__':
         print(Fore.LIGHTRED_EX + "No file with pattern: {}".format(COMPARE_PATTERN))
         exit(0)
 
-    df['Version'] = df['Version'].str.replace('binpack_num', PL_NUM_NAME, regex=False)
+    df['Version'] = df['Version'].str.replace('binpack_num', PL_NUM, regex=False)
     df['Version'] = df['Version'].str.replace('ortools_num', MILP, regex=False)
-    df['Version'] = df['Version'].str.replace('binpack', PL_NAME, regex=False)
+    df['Version'] = df['Version'].str.replace('binpack', PL, regex=False)
     df['Version'] = df['Version'].str.replace('ortools', EDGEWISE, regex=False)
 
     # remove 'ortools' and 'binpack' Version from df
-    df_num = df[(df.Version != PL_NAME) & (df.Version != EDGEWISE)]
+    df_num = df[(df.Version != PL) & (df.Version != EDGEWISE)]
     size_vs("Time", df_num, name="time_num", logy=True, ylim=TIME_YLIM)
     size_vs("Change_num", df_num, name="change_num", legend="lower right")
     size_vs("Bins", df_num, name="bins_num", lineplot=False, ylim=BINS_YLIM)
 
-    # print mean of "Time" and "Change_num"
-    print("\n")
-    print(Fore.LIGHTCYAN_EX + "Mean of Time_num: {}".format(df_num["Time"].mean()))
-    print(Fore.LIGHTCYAN_EX + "Mean of Change_num: {}".format(df_num.loc[df.Version == PL_NUM_NAME, "Change_num"].mean()))
-    print("\n")
-
     # p = sns.color_palette(PALETTE, 2)
     # palette = {c: p[0] if c == "ortools" else p[1] for c in df.Version.unique()}
-    df_no_num = df[(df.Version != PL_NUM_NAME) & (df.Version != MILP)]
+    df_no_num = df[(df.Version != PL_NUM) & (df.Version != MILP)]
     size_vs("Time", df_no_num, logy=True, ylim=TIME_YLIM)
     size_vs("Change", df_no_num, legend="lower right")
     size_vs("Bins", df_no_num, lineplot=False, ylim=BINS_YLIM)
 
-    # print mean of "Time" and "Change"
-    print("\n")
-    print(Fore.LIGHTCYAN_EX + "Mean of Time: {}".format(df_no_num["Time"].mean()))
-    print(Fore.LIGHTCYAN_EX + "Mean of Change: {}".format(df_no_num.loc[df.Version == PL_NAME, "Change"].mean()))
-
-    mean_time_edgewise = df.loc[df.Version == EDGEWISE, "Time"].mean()
-    mean_time_milp = df.loc[df.Version == MILP, "Time"].mean()
-
-    speedup = mean_time_milp / mean_time_edgewise
+    mean_times = df.groupby('Version')['Time'].mean()
+    mean_changes = df_no_num.groupby('Version')['Change'].mean()
+    mean_changes_num = df_num.groupby('Version')['Change_num'].mean()
 
     print("\n")
-    print(Fore.LIGHTCYAN_EX + "Mean of Time EdgeWise: {}".format(mean_time_edgewise))
-    print(Fore.LIGHTCYAN_EX + "Mean of Time MILP: {}".format(mean_time_milp))
-    print(Fore.LIGHTCYAN_EX + "Speedup: {}".format(speedup))
+    print(Fore.LIGHTRED_EX + "Mean of TIME:\n{}\n".format(mean_times))
+    print(Fore.LIGHTYELLOW_EX + "Mean of CHANGE:\n{}\n".format(mean_changes))
+    print(Fore.LIGHTGREEN_EX + "Mean of CHANGE_NUM:\n{}".format(mean_changes_num))
 
-
-
-
-
-
+    print("\n")
+    print(Fore.LIGHTRED_EX + "Speedup of TIME (MILP/EdgeWise):{}\n".format(mean_times[MILP] / mean_times[EDGEWISE]))
