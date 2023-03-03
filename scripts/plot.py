@@ -87,20 +87,11 @@ if __name__ == '__main__':
     size_vs("Bins", df_no_num, lineplot=False, ylim=BINS_YLIM)
 
     print("\n")
-    """ df_time = df.groupby('Version')['Time'].agg(['mean', 'min', 'max'])
-    df_time.columns = ['TimeAvg', 'TimeMin', 'TimeMax']
-    df_bins = df.groupby('Version')['Bins'].agg(['mean', 'min', 'max'])
-    df_bins.columns = ['BinsAvg', 'BinsMin', 'BinsMax']
-    df_change = df_no_num.groupby('Version')['Change'].agg(['mean', 'min', 'max'])
-    df_change.columns = ['ChangeAvg', 'ChangeMin', 'ChangeMax']
-    df_change_num = df_num.groupby('Version')['Change_num'].agg(['mean', 'min', 'max'])
-    df_change_num.columns = ['Change_numAvg', 'Change_numMin', 'Change_numMax']
-    """
     df_time = groupby(df, 'Time')
     df_bins = groupby(df, 'Bins')
     df_change = groupby(df_no_num, 'Change')
     df_change_num = groupby(df_num, 'Change_num')
-    
+
     df_agg = pd.concat([df_time, df_bins, df_change, df_change_num], axis=1)
     print(Fore.LIGHTCYAN_EX + tabulate(df_agg, headers='keys', numalign='center', stralign='center'))
     
