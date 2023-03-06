@@ -5,11 +5,13 @@ from multiprocessing import Manager, Process
 
 import pandas as pd
 from classes import Application
-from classes.utils import BUDGETS_PATH, check_app, check_infr, df_to_file
+from classes.utils import (BUDGETS_PATH, EDGEWISE, MILP, check_app, check_infr,
+                           df_to_file)
 from colorama import Fore, init
-from orsolver import or_solver
-from orsolver_num import or_solver_num
+from milp import milp
 from tabulate import tabulate
+
+from edgewise import edgewise
 
 
 def init_parser() -> ap.ArgumentParser:
@@ -64,9 +66,9 @@ def or_budgeting(app, infr, version='pre', save_results=False, result=""):
 	processes = []
 	for i in range(S):
 		if version == 'pre':
-			p = Process(target=or_solver, args=(app.get_file(), infr, i+1, False, False, False, bdg_result))
+			p = Process(target=edgewise, args=(app.get_file(), infr, i+1, False, False, False, bdg_result))
 		else:
-			p = Process(target=or_solver_num, args=(app.get_file(), infr, i+1, False, False, False, bdg_result))
+			p = Process(target=milp, args=(app.get_file(), infr, i+1, False, False, False, bdg_result))
 		p.start()
 		processes.append(p)
 
@@ -75,7 +77,7 @@ def or_budgeting(app, infr, version='pre', save_results=False, result=""):
 
 	res = get_best(bdg_result, save_results=save_results)
 	if type(result) != str and res:
-		name = 'ortools' if version == 'pre' else 'ortools_num'
+		name = EDGEWISE if version == 'pre' else MILP
 		result[name] = res
 
 

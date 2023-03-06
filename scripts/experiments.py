@@ -5,7 +5,7 @@ from multiprocessing import Manager, Process
 from os.path import basename, join
 
 from classes import Infrastructure
-from classes.utils import check_files
+from classes.utils import check_files, EDGEWISE
 from colorama import Fore, init
 from compare import compute_allocated_resources, or_budgeting, pl_process
 
@@ -39,7 +39,7 @@ def exp_replace_same_app(app, pl_infr_path, or_infr_path, pl_version):
     result = manager.dict()
 
     pl_key = basename(pl_version)
-    or_key = 'ortools'
+    or_key = EDGEWISE
 
     infr_pl = Infrastructure(pl_infr_path)
     infr_or = Infrastructure(or_infr_path)

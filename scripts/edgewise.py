@@ -50,7 +50,7 @@ def parse_compatibles(r):
 	return compatibles
 
 		
-def or_solver(app, infr, max_bin=None, dummy=False, show_placement=False, model=False, result=""):
+def edgewise(app, infr, max_bin=None, dummy=False, show_placement=False, model=False, result=""):
 	
 	if type(result) != str:  # if result is not a string, redirect output tu /dev/null
 		sys.stdout = open(os.devnull, 'w')
@@ -231,4 +231,4 @@ if __name__ == '__main__':
 	app = check_app(args.app)
 	infr = check_infr(args.infr, dummy=args.dummy)
 
-	or_solver(app=app, infr=infr, dummy=args.dummy, show_placement=args.placement, model=args.model)
+	edgewise(app=app, infr=infr, dummy=args.dummy, show_placement=args.placement, model=args.model)

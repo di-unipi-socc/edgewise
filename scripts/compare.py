@@ -6,13 +6,15 @@ from os.path import basename, join
 import pandas as pd
 from budgeting import or_budgeting
 from classes import Infrastructure
-from classes.utils import (ALLOC_QUERY, COMPARE_PATH, CSV_DIR, MAIN_QUERY,
-                           PL_UTILS_DIR, TIMEOUT, check_files, df_to_file)
+from classes.utils import (ALLOC_QUERY, COMPARE_PATH, CSV_DIR, EDGEWISE,
+                           MAIN_QUERY, MILP, PL_UTILS_DIR, TIMEOUT,
+                           check_files, df_to_file)
 from colorama import Fore, init
-from orsolver import or_solver
-from orsolver_num import or_solver_num
+from milp import milp
 from swiplserver import PrologMQI, prolog_args
 from tabulate import tabulate
+
+from edgewise import edgewise
 
 
 def init_parser() -> ap.ArgumentParser:
@@ -23,8 +25,8 @@ def init_parser() -> ap.ArgumentParser:
 	p.add_argument("-d", "--dummy", action="store_true",
 	               help="if set, uses an infrastructure with dummy links (low lat, high bw).")
 	p.add_argument("-b", "--budgeting", action="store_true", help="use budgeting for OR-Tools models.")
-	p.add_argument("-o", "--ortools", action="store_true", help="if set, compares also with Google OR-Tools model (with PL pre-processing).")
-	p.add_argument("-on", "--ortools-num", action="store_true", help="if set, compares also with Google OR-Tools model (only numeric constraints).")
+	p.add_argument("-e", "--edgewise", action="store_true", help="if set, compares also with EdgeWise (OR-Tools model with PL pre-processing).")
+	p.add_argument("-m", "--milp", action="store_true", help="if set, compares also with MILP model (OR-Tools model with only numerical constraints).")
 	p.add_argument("-s", "--save", action="store_true", help="if set, saves the results in csv format.")
 	p.add_argument("-t", "--timeout", type=int, default=TIMEOUT, help="Timeout for both OR-Tools and Prolog processes.")
 	p.add_argument("-f", "--file", type=str, default=COMPARE_PATH, help="Name of the file where to save the results.")
@@ -42,14 +44,14 @@ def print_result(result, show_placement, save_results):
 	result = pd.DataFrame.from_dict(result, orient='index')
 	result.index.name = 'Version'
 
-	if 'ortools' in result.index:
-		opt_cost = float(result.loc[['ortools']]['Cost'])
+	if EDGEWISE in result.index:
+		opt_cost = float(result.loc[[EDGEWISE]]['Cost'])
 		result['Change'] = result['Cost'].apply(lambda x: get_change(x, opt_cost)).round(4) #.astype(str) + " %"
 	else:
 		result['Change'] = None
 	
-	if 'ortools_num' in result.index:
-		opt_cost = float(result.loc[['ortools_num']]['Cost'])
+	if MILP in result.index:
+		opt_cost = float(result.loc[[MILP]]['Cost'])
 		result['Change_num'] = result['Cost'].apply(lambda x: get_change(x, opt_cost)).round(4) #.astype(str) + " %"
 	else:
 		result['Change_num'] = None
@@ -81,6 +83,7 @@ def print_result(result, show_placement, save_results):
 
 def prolog_to_dict(p):
 	return dict(list(map((lambda x: prolog_args(x)), p)))
+
 
 def prolog_to_dict2(p):
 	a = list(map((lambda x: prolog_args(x)), p))
@@ -143,9 +146,9 @@ def main(app, infr, versions, budgeting=False, show_placement=False, ortools=Fal
 	# add OR-Tools(pre) process
 	if ortools:
 		if budgeting:
-			p = Process(name='budgeting', target=or_budgeting, args=(app, infr, 'pre', False, result))
+			p = Process(name=f'budgeting {EDGEWISE}', target=or_budgeting, args=(app, infr, 'pre', False, result))
 		else:
-			p = Process(name='ortools', target=or_solver, args=(app, infr, None, dummy, show_placement, False, result))
+			p = Process(name=EDGEWISE, target=edgewise, args=(app, infr, None, dummy, show_placement, False, result))
 					
 		p.start()
 		processes.append(p)
@@ -153,9 +156,9 @@ def main(app, infr, versions, budgeting=False, show_placement=False, ortools=Fal
 	# add OR-Tools(num) process
 	if ortools_num:
 		if budgeting:
-			p = Process(name='budgeting_num', target=or_budgeting, args=(app, infr, 'num', False, result))
+			p = Process(name=f'budgeting {MILP}', target=or_budgeting, args=(app, infr, 'num', False, result))
 		else:
-			p = Process(name='ortools_num', target=or_solver_num, args=(app, infr, None, dummy, show_placement, False, result))
+			p = Process(name=MILP, target=milp, args=(app, infr, None, dummy, show_placement, False, result))
 					
 		p.start()
 		processes.append(p)
@@ -203,4 +206,4 @@ if __name__ == "__main__":
 	print(Fore.LIGHTCYAN_EX + tabulate(info))
 
 	main(app=app, infr=infr, versions=vs, show_placement=args.placement, 
-    	budgeting=args.budgeting, ortools=args.ortools, ortools_num=args.ortools_num, dummy=args.dummy, save=args.save)
+    	budgeting=args.budgeting, ortools=args.edgewise, ortools_num=args.milp, dummy=args.dummy, save=args.save)

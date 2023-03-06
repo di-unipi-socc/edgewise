@@ -17,11 +17,6 @@ PALETTE = "colorblind"
 TIME_YLIM = (10**-2, 10**3)
 BINS_YLIM = (0, 12)
 
-PL = "declarative"
-PL_NUM = f"{PL} (num)"
-MILP = "MILP"
-EDGEWISE = "EdgeWise"
-
 def groupby(df, field):
     df = df.groupby('Version')[field].agg(['mean', 'min', 'max'])
     df.columns = [f"{field}Avg", f"{field}Min", f"{field}Max"]

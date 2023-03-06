@@ -48,7 +48,7 @@ def get_costs(app, infr, instances, nodes):
 			return costs
 
 
-def or_solver_num(app, infr, max_bin=None, dummy=False, show_placement=False, model=False, result=""):
+def milp(app, infr, max_bin=None, dummy=False, show_placement=False, model=False, result=""):
 	
 	if type(result) != str:  # if result is not a string, redirect output tu /dev/null
 		sys.stdout = open(os.devnull, 'w')
@@ -205,4 +205,4 @@ if __name__ == '__main__':
 	app = check_app(args.app)
 	infr = check_infr(args.infr, dummy=args.dummy)
 
-	or_solver_num(app=app, infr=infr, dummy=args.dummy, show_placement=args.placement, model=args.model)
+	milp(app=app, infr=infr, dummy=args.dummy, show_placement=args.placement, model=args.model)
