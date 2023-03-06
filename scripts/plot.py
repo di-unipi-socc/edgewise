@@ -4,9 +4,9 @@ from os.path import basename, exists
 import matplotlib.pyplot as plt
 import pandas as pd
 import seaborn as sns
-from classes.utils import (COMPARE_PATTERN, PLOT_FORMAT, PLOT_PATH,
-                           PLOTS_SUBDIR, RESULTS_PATH, df_to_file,
-                           merge_results)
+from classes.utils import (COMPARE_PATTERN, EDGEWISE, MILP, PL, PL_NUM,
+                           PLOT_FORMAT, PLOT_PATH, PLOTS_SUBDIR, RESULTS_PATH,
+                           df_to_file, merge_results)
 from colorama import Fore, init
 from tabulate import tabulate
 
