@@ -1,6 +1,8 @@
+<div align='center'>
 <picture>
     <img width=250 alt="edgewise-logo" src="assets/logo.png"/>
 </picture>
+</div>
 
 ## Repository Folders' structure <img src="https://img.icons8.com/small/344/folder-tree.png" alt="folder tree" width="20" height="20">
 
