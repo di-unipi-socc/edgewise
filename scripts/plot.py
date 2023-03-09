@@ -23,7 +23,7 @@ def groupby(df, field):
     return df
 
 
-def size_vs(field, df, name=None, legend="best", lineplot=True, logy=False, ylim=None, palette=PALETTE):
+def size_vs(field, df, name=None, legend="best", lineplot=True, ylog=False, ylim=None, ylabel=None, palette=PALETTE):
     # set seaborn context
     sns.set(style="whitegrid")
     sns.set_context("notebook", font_scale=1.5, rc={"lines.linewidth": 2.5})
@@ -38,9 +38,9 @@ def size_vs(field, df, name=None, legend="best", lineplot=True, logy=False, ylim
     
     # set labels and y-scale
     plt.xlabel("Infrastructure Size")
-    plt.ylabel(field)
+    plt.ylabel(ylabel if ylabel else field)
     plt.ylim(ylim) if ylim else None
-    plt.yscale('log') if logy else None
+    plt.yscale('log') if ylog else None
     # plt.title("{} vs Size".format(field))
     plt.legend(loc=legend) if legend else plt.legend([],[], frameon=False)
 
@@ -71,14 +71,14 @@ if __name__ == '__main__':
 
     # remove 'ortools' and 'binpack' Version from df
     df_num = df[(df.Version != PL) & (df.Version != EDGEWISE)]
-    size_vs("Time", df_num, name="time_num", logy=True, ylim=TIME_YLIM)
+    size_vs("Time", df_num, name="time_num", ylog=True, ylim=TIME_YLIM, ylabel="Time (s)")
     size_vs("Change_num", df_num, name="change_num", legend="lower right")
     size_vs("Bins", df_num, name="bins_num", lineplot=False, ylim=BINS_YLIM)
 
     # p = sns.color_palette(PALETTE, 2)
     # palette = {c: p[0] if c == "ortools" else p[1] for c in df.Version.unique()}
     df_no_num = df[(df.Version != PL_NUM) & (df.Version != MILP)]
-    size_vs("Time", df_no_num, logy=True, ylim=TIME_YLIM)
+    size_vs("Time", df_no_num, ylog=True, ylim=TIME_YLIM, ylabel="Time (s)")
     size_vs("Change", df_no_num, legend="lower right")
     size_vs("Bins", df_no_num, lineplot=False, ylim=BINS_YLIM)
 
