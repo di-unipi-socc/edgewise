@@ -17,11 +17,11 @@
 ```
 
 The above tree shows the structure of the repository (_see the README.md file in each folder for more information_):
- - `data` folder contains the input files for the tool execution.
- - `pl-utils` folder contains some Prolog files implementing a part of the reasoner logic (i.e. pre-processing, resource allocation...).
- - `scripts` folder contains the python scripts implementing the MILP approach and oter ones used to run the experiments. 
- - `versions` folder contains different versions of the declarative approach. 
- - `Makefile` contains some shortcut commands to generate input data and run the experiments.
+ - [`data`](data) folder contains the input files for the tool execution.
+ - [`pl-utils`](pl-utils) folder contains some Prolog files implementing a part of the reasoner logic (i.e. pre-processing, resource allocation...).
+ - [`scripts`](scripts) folder contains the python scripts implementing the MILP approach and oter ones used to run the experiments. 
+ - [`versions`](versions) folder contains different versions of the declarative approach. 
+ - [`Makefile`](Makefile) contains some shortcut commands to generate input data and run the experiments.
 
 ## How to use &nbsp;<img src="https://cdn-icons-png.flaticon.com/512/3208/3208615.png" alt="checklist" width="20" height="20"/> 
 
