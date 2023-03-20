@@ -197,8 +197,8 @@ if __name__ == "__main__":
 	info = [['APPLICATION:', basename(app)],
 			['INFRASTRUCTURE:', ("dummy" + os.sep if args.dummy else "") + basename(infr)],
 			['NODE BUDGETING:', "YES" if args.budgeting else "NO"],
-			['OR-TOOLS-NUM:', "YES" if args.ortools_num else "NO"],
-			['OR-TOOLS:', "YES" if args.ortools else "NO"],
+			['MILP:', "YES" if args.milp else "NO"],
+			['EDGEWISE:', "YES" if args.edgewise else "NO"],
 			['PL VERSIONS:', [basename(v) for v in vs]],
 			['SAVE RESULTS:', "YES" if args.save else "NO"]]
 	info.append(['FILE:', COMPARE_PATH]) if args.save else None

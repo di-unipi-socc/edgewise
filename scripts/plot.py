@@ -95,4 +95,4 @@ if __name__ == '__main__':
     
 
     print("\n")
-    print(Fore.LIGHTWHITE_EX + "Speedup of TIME (MILP/EdgeWise): {}\n".format(df_time.loc[MILP]['TimeAvg'] / df_time.loc[EDGEWISE]['TimeAvg']))
+    print(Fore.LIGHTWHITE_EX + "Speedup of TIME (MILP/EdgeWise): {}x\n".format(round(df_time.loc[MILP]['TimeAvg'] / df_time.loc[EDGEWISE]['TimeAvg'], 2)))
