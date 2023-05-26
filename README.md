@@ -1,6 +1,6 @@
 <div>
 <picture>
-    <img width="100%" alt="edgewise-logo" src="assets/logo.png"/>
+    <source media="(prefers-color-scheme: dark)" srcset="img/logo-white.png"><img width="100%" alt="edgewise-logo" src="assets/logo.png"/>
 </picture>
 </div>
 
