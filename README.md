@@ -1,6 +1,6 @@
-<div align='center'>
+<div>
 <picture>
-    <img width=250 alt="edgewise-logo" src="assets/logo.png"/>
+    <img width="100%" alt="edgewise-logo" src="assets/logo.png"/>
 </picture>
 </div>
 
