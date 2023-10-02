@@ -4,6 +4,14 @@
 </picture>
 </div>
 
+<hr>
+
+**EdgeWise** methodology is described and assessed in:
+
+> [Jacopo Massa](https://pages.di.unipi.it/massa), [Stefano Forti](https://pages.di.unipi.it/forti), [Patrizio Dazzi](https://pages.di.unipi.it/dazzi), [Antonio Brogi](https://pages.di.unipi.it/brogi)<br>
+> [**Declarative and Linear Programming Approaches to Service Placement, Reconciled.**](https://doi.org/10.1109/CLOUD60044.2023.00033), <br>	
+> IEEE 16th International Conference on Cloud Computing (CLOUD), 2023.
+
 ## Repository Folders' structure <img src="https://img.icons8.com/small/344/folder-tree.png" alt="folder tree" width="20" height="20">
 
 ``` bash
