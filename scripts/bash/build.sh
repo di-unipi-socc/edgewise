@@ -1,5 +1,5 @@
 #!/bin/bash
-INFRS=(16 32 64 128 256 512)
+INFRS=(16 32 64 128 256 512 1024)
 
 ROOT_DIR=$(dirname $(dirname $(dirname $(realpath $0))))
 INFRS_DIR=$ROOT_DIR/data/infrs
