@@ -6,19 +6,16 @@ from os.path import dirname, exists, join
 
 import networkx as nx
 from colorama import Fore, init
-from numpy import random as rnd
-from numpy import set_printoptions
+from numpy import random as rnd, log2
+from numpy import set_printoptions, get_printoptions
 from tabulate import tabulate
 from utils import INFRS_DIR, normal_distribution
+from pathlib import Path
 
 HW_PLATFORMS = ["arm64", "x86"]
 SW_CAPS = ["ubuntu", "mySQL", "python", "js", "gcc"]
 LOCATIONS = ["de", "es", "it"]
-PROVIDERS = [
-    "aws",
-    "azure",
-    "ibm",
-]
+PROVIDERS = ["aws", "azure", "ibm"]
 THINGS = [
     "soil",
     "heat",
@@ -103,7 +100,7 @@ TYPES = {
 
 NOT_PLACED_THINGS = None
 DUMMY_LAT, DUMMY_BW = 5, 1000
-BW_MIN, BW_MAX = 20, 500
+BW_MIN, BW_MAX = 100, 500
 LAT_MIN, LAT_MAX = 2, 20
 
 
@@ -111,6 +108,19 @@ def init_parser() -> ap.ArgumentParser:
     description = "Generate random infrastructure with a given number of nodes."
     p = ap.ArgumentParser(prog=__file__, description=description)
 
+    p.add_argument(
+        "n",
+        nargs="*",
+        type=int,
+        help="number of infrastructure nodes",
+    )
+    p.add_argument(
+        "-g",
+        "--generator",
+        default="ba",
+        nargs="*",
+        help="which kind of nx graph to generate",
+    )
     p.add_argument(
         "-d",
         "--dummy",
@@ -124,16 +134,20 @@ def init_parser() -> ap.ArgumentParser:
         type=int,
         help="seed for random generation ('None' if not set)",
     )
-    p.add_argument("n", nargs="*", type=int, help="number of infrastructure nodes")
     p.add_argument(
-        "-t", "--things", nargs="*", help="list of IoT devices to be randomly placed"
+        "-t",
+        "--things",
+        nargs="*",
+        help="list of IoT devices to be randomly placed",
     )
 
     return p
 
 
 def get_random(l, size=1):
-    return list(rnd.choice(l, size=size, replace=False))
+    a = list(rnd.choice(l, size=size, replace=False))
+    a = [str(i) for i in a]
+    return a
 
 
 def get_random_things(size=1):
@@ -149,7 +163,7 @@ def get_random_things(size=1):
 
 
 class Builder(nx.Graph):
-    def __init__(self, n, dummy=False, seed=None):
+    def __init__(self, n, generator="ba", dummy=False, seed=None):
         super().__init__()
         self._bwTh = 3
         self._hwTh = 1
@@ -158,6 +172,7 @@ class Builder(nx.Graph):
         self.seed = seed
         self.file = "infr{}-{}.pl".format(self.n, self.seed)
         self.gnodes = {}  # nodes grouped by TYPES
+        self.generator = generator
 
         self.set_filepath(dummy)
         self.set_nodes(n)
@@ -165,13 +180,21 @@ class Builder(nx.Graph):
         nx.relabel_nodes(self, lambda x: f"n{x}", copy=False)
 
     def set_filepath(self, dummy):
-        path = INFRS_DIR
-        path = join(path, "dummy") if dummy else path
-        self.file = join(path, self.file)
+        path = Path(INFRS_DIR) / self.generator.upper() / ("dummy" if dummy else "")
+        self.file = path / self.file
+        self.file.parent.mkdir(parents=True, exist_ok=True)
 
     def set_nodes(self, n):
-        # R = nx.complete_graph(n, nx.DiGraph())
-        R = nx.gnp_random_graph(n, 0.2, seed=self.seed)
+        if self.generator == "ba":
+            R = nx.barabasi_albert_graph(n, int(log2(n)), seed=self.seed)
+        elif self.generator == "er":
+            R = nx.gnp_random_graph(n, 0.4, seed=self.seed)
+        elif self.generator == "iag":
+            R = nx.random_internet_as_graph(n, seed=self.seed)
+        elif self.generator == "all":
+            R = nx.complete_graph(n, nx.DiGraph())
+        else:
+            raise ValueError(f"Invalid generator {self.generator}")
         self.add_nodes_from(R, things=[])
 
         dist = normal_distribution(size_of_federation=n)
@@ -216,7 +239,7 @@ class Builder(nx.Graph):
         iot_min, iot_max = iot_size if isinstance(iot_size, tuple) else (0, 0)
 
         node["nodeType"] = ntype
-        node["hardware"] = (rnd.choice(HW_PLATFORMS), hw)
+        node["hardware"] = (str(rnd.choice(HW_PLATFORMS)), hw)
         node["location"] = rnd.choice(LOCATIONS)
         node["provider"] = rnd.choice(PROVIDERS)
         node["software"] = (
@@ -303,15 +326,15 @@ class Builder(nx.Graph):
 
     def upload(self, file=None):
         file = self.file if not file else file
-        makedirs(dirname(file)) if not exists(dirname(file)) else None
         with open(file, "w+") as f:
             f.write(str(self))
 
 
-def main(n, seed=None, dummy=False):
-    infra = Builder(n, dummy=dummy, seed=seed)
+def main(n, seed=None, generator="ba", dummy=False):
+    infra = Builder(n, generator=generator, dummy=dummy, seed=seed)
     info = [
         ["SEED:", seed if seed else "<not set>"],
+        ["GENERATOR:", generator],
         ["DUMMY:", "YES" if dummy else "NO"],
         ["PATH:", infra.file],
     ]
@@ -336,32 +359,32 @@ def main(n, seed=None, dummy=False):
 
 
 if __name__ == "__main__":
-    set_printoptions(threshold=sys.maxsize)
+    set_printoptions(threshold=sys.maxsize, formatter={"str_kind": "str"})
     init(autoreset=True)
 
     parser = init_parser()
     args = parser.parse_args()
 
-    print("NOT PLACED THINGS", NOT_PLACED_THINGS)
     for s in args.seed:
         for n in args.n:
-            THINGS = [
-                "soil",
-                "heat",
-                "water",
-                "nutrient",
-                "energy",
-                "piCamera1",
-                "piCamera2",
-                "arViewer",  # arFarming
-                "cam11",
-                "cam12",
-                "cam21",
-                "cam22",  # distSecurity
-                "iphoneXS",
-                "echoDot",
-            ]  # speakToMe
-            NOT_PLACED_THINGS = len(THINGS)
-            print(f"Seed: {s}, Nodes: {n}")
-            rnd.seed(s)
-            main(n, s, dummy=args.dummy)
+            for g in args.generator:
+                THINGS = [
+                    "soil",
+                    "heat",
+                    "water",
+                    "nutrient",
+                    "energy",
+                    "piCamera1",
+                    "piCamera2",
+                    "arViewer",  # arFarming
+                    "cam11",
+                    "cam12",
+                    "cam21",
+                    "cam22",  # distSecurity
+                    "iphoneXS",
+                    "echoDot",
+                ]  # speakToMe
+                NOT_PLACED_THINGS = len(THINGS)
+                print(f"Seed: {s}, Nodes: {n}, Generator: {g}")
+                rnd.seed(s)
+                main(n, s, g, dummy=args.dummy)
