@@ -1,7 +1,4 @@
 :-['requirements.pl', 'costs.pl'].
-%:- ['../data/apps/arFarming.pl', '../data/infrs/infr32-42.pl'].
-% :-['/Users/jacopomassa/GitHub/eclypse/examples/edgewise/applications/prolog/distSecurity.pl'].
-% :-['/home/massa/eclypse/examples/edgewise/infrastructures/BA/infr128-300425.pl'].
 :- dynamic deployed/2.
 
 
@@ -12,12 +9,10 @@
 preprocess(App, Compatibles) :-
     \+ deployed(App, _),
     application(App, Functions, Services), 
-    checkThings,
     append(Functions, Services, Components),
     findCompatibles(Components, Compatibles).
 preprocess(App, Compatibles) :-
     deployed(App, Placement),
-    checkThings,
     crStep(Placement, Compatibles).
 
 crStep(P, Compatibles) :- crStep(P, [], Compatibles).
