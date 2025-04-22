@@ -9,7 +9,7 @@
 **EdgeWiseCR** methodology is described and assessed in:
 
 > [Jacopo Massa](https://pages.di.unipi.it/massa), [Stefano Forti](https://pages.di.unipi.it/forti), [Patrizio Dazzi](https://pages.di.unipi.it/dazzi), [Antonio Brogi](https://pages.di.unipi.it/brogi)<br>
-> [**Combining Declarative and Linear Programming for Application Management in the Cloud-Edge Continuum**](https://doi.org/10.1109/CLOUD60044.2023.00033), <br>	
+> [**Combining Declarative and Linear Programming for Application Management in the Cloud-Edge Continuum**](https://doi.org/10.48550/arXiv.2504.12032), <br>	
 > arXiv: 2504.12032 [cs.DC].
 
 This work investigates the data-aware multi-service application placement problem in Cloud-Edge settings. We previously introduced [_EdgeWise_](https://github.com/di-unipi-socc/edgewise), a hybrid approach that combines declarative programming with Mixed-Integer Linear Programming (MILP) to determine optimal placements that minimise operational costs and unnecessary data transfers. The declarative stage pre-processes infrastructure constraints to improve the efficiency of the MILP solver, achieving optimal placements in terms of operational costs, with significantly reduced execution times. 
