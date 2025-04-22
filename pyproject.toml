@@ -3,7 +3,7 @@ name = "edgewise"
 version = "0.1.0"
 description = ""
 authors = [{ name = "Jacopo Massa", email = "jacopomassa97@gmail.com" }]
-# readme = "README.md"
+readme = "README.md"
 
 [tool.poetry.dependencies]
 python = ">=3.11, <3.13"
@@ -15,7 +15,7 @@ seaborn = "^0.13.2"
 ipykernel = "^6.29.5"
 pyarrow = "<18"
 eclypse = "0.6.19"
-prolog-to-networkx = {git = "https://github.com/jacopo-massa/prolog-to-networkx"}
+prolog-to-networkx = { git = "https://github.com/jacopo-massa/prolog-to-networkx" }
 
 
 [build-system]
