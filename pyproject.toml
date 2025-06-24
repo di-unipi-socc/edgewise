@@ -17,7 +17,35 @@ pyarrow = "<18"
 eclypse = "0.6.19"
 prolog-to-networkx = { git = "https://github.com/jacopo-massa/prolog-to-networkx" }
 
-
 [build-system]
 requires = ["poetry-core>=2.0.0,<3.0.0"]
 build-backend = "poetry.core.masonry.api"
+
+[tool.poetry.group.dev]
+optional = true
+
+[tool.poetry.group.dev.dependencies]
+matplotlib = "^3.10.3"
+black = "^25.1.0"
+commitizen = "^4.8.2"
+isort = "^6.0.1"
+pycln = "^2.5.0"
+pylint = "^3.3.7"
+docformatter = { extras = ["tomli"], version = "^1.7.7" }
+
+
+[tool.pycln]
+all = true
+
+[tool.isort]
+multi_line_output = 3
+include_trailing_comma = true
+force_grid_wrap = 2
+filter_files = true
+skip = ["__init__.py"]
+
+[tool.docformatter]
+recursive = true
+black = true
+diff = true
+tab-width = 4
