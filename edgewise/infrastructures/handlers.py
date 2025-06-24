@@ -1,5 +1,4 @@
 from __future__ import annotations
-from eclypse.graph import NodeGroup
 
 from typing import (
     TYPE_CHECKING,

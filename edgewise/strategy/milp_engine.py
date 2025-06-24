@@ -1,5 +1,4 @@
 from collections import defaultdict
-from pathlib import Path
 from typing import (
     TYPE_CHECKING,
     Dict,
@@ -8,13 +7,13 @@ from typing import (
 )
 
 import numpy as np
-from ortools.linear_solver import pywraplp
-from swiplserver import PrologThread
-
 from eclypse.graph import (
     Application,
     Infrastructure,
 )
+from ortools.linear_solver import pywraplp
+from swiplserver import PrologThread
+
 from edgewise.utils import (
     COST_QUERY,
     DEPLOYED_QUERY,

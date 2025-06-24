@@ -2,9 +2,9 @@ from __future__ import annotations
 
 from pathlib import Path
 from typing import Optional
-from scipy.stats import truncnorm
-import numpy as np
 
+import numpy as np
+from scipy.stats import truncnorm
 from swiplserver import (
     PrologQueryTimeoutError,
     PrologResultNotAvailableError,

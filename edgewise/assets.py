@@ -8,7 +8,6 @@ from eclypse.graph.assets import (
     Additive,
     Symbolic,
 )
-from eclypse.graph.assets.space import Choice
 from eclypse.graph.assets.defaults import (
     availability,
     bandwidth,

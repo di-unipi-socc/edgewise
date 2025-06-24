@@ -2,17 +2,17 @@ from pathlib import Path
 from time import time
 
 import ray
+from eclypse.simulation import (
+    Simulation,
+    SimulationConfig,
+)
+from eclypse.utils import DEFAULT_SIM_PATH
 from ray import (
     train,
     tune,
 )
 from swiplserver import PrologMQI
 
-from eclypse.simulation import (
-    Simulation,
-    SimulationConfig,
-)
-from eclypse.utils import DEFAULT_SIM_PATH
 from edgewise.applications import get_application
 from edgewise.assets import (
     get_edge_assets,

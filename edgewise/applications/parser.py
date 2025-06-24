@@ -10,12 +10,11 @@ from typing import (
 )
 
 import prolog_to_networkx as ptn
+from eclypse.graph import Application
 from networkx.classes.reportviews import (
     EdgeView,
     NodeView,
 )
-
-from eclypse.graph import Application
 
 from .handlers import get_handlers
 
@@ -37,7 +36,7 @@ cfg.add_fact("function", "FunctionId", "SWPlatform", ("Arch", "HW"))
 cfg.add_fact("thing", "ThingId", "TType")
 
 cfg.add_node_fact("serviceInstance", "ServiceId")
-cfg.add_node_fact("functionInstance", "FunctionId", ("ReqXMont", "ReqDuration"))
+cfg.add_node_fact("functionInstance", "FunctionId", ("ReqXMonth", "ReqDuration"))
 cfg.add_node_fact("thingInstance", "ThingId")
 
 cfg.add_edge_fact("dataFlow", "DataId", "Sec", "Size", "Rate", "latency")

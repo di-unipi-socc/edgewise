@@ -1,3 +1,4 @@
+import time
 from typing import (
     Any,
     Dict,
@@ -14,8 +15,6 @@ from edgewise.utils import (
     timed_async_query,
     timed_query,
 )
-
-import time
 
 
 def pl_process(

@@ -1,14 +1,21 @@
 import argparse as ap
 import sys
 from itertools import product
+from pathlib import Path
 
 import networkx as nx
-from colorama import Fore, init
-from numpy import random as rnd, log2
+from colorama import (
+    Fore,
+    init,
+)
+from numpy import log2
+from numpy import random as rnd
 from numpy import set_printoptions
 from tabulate import tabulate
-from utils import INFRS_DIR, normal_distribution
-from pathlib import Path
+from utils import (
+    INFRS_DIR,
+    normal_distribution,
+)
 
 HW_PLATFORMS = ["arm64", "x86"]
 SW_CAPS = ["ubuntu", "mySQL", "python", "js", "gcc"]

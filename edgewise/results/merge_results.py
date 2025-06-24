@@ -1,6 +1,7 @@
-import pandas as pd
 import json
 from pathlib import Path
+
+import pandas as pd
 from eclypse.utils import DEFAULT_SIM_PATH
 
 

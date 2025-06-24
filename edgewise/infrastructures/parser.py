@@ -12,7 +12,6 @@ from typing import (
 )
 
 import prolog_to_networkx as ptn
-
 from eclypse.graph import Infrastructure
 
 from .handlers import get_handlers

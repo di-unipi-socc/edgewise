@@ -1,8 +1,6 @@
 from __future__ import annotations
 
-import multiprocessing
 import random
-import threading
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -12,14 +10,12 @@ from typing import (
 
 from eclypse.placement.strategies import PlacementStrategy
 
+from edgewise.utils import timed_query
+
 from .milp_engine import edgewise
 from .pl_engine import pl_process
 
-from edgewise.utils import timed_query
-
 if TYPE_CHECKING:
-    from swiplserver import PrologThread
-
     from eclypse.graph import (
         Application,
         Infrastructure,
@@ -28,6 +24,7 @@ if TYPE_CHECKING:
         Placement,
         PlacementView,
     )
+    from swiplserver import PrologThread
 
 
 def place_thing_instances(

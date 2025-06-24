@@ -1,9 +1,14 @@
 from __future__ import annotations
-from eclypse.report import metric
+
 from typing import TYPE_CHECKING
 
+from eclypse.report import metric
+
 if TYPE_CHECKING:
-    from eclypse.graph import Application, Infrastructure
+    from eclypse.graph import (
+        Application,
+        Infrastructure,
+    )
     from eclypse.placement import Placement
 
 
