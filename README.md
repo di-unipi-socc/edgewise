@@ -6,7 +6,12 @@
 
 <hr>
 
-**EdgeWise** methodology is described and assessed in:
+**EdgeWise** methodology is described and assessed in the following publications:
+
+
+> [Jacopo Massa](https://pages.di.unipi.it/massa), [Stefano Forti](https://pages.di.unipi.it/forti), [Patrizio Dazzi](https://pages.di.unipi.it/dazzi), [Antonio Brogi](https://pages.di.unipi.it/brogi)<br>
+> [**Combining Declarative and Linear Programming for Application Management in the Cloud-Edge Continuum**](https://doi.org/10.1016/j.future.2025.108224), <br>	
+> Future Generation Computer Systems, 2025.
 
 > [Jacopo Massa](https://pages.di.unipi.it/massa), [Stefano Forti](https://pages.di.unipi.it/forti), [Patrizio Dazzi](https://pages.di.unipi.it/dazzi), [Antonio Brogi](https://pages.di.unipi.it/brogi)<br>
 > [**Declarative and Linear Programming Approaches to Service Placement, Reconciled.**](https://doi.org/10.1109/CLOUD60044.2023.00033), <br>	
